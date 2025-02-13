@@ -9,6 +9,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export function ChatView() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({ maxSteps: 10 });
+  const [files, setFiles] = React.useState<FileList | undefined>(undefined);
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    handleSubmit(e, {
+      experimental_attachments: files,
+    });
+    setFiles(undefined);
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -32,8 +40,10 @@ export function ChatView() {
           <ChatInput
             input={input}
             handleInputChange={handleInputChange}
-            handleSubmit={handleSubmit}
+            handleSubmit={handleFormSubmit}
             isLoading={isLoading}
+            files={files}
+            setFiles={setFiles}
           />
         </div>
       </div>
