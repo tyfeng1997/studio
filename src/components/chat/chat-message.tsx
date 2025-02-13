@@ -2,6 +2,7 @@
 
 import { Message } from "ai";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { ToolResultRenderer } from "@/components/tools/tool-result-renderer";
 
 interface ChatMessageProps {
@@ -26,6 +27,25 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
       >
         <p className="whitespace-pre-wrap">{message.content}</p>
+
+        {/* Display attached images */}
+        <div className="flex flex-wrap gap-2">
+          {message?.experimental_attachments
+            ?.filter((attachment) =>
+              attachment?.contentType?.startsWith("image/")
+            )
+            .map((attachment, index) => (
+              <Image
+                key={`${message.id}-${index}`}
+                src={attachment.url}
+                width={300}
+                height={300}
+                className="rounded-lg object-cover"
+                alt={attachment.name ?? `attachment-${index}`}
+              />
+            ))}
+        </div>
+
         {message.toolInvocations?.map((tool) => (
           <ToolResultRenderer
             key={`${tool.toolCallId}`}
