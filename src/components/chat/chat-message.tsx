@@ -3,6 +3,7 @@
 import { Message } from "ai";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { FileText } from "lucide-react";
 import { ToolResultRenderer } from "@/components/tools/tool-result-renderer";
 
 interface ChatMessageProps {
@@ -10,6 +11,17 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
+  // Separate attachments by type
+  const imageAttachments =
+    message?.experimental_attachments?.filter((attachment) =>
+      attachment?.contentType?.startsWith("image/")
+    ) || [];
+
+  const pdfAttachments =
+    message?.experimental_attachments?.filter(
+      (attachment) => attachment?.contentType === "application/pdf"
+    ) || [];
+
   return (
     <div
       className={cn(
@@ -28,15 +40,34 @@ export function ChatMessage({ message }: ChatMessageProps) {
       >
         <p className="whitespace-pre-wrap">{message.content}</p>
 
-        {/* Display attached images */}
-        <div className="flex flex-wrap gap-2">
-          {message?.experimental_attachments
-            ?.filter((attachment) =>
-              attachment?.contentType?.startsWith("image/")
-            )
-            .map((attachment, index) => (
+        {/* Display PDF attachments */}
+        {pdfAttachments.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {pdfAttachments.map((attachment, index) => (
+              <div
+                key={`pdf-${message.id}-${index}`}
+                className={cn(
+                  "flex items-center gap-2 rounded-md p-2",
+                  message.role === "user"
+                    ? "bg-primary-foreground/10"
+                    : "bg-background"
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                <span className="text-sm truncate">
+                  {attachment.name || `Document-${index + 1}.pdf`}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Display image attachments */}
+        {imageAttachments.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {imageAttachments.map((attachment, index) => (
               <Image
-                key={`${message.id}-${index}`}
+                key={`image-${message.id}-${index}`}
                 src={attachment.url}
                 width={300}
                 height={300}
@@ -44,7 +75,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 alt={attachment.name ?? `attachment-${index}`}
               />
             ))}
-        </div>
+          </div>
+        )}
 
         {message.toolInvocations?.map((tool) => (
           <ToolResultRenderer
