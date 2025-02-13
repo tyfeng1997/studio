@@ -7,6 +7,7 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
+  console.log("message ", messages);
   const toolsConfig = getToolsConfig();
 
   // 包装工具执行函数以处理错误

@@ -26,6 +26,7 @@ export function ChatInput({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
+      console.log("set file .", event.target.files);
       setFiles(event.target.files);
     }
   };

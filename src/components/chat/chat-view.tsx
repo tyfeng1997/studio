@@ -40,7 +40,7 @@ export function ChatView() {
           <ChatInput
             input={input}
             handleInputChange={handleInputChange}
-            handleSubmit={handleSubmit}
+            handleSubmit={handleFormSubmit}
             isLoading={isLoading}
             files={files}
             setFiles={setFiles}
