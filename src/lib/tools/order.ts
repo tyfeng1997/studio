@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { ToolDefinition, ToolExecuteResult } from "@/app/types/tools";
-//TODO ,完成工具参数的describe，比如用户是tyfeng，从北京去上海的机票订单。
 const OrderParams = z.object({
   name: z.string().describe("name 用户的名字，用于创建机票订单。"),
   from: z.string().describe("from 用户从哪里出发，比如shanghai，北京 "),

@@ -19,9 +19,9 @@ export function ChatView() {
   };
 
   return (
-    <div className="relative min-h-screen">
-      <ScrollArea className="h-[calc(100vh-10rem)] px-4">
-        <div className="relative mx-auto max-w-4xl pt-4 pb-[8rem]">
+    <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
+      <ScrollArea className="flex-1 px-4">
+        <div className="relative mx-auto max-w-3xl pt-4 pb-4">
           {messages.length > 0 ? (
             messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
@@ -35,8 +35,8 @@ export function ChatView() {
           )}
         </div>
       </ScrollArea>
-      <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-background to-background/0 h-40">
-        <div className="mx-auto max-w-4xl p-4">
+      <div className="border-t bg-background p-4">
+        <div className="mx-auto max-w-3xl">
           <ChatInput
             input={input}
             handleInputChange={handleInputChange}

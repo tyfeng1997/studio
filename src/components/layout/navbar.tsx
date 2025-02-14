@@ -3,8 +3,13 @@
 import { Github } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { useToolStore } from "@/lib/store/tool-store";
+import { X } from "lucide-react";
 
 export function Navbar() {
+  const setActiveTool = useToolStore((state) => state.setActiveTool);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -16,6 +21,22 @@ export function Navbar() {
 
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center space-x-2">
+            {/*TODO DELETE*/}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setActiveTool(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setActiveTool("rag")}
+            >
+              Test RAG
+            </Button>
+
             <Link
               href="https://github.com/yourusername/your-repo"
               target="_blank"
