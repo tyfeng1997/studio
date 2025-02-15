@@ -21,9 +21,10 @@ export async function login(formData: FormData) {
   try {
     authSchema.parse({ email, password });
   } catch (error) {
-    return {
-      error: "Invalid form data",
-    };
+    if (error instanceof z.ZodError) {
+      redirect(`/login?error=${encodeURIComponent(error.errors[0].message)}`);
+    }
+    redirect("/login?error=Invalid form data");
   }
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -32,12 +33,10 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    return {
-      error: error.message,
-    };
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  // revalidatePath("/", "layout");
+  revalidatePath("/", "layout");
   redirect("/chat");
 }
 
@@ -51,9 +50,12 @@ export async function signup(formData: FormData) {
   try {
     authSchema.parse({ email, password });
   } catch (error) {
-    return {
-      error: "Invalid form data {}" + error,
-    };
+    if (error instanceof z.ZodError) {
+      redirect(
+        `/register?error=${encodeURIComponent(error.errors[0].message)}`
+      );
+    }
+    redirect("/register?error=Invalid form data");
   }
 
   const { error } = await supabase.auth.signUp({
@@ -62,13 +64,8 @@ export async function signup(formData: FormData) {
   });
 
   if (error) {
-    return {
-      error: error.message,
-    };
+    redirect(`/register?error=${encodeURIComponent(error.message)}`);
   }
 
-  // revalidatePath("/", "layout");
-  return {
-    message: "Check your email to confirm your account",
-  };
+  redirect("/register?message=Check your email to confirm your account");
 }

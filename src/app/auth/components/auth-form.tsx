@@ -1,4 +1,3 @@
-// app/auth/components/auth-form.tsx
 "use client";
 
 import { useTransition } from "react";
@@ -15,15 +14,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MailCheck } from "lucide-react";
 
-function SubmitButton() {
+function SubmitButton({ type }: { type: "login" | "register" }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Loading..." : "Sign In"}
+      {pending ? "Loading..." : type === "login" ? "Sign In" : "Create Account"}
     </Button>
   );
+}
+
+interface AuthError {
+  type: "InvalidCredentials" | "UserNotFound" | "Other";
+  message: string;
+}
+
+function parseAuthError(error: string): AuthError {
+  if (
+    error.includes("Invalid credentials") ||
+    error.includes("incorrect password")
+  ) {
+    return {
+      type: "InvalidCredentials",
+      message:
+        "Invalid email or password. Please check your credentials and try again.",
+    };
+  }
+  if (error.includes("user not found") || error.includes("no user")) {
+    return {
+      type: "UserNotFound",
+      message:
+        "We couldn't find an account with that email. Please check your email or create a new account.",
+    };
+  }
+  return {
+    type: "Other",
+    message: error,
+  };
 }
 
 export function AuthForm({
@@ -36,6 +65,7 @@ export function AuthForm({
   message?: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const parsedError = error ? parseAuthError(error) : null;
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -59,18 +89,43 @@ export function AuthForm({
               type="email"
               placeholder="you@example.com"
               required
+              className={
+                error ? "border-red-500 focus-visible:ring-red-500" : ""
+              }
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              className={
+                error ? "border-red-500 focus-visible:ring-red-500" : ""
+              }
+            />
           </div>
-          {(error || message) && (
-            <Alert variant={message ? "default" : "destructive"}>
-              <AlertDescription>{error || message}</AlertDescription>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Authentication Error</AlertTitle>
+              <AlertDescription>{parsedError?.message}</AlertDescription>
             </Alert>
           )}
-          <SubmitButton />
+
+          {type === "register" && message && (
+            <Alert>
+              <MailCheck className="h-4 w-4" />
+              <AlertTitle>Check your email</AlertTitle>
+              <AlertDescription>
+                We've sent you a verification link. Please check your email to
+                complete your registration.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <SubmitButton type={type} />
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">
