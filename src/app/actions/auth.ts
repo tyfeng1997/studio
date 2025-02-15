@@ -52,7 +52,7 @@ export async function signup(formData: FormData) {
     authSchema.parse({ email, password });
   } catch (error) {
     return {
-      error: "Invalid form data",
+      error: "Invalid form data {}" + error,
     };
   }
 
