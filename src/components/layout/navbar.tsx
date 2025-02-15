@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useToolStore } from "@/lib/store/tool-store";
 import { X } from "lucide-react";
-
+import { ChatHistoryDropdown } from "../chat-history-dropdown";
 export function Navbar() {
   const setActiveTool = useToolStore((state) => state.setActiveTool);
 
@@ -22,6 +22,9 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center space-x-2">
             {/*TODO DELETE*/}
+            <div className="p-4">
+              <ChatHistoryDropdown />
+            </div>
             <Button
               variant="ghost"
               size="icon"
