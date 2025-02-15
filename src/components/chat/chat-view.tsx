@@ -1,14 +1,30 @@
 "use client";
 
 import * as React from "react";
-import { useChat } from "@ai-sdk/react";
 import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Message, useChat } from "@ai-sdk/react";
+import { createIdGenerator } from "ai";
 
-export function ChatView() {
+export function ChatView({
+  id,
+  initialMessages,
+}: { id?: string | undefined; initialMessages?: Message[] } = {}) {
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({ maxSteps: 10 });
+    useChat({
+      maxSteps: 10,
+      id, // use the provided chat ID
+      initialMessages, // initial messages if provided
+      sendExtraMessageFields: true, // send id and createdAt for each message
+      generateId: createIdGenerator({
+        prefix: "msgc",
+        size: 16,
+      }),
+      experimental_prepareRequestBody({ messages, id }) {
+        return { message: messages[messages.length - 1], id };
+      },
+    });
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

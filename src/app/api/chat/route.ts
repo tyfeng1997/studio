@@ -1,15 +1,28 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { getToolsConfig } from "@/lib/tools";
-import { streamText } from "ai";
+import {
+  streamText,
+  appendClientMessage,
+  createIdGenerator,
+  appendResponseMessages,
+} from "ai";
 import { type ToolExecuteResult } from "@/app/types/tools";
+import { saveChat, loadChat } from "@/utils/store/chat-store";
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
-  console.log("message ", messages);
-  const toolsConfig = getToolsConfig();
+  const { message, id } = await req.json();
 
+  console.log("message (single)", message);
+
+  const previousMessages = await loadChat(id);
+
+  const toolsConfig = getToolsConfig();
+  const messages = appendClientMessage({
+    messages: previousMessages,
+    message,
+  });
   // 包装工具执行函数以处理错误
   const wrappedTools = Object.entries(toolsConfig).reduce(
     (acc, [name, config]) => {
@@ -49,7 +62,21 @@ export async function POST(req: Request) {
     model: anthropic("claude-3-5-sonnet-20241022"),
     messages,
     tools: wrappedTools,
+    experimental_generateMessageId: createIdGenerator({
+      prefix: "msgs",
+      size: 16,
+    }),
+    async onFinish({ response }) {
+      await saveChat({
+        id,
+        messages: appendResponseMessages({
+          messages,
+          responseMessages: response.messages,
+        }),
+      });
+    },
   });
+  result.consumeStream(); // no await
 
   return result.toDataStreamResponse();
 }
