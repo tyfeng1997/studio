@@ -74,7 +74,12 @@ export function ChatInput({
         />
         <div className="absolute bottom-2 right-2 flex gap-2">
           {isLoading ? (
-            <Button type="button" size="icon" variant="ghost" onClick={stop}>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => stop()}
+            >
               <Square className="h-4 w-4" />
               <span className="sr-only">Stop generating</span>
             </Button>

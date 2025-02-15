@@ -66,6 +66,7 @@ export async function POST(req: Request) {
       prefix: "msgs",
       size: 16,
     }),
+    maxSteps: 10,
     async onFinish({ response }) {
       await saveChat({
         id,
