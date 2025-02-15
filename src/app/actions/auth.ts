@@ -37,8 +37,8 @@ export async function login(formData: FormData) {
     };
   }
 
-  revalidatePath("/", "layout");
-  redirect("/");
+  // revalidatePath("/", "layout");
+  redirect("/chat");
 }
 
 export async function signup(formData: FormData) {
@@ -67,7 +67,7 @@ export async function signup(formData: FormData) {
     };
   }
 
-  revalidatePath("/", "layout");
+  // revalidatePath("/", "layout");
   return {
     message: "Check your email to confirm your account",
   };
