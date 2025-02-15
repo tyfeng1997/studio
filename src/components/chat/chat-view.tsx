@@ -11,7 +11,7 @@ export function ChatView({
   id,
   initialMessages,
 }: { id?: string | undefined; initialMessages?: Message[] } = {}) {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+  const { messages, input, handleInputChange, handleSubmit, isLoading, stop } =
     useChat({
       maxSteps: 10,
       id, // use the provided chat ID
@@ -60,6 +60,7 @@ export function ChatView({
             isLoading={isLoading}
             files={files}
             setFiles={setFiles}
+            stop={stop}
           />
         </div>
       </div>

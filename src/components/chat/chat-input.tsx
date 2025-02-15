@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Paperclip, SendHorizonal, X } from "lucide-react";
+import { Paperclip, SendHorizonal, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -12,6 +12,7 @@ interface ChatInputProps {
   isLoading: boolean;
   files?: FileList;
   setFiles: (files: FileList | undefined) => void;
+  stop: () => void;
 }
 
 export function ChatInput({
@@ -21,6 +22,7 @@ export function ChatInput({
   isLoading,
   files,
   setFiles,
+  stop,
 }: ChatInputProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -30,6 +32,7 @@ export function ChatInput({
       setFiles(event.target.files);
     }
   };
+
   const clearFiles = () => {
     setFiles(undefined);
     if (fileInputRef.current) {
@@ -70,15 +73,22 @@ export function ChatInput({
           className="min-h-[60px] w-full resize-none rounded-lg pr-24"
         />
         <div className="absolute bottom-2 right-2 flex gap-2">
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="h-4 w-4" />
-            <span className="sr-only">Attach files</span>
-          </Button>
+          {isLoading ? (
+            <Button type="button" size="icon" variant="ghost" onClick={stop}>
+              <Square className="h-4 w-4" />
+              <span className="sr-only">Stop generating</span>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip className="h-4 w-4" />
+              <span className="sr-only">Attach files</span>
+            </Button>
+          )}
           <Button type="submit" size="icon" disabled={isLoading}>
             <SendHorizonal className="h-4 w-4" />
             <span className="sr-only">Send message</span>
