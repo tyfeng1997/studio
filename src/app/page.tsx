@@ -1,11 +1,9 @@
-import { ChatView } from "@/components/chat/chat-view";
+// app/page.tsx
 
 export default function Home() {
   return (
     <main className="flex flex-col min-h-screen">
-      <div className="flex-1">
-        <ChatView />
-      </div>
+      <></>
     </main>
   );
 }

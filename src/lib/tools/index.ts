@@ -1,9 +1,10 @@
 import { weatherTool } from "./weather";
 import { tool as tooltype, Tool } from "ai";
-
+import { orderTool } from "./order";
 // 工具注册表
 export const tools = {
   weather: weatherTool,
+  order: orderTool,
 };
 
 // 获取所有工具的配置，用于AI SDK
