@@ -152,38 +152,46 @@ export function ToolStatus({ data }: { data: any[] }) {
   };
 
   return (
-    <div className="my-4 px-4">
+    <div className="space-y-3">
       <Alert className="bg-card text-card-foreground border border-border shadow-sm">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <div className={`${getStatusColor(state.status)}`}>
             {getStatusIcon(state.status)}
           </div>
           <div className="flex-1 min-w-0">
-            <AlertTitle className="text-sm font-medium">
+            <AlertTitle className="text-sm font-medium truncate">
               {state.currentTool ? state.currentTool : "Tool Execution"}
             </AlertTitle>
             <AlertDescription>
-              <p className="text-sm text-muted-foreground mt-1 truncate">
+              <p className="text-xs text-muted-foreground mt-1 truncate">
                 {state.message}
               </p>
-              {state.activities.length > 0 && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  {state.activities.length} step
-                  {state.activities.length > 1 ? "s" : ""} completed
+              {state.progress > 0 && (
+                <div className="w-full h-1 bg-secondary rounded-full overflow-hidden mt-2">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${state.progress}%` }}
+                  />
                 </div>
               )}
             </AlertDescription>
           </div>
-          {state.progress > 0 && (
-            <div className="w-20 h-1 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${state.progress}%` }}
-              />
-            </div>
-          )}
         </div>
       </Alert>
+
+      <div className="text-xs text-muted-foreground">
+        <div className="font-medium mb-1">Recent Updates</div>
+        <ul className="space-y-1">
+          {state.activities
+            .slice(-2)
+            .reverse()
+            .map((activity) => (
+              <li key={activity.id} className="truncate">
+                {activity.message}
+              </li>
+            ))}
+        </ul>
+      </div>
     </div>
   );
 }

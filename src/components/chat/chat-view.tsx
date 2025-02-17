@@ -53,7 +53,20 @@ export function ChatView({
     },
   });
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
-
+  const [hasToolStatus, setHasToolStatus] = React.useState(false);
+  React.useEffect(() => {
+    if (data && data.length > 0) {
+      const latestData = data[data.length - 1];
+      if (
+        latestData.type === "chat-status" &&
+        latestData.content.status === "completed"
+      ) {
+        setHasToolStatus(false);
+      } else {
+        setHasToolStatus(true);
+      }
+    }
+  }, [data]);
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     handleSubmit(e, {
       experimental_attachments: files,
@@ -66,55 +79,77 @@ export function ChatView({
       prevMessages.filter((msg) => msg.id !== messageId)
     );
   };
-
   return (
     <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
-      <ScrollArea className="flex-1 px-4">
-        <div className="relative mx-auto max-w-3xl pt-4 pb-4">
-          {error ? (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription className="flex items-center justify-between">
-                <span>Error: {error.message}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => reload()}
-                  className="h-7 px-3"
-                >
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Retry
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : null}
+      <div className="flex-1 flex justify-center overflow-hidden">
+        {/* 聊天区域 - 动态宽度 */}
+        <div
+          className={`flex flex-col ${
+            hasToolStatus ? "w-4/5" : "w-full"
+          } max-w-5xl transition-all duration-300`}
+        >
+          <ScrollArea className="flex-1 px-4">
+            <div className="pt-4 pb-4">
+              {error ? (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>Error: {error.message}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => reload()}
+                      className="h-7 px-3"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
 
-          {messages.length > 0 ? (
-            messages.map((message) => (
-              <div key={message.id} className="group relative">
-                <ChatMessage message={message} />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => handleDeleteMessage(message.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                  <span className="sr-only">Delete message</span>
-                </Button>
-              </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center space-y-2 py-20">
-              <p className="text-lg text-muted-foreground">
-                Start a conversation with the AI assistant.
-              </p>
+              {messages.length > 0 ? (
+                messages.map((message) => (
+                  <div key={message.id} className="group relative">
+                    <ChatMessage message={message} />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleDeleteMessage(message.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      <span className="sr-only">Delete message</span>
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center space-y-2 py-20">
+                  <p className="text-lg text-muted-foreground">
+                    Start a conversation with the AI assistant.
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-          {isLoading && <ToolStatus data={data || []} />}
+          </ScrollArea>
         </div>
-      </ScrollArea>
-      <div className="border-t bg-background p-4">
-        <div className="mx-auto max-w-3xl">
+
+        {/* 工具状态区域 - 条件渲染和固定宽度 */}
+        {hasToolStatus && (
+          <div className="w-1/5 min-w-[250px] max-w-[300px] border-l border-border">
+            <div className="sticky top-0 p-4">
+              <ToolStatus data={data || []} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 输入框区域 - 固定在底部 */}
+      <div className="border-t bg-background p-4 mt-auto">
+        <div
+          className={`mx-auto ${
+            hasToolStatus ? "w-4/5" : "w-full"
+          } max-w-5xl transition-all duration-300`}
+        >
           <ChatInput
             input={input}
             handleInputChange={handleInputChange}
