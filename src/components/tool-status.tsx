@@ -12,6 +12,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useEffect, useReducer } from "react";
 import { JSONValue } from "ai";
 import { generateId } from "../utils/id";
+import { motion, AnimatePresence } from "framer-motion";
+
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type ToolState = {
   status: "idle" | "started" | "completed" | "error";
@@ -123,8 +127,115 @@ function getStatusIcon(status: string) {
       );
   }
 }
+
+// 状态记录组件
+const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
+  const getStatusIcon = (status) => {
+    const commonProps = { className: "w-4 h-4" };
+    switch (status) {
+      case "started":
+        return (
+          <Search
+            {...commonProps}
+            className="text-blue-400 dark:text-blue-300"
+          />
+        );
+      case "completed":
+        return (
+          <CheckCircle
+            {...commonProps}
+            className="text-emerald-400 dark:text-emerald-300"
+          />
+        );
+      case "error":
+        return (
+          <AlertCircle
+            {...commonProps}
+            className="text-red-400 dark:text-red-300"
+          />
+        );
+      default:
+        return (
+          <Clock
+            {...commonProps}
+            className="text-gray-400 dark:text-gray-300"
+          />
+        );
+    }
+  };
+
+  return (
+    <motion.div
+      initial={isLatest ? { opacity: 0, y: -10 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      className={`border border-border rounded-lg overflow-hidden ${
+        isLatest ? "bg-card shadow-sm" : "bg-muted/30"
+      } mb-2`}
+    >
+      <div className="p-3 flex items-center cursor-pointer" onClick={onToggle}>
+        <div className="flex items-center flex-1 min-w-0">
+          {getStatusIcon(activity.status)}
+          <span className="ml-2 text-sm font-medium truncate">
+            {activity.tool}
+          </span>
+          <span className="ml-2 text-xs text-muted-foreground">
+            {new Date(activity.timestamp).toLocaleTimeString()}
+          </span>
+        </div>
+        <Button variant="ghost" size="sm" className="ml-2 h-6 w-6 p-0">
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-0">
+              <p className="text-sm text-muted-foreground">
+                {activity.message}
+              </p>
+              {activity.metadata && (
+                <pre className="mt-2 text-xs bg-muted/50 p-2 rounded overflow-x-auto">
+                  {JSON.stringify(activity.metadata, null, 2)}
+                </pre>
+              )}
+              {activity.progress > 0 && (
+                <div className="w-full h-1 bg-secondary rounded-full overflow-hidden mt-3">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${activity.progress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+// 主组件
 export function ToolStatus({ data }: { data: any[] }) {
   const [state, dispatch] = useReducer(toolReducer, initialToolState);
+  const [expandedIds, setExpandedIds] = React.useState(new Set());
+
+  // 更新时自动展开最新的状态
+  useEffect(() => {
+    if (state.activities.length > 0) {
+      const latestId = state.activities[state.activities.length - 1].id;
+      setExpandedIds(new Set([latestId]));
+    }
+  }, [state.activities.length]);
 
   useEffect(() => {
     if (!data?.length) return;
@@ -134,64 +245,33 @@ export function ToolStatus({ data }: { data: any[] }) {
     }
   }, [data]);
 
-  if (state.status === "idle") {
+  if (state.status === "idle" || state.activities.length === 0) {
     return null;
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "started":
-        return "text-blue-500 dark:text-blue-400";
-      case "completed":
-        return "text-emerald-500 dark:text-emerald-400";
-      case "error":
-        return "text-red-500 dark:text-red-400";
-      default:
-        return "text-gray-500 dark:text-gray-400";
-    }
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   return (
-    <div className="space-y-3">
-      <Alert className="bg-card text-card-foreground border border-border shadow-sm">
-        <div className="flex items-center space-x-2">
-          <div className={`${getStatusColor(state.status)}`}>
-            {getStatusIcon(state.status)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <AlertTitle className="text-sm font-medium truncate">
-              {state.currentTool ? state.currentTool : "Tool Execution"}
-            </AlertTitle>
-            <AlertDescription>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {state.message}
-              </p>
-              {state.progress > 0 && (
-                <div className="w-full h-1 bg-secondary rounded-full overflow-hidden mt-2">
-                  <div
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${state.progress}%` }}
-                  />
-                </div>
-              )}
-            </AlertDescription>
-          </div>
-        </div>
-      </Alert>
-
-      <div className="text-xs text-muted-foreground">
-        <div className="font-medium mb-1">Recent Updates</div>
-        <ul className="space-y-1">
-          {state.activities
-            .slice(-2)
-            .reverse()
-            .map((activity) => (
-              <li key={activity.id} className="truncate">
-                {activity.message}
-              </li>
-            ))}
-        </ul>
-      </div>
+    <div className="space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto">
+      {state.activities.map((activity, index) => (
+        <StatusRecord
+          key={activity.id}
+          activity={activity}
+          isExpanded={expandedIds.has(activity.id)}
+          onToggle={() => toggleExpanded(activity.id)}
+          isLatest={index === state.activities.length - 1}
+        />
+      ))}
     </div>
   );
 }
