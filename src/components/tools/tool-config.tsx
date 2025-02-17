@@ -1,15 +1,11 @@
 // components/tool-config/tool-config.tsx
 "use client";
-import { ToolStatus } from "@/components/tool-workflow";
 import { useToolStore } from "@/lib/store/tool-store";
 
 const RAGConfig = () => (
   <div className="p-4">
     <h2 className="text-lg font-semibold mb-4">RAG Configuration</h2>
     {/* Add your RAG configuration UI here */}
-    <div className="container mx-auto p-4">
-      <ToolStatus />
-    </div>
   </div>
 );
 

@@ -9,7 +9,7 @@ import { createIdGenerator } from "ai";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Trash2 } from "lucide-react";
-
+import { ToolStatus } from "@/components/tool-status";
 export function ChatView({
   id,
   initialMessages,
@@ -27,6 +27,7 @@ export function ChatView({
     stop,
     error,
     reload,
+    data,
   } = useChat({
     maxSteps: 10,
     id,
@@ -109,6 +110,7 @@ export function ChatView({
               </p>
             </div>
           )}
+          {isLoading && <ToolStatus data={data || []} />}
         </div>
       </ScrollArea>
       <div className="border-t bg-background p-4">

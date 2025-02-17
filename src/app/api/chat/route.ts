@@ -5,6 +5,7 @@ import {
   appendClientMessage,
   createIdGenerator,
   appendResponseMessages,
+  createDataStreamResponse,
 } from "ai";
 import { type ToolExecuteResult } from "@/app/types/tools";
 import { saveChat, loadChat } from "@/utils/store/chat-store";
@@ -14,70 +15,162 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { message, id } = await req.json();
 
-  console.log("message (single)", message);
-
   const previousMessages = await loadChat(id);
-
   const toolsConfig = getToolsConfig();
   const messages = appendClientMessage({
     messages: previousMessages,
     message,
   });
-  // 包装工具执行函数以处理错误
-  const wrappedTools = Object.entries(toolsConfig).reduce(
-    (acc, [name, config]) => {
-      if (!config || typeof config.execute !== "function") {
-        console.warn(`Invalid tool configuration for ${name}`);
-        return acc;
-      }
-      acc[name] = {
-        ...config,
-        execute: async (params: any) => {
-          try {
-            const result = (await config.execute(params)) as ToolExecuteResult;
-            if (!result.success) {
-              // 将错误信息返回给 LLM
-              return {
-                error: result.error || `Failed to execute ${name} tool`,
-              };
-            }
-            return result.data;
-          } catch (error) {
-            console.error(`Error executing tool ${name}:`, error);
-            return {
-              error:
+
+  return createDataStreamResponse({
+    execute: async (dataStream) => {
+      // 包装工具执行函数以处理错误和发送状态
+      const wrappedTools = Object.entries(toolsConfig).reduce(
+        (acc, [name, config]) => {
+          if (!config || typeof config.execute !== "function") {
+            console.warn(`Invalid tool configuration for ${name}`);
+            return acc;
+          }
+
+          acc[name] = {
+            ...config,
+            execute: async (params: any) => {
+              try {
+                // 发送工具开始执行的状态
+                dataStream.writeData({
+                  type: "tool-status",
+                  content: {
+                    tool: name,
+                    status: "started",
+                    message: `Starting ${name} execution`,
+                    timestamp: new Date().toISOString(),
+                  },
+                });
+
+                // 发送进度初始化
+                dataStream.writeData({
+                  type: "progress-init",
+                  content: {
+                    tool: name,
+                    totalSteps: config.estimatedSteps || 1,
+                  },
+                });
+
+                const result = (await config.execute(
+                  params
+                )) as ToolExecuteResult;
+
+                if (!result.success) {
+                  // 发送错误状态
+                  dataStream.writeData({
+                    type: "tool-status",
+                    content: {
+                      tool: name,
+                      status: "error",
+                      message: result.error || `Failed to execute ${name} tool`,
+                      timestamp: new Date().toISOString(),
+                    },
+                  });
+
+                  return {
+                    error: result.error || `Failed to execute ${name} tool`,
+                  };
+                }
+
+                // 发送完成状态
+                dataStream.writeData({
+                  type: "tool-status",
+                  content: {
+                    tool: name,
+                    status: "completed",
+                    message: `${name} execution completed`,
+                    timestamp: new Date().toISOString(),
+                    metadata: result.metadata,
+                  },
+                });
+
+                return result.data;
+              } catch (error) {
+                console.error(`Error executing tool ${name}:`, error);
+
+                // 发送错误状态
+                dataStream.writeData({
+                  type: "tool-status",
+                  content: {
+                    tool: name,
+                    status: "error",
+                    message:
+                      error instanceof Error
+                        ? error.message
+                        : `Unexpected error in ${name} tool`,
+                    timestamp: new Date().toISOString(),
+                  },
+                });
+
+                return {
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : `Unexpected error in ${name} tool`,
+                };
+              }
+            },
+          };
+          return acc;
+        },
+        {} as Record<string, any>
+      );
+
+      const result = streamText({
+        model: anthropic("claude-3-5-sonnet-20241022"),
+        messages,
+        tools: wrappedTools,
+        experimental_generateMessageId: createIdGenerator({
+          prefix: "msgs",
+          size: 16,
+        }),
+        maxSteps: 10,
+        async onFinish({ response }) {
+          // 保存聊天记录
+          await saveChat({
+            id,
+            messages: appendResponseMessages({
+              messages,
+              responseMessages: response.messages,
+            }),
+          });
+
+          // 发送完成状态
+          dataStream.writeData({
+            type: "chat-status",
+            content: {
+              status: "completed",
+              message: "Chat response completed",
+              timestamp: new Date().toISOString(),
+            },
+          });
+        },
+        onError: (error) => {
+          // 发送错误状态
+          dataStream.writeData({
+            type: "chat-status",
+            content: {
+              status: "error",
+              message:
                 error instanceof Error
                   ? error.message
-                  : `Unexpected error in ${name} tool`,
-            };
-          }
+                  : "Unexpected error in chat",
+              timestamp: new Date().toISOString(),
+            },
+          });
         },
-      };
-      return acc;
-    },
-    {} as Record<string, any>
-  );
-
-  const result = streamText({
-    model: anthropic("claude-3-5-sonnet-20241022"),
-    messages,
-    tools: wrappedTools,
-    experimental_generateMessageId: createIdGenerator({
-      prefix: "msgs",
-      size: 16,
-    }),
-    maxSteps: 10,
-    async onFinish({ response }) {
-      await saveChat({
-        id,
-        messages: appendResponseMessages({
-          messages,
-          responseMessages: response.messages,
-        }),
       });
+
+      // 合并流
+      result.mergeIntoDataStream(dataStream);
+    },
+    onError: (error) => {
+      return error instanceof Error ? error.message : String(error);
     },
   });
-  result.consumeStream(); // no await
-
-  return result.toDataStreamResponse();
 }
