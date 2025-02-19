@@ -29,22 +29,15 @@ export const extractTool: ToolDefinition<typeof ExtractParams> = {
       if (!prompt.trim()) {
         throw new Error("Extraction prompt cannot be empty");
       }
-      dataStream?.writeData({
-        type: "tool-status",
-        content: {
-          tool: "extract",
-          status: "started",
-          message: "Starting extract execution",
-          timestamp: new Date().toISOString(),
-        },
-      });
 
-      // 发送进度初始化
       dataStream?.writeData({
-        type: "progress-init",
+        tool: "extract",
         content: {
-          tool: "extract",
-          totalSteps: 1,
+          params: {
+            urls: urls,
+            prompt: prompt,
+          },
+          timestamp: new Date().toISOString(),
         },
       });
 
@@ -58,12 +51,13 @@ export const extractTool: ToolDefinition<typeof ExtractParams> = {
           error: `Failed to extract data: ${scrapeResult.error}`,
         };
       }
+
       dataStream?.writeData({
-        type: "tool-status",
+        tool: "extract",
         content: {
-          tool: "extract",
-          status: "completed",
-          message: `search execution completed`,
+          result: {
+            extractedData: scrapeResult.data,
+          },
           timestamp: new Date().toISOString(),
         },
       });

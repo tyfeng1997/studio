@@ -26,21 +26,12 @@ export const scrapeTool: ToolDefinition<typeof ScrapeParams> = {
         throw new Error("URL cannot be empty");
       }
       dataStream?.writeData({
-        type: "tool-status",
+        tool: "scrape",
         content: {
-          tool: "scrape",
-          status: "started",
-          message: "Starting extract execution",
+          params: {
+            urls: url,
+          },
           timestamp: new Date().toISOString(),
-        },
-      });
-
-      // 发送进度初始化
-      dataStream?.writeData({
-        type: "progress-init",
-        content: {
-          tool: "scrape",
-          totalSteps: 1,
         },
       });
 
@@ -52,13 +43,10 @@ export const scrapeTool: ToolDefinition<typeof ScrapeParams> = {
           error: `Failed to extract data: ${scrapeResult.error}`,
         };
       }
-
       dataStream?.writeData({
-        type: "tool-status",
+        tool: "scrape",
         content: {
-          tool: "scrape",
-          status: "completed",
-          message: `search execution completed`,
+          result: "scrape done .",
           timestamp: new Date().toISOString(),
         },
       });

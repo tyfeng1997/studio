@@ -28,6 +28,13 @@ export const searchTool: ToolDefinition<typeof SearchParams> = {
       if (!query.trim()) {
         throw new Error("Search query cannot be empty");
       }
+      dataStream?.writeData({
+        tool: "search",
+        content: {
+          params: { query: query },
+          timestamp: new Date().toISOString(),
+        },
+      });
 
       const searchResult = await app.search(query);
 
@@ -37,24 +44,6 @@ export const searchTool: ToolDefinition<typeof SearchParams> = {
           error: `Search failed: ${searchResult.error}`,
         };
       }
-      dataStream?.writeData({
-        type: "tool-status",
-        content: {
-          tool: "search",
-          status: "started",
-          message: "Starting extract execution",
-          timestamp: new Date().toISOString(),
-        },
-      });
-
-      // 发送进度初始化
-      dataStream?.writeData({
-        type: "progress-init",
-        content: {
-          tool: "search",
-          totalSteps: 1,
-        },
-      });
 
       // Add favicon URLs to search results
       const resultsWithFavicons = searchResult.data.map((result: any) => {
@@ -66,11 +55,11 @@ export const searchTool: ToolDefinition<typeof SearchParams> = {
         };
       });
       dataStream?.writeData({
-        type: "tool-status",
+        tool: "search",
         content: {
-          tool: "search",
-          status: "completed",
-          message: `search execution completed`,
+          result: {
+            resultsWithFavicons,
+          },
           timestamp: new Date().toISOString(),
         },
       });

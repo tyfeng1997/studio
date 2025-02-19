@@ -17,107 +17,40 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// ToolStatus.tsx
 export type ToolState = {
-  status: "idle" | "started" | "completed" | "error";
-  currentTool: string | null;
-  progress: number;
-  message: string;
   activities: Array<{
     id: string;
     tool: string;
-    status: "started" | "completed" | "error";
-    message: string;
+    params?: Record<string, any>;
+    result?: Record<string, any>;
+    error?: string;
     timestamp: string;
-    metadata?: any;
   }>;
 };
 
 const initialToolState: ToolState = {
-  status: "idle",
-  currentTool: null,
-  progress: 0,
-  message: "",
   activities: [],
 };
 
 function toolReducer(state: ToolState, action: any): ToolState {
-  switch (action.type) {
-    case "tool-status": {
-      const { tool, status, message, timestamp, metadata } = action.content;
-      if (!tool || !status || !message) return state;
+  const { tool, content } = action;
+  if (!tool || !content) return state;
 
-      const newActivity = {
-        id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-        tool,
-        status: status as "started" | "completed" | "error",
-        message,
-        timestamp: timestamp || new Date().toISOString(),
-        metadata,
-      };
+  const newActivity = {
+    id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+    tool,
+    ...content,
+  };
 
-      // 只保留最新的活动记录，但仍然计数所有活动
-      return {
-        ...state,
-        status: status as ToolState["status"],
-        currentTool: tool,
-        message,
-        activities: [...state.activities, newActivity],
-      };
-    }
-
-    case "progress-init":
-      return {
-        ...state,
-        progress: 0,
-      };
-
-    case "chat-status":
-      if (action.content.status === "completed") {
-        return initialToolState; // 重置状态
-      }
-      return state;
-
-    default:
-      return state;
-  }
+  return {
+    ...state,
+    activities: [...state.activities, newActivity],
+  };
 }
 
 // 状态记录组件
 const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
-  const getStatusIcon = (status) => {
-    const commonProps = { className: "w-4 h-4" };
-    switch (status) {
-      case "started":
-        return (
-          <Search
-            {...commonProps}
-            className="text-blue-400 dark:text-blue-300"
-          />
-        );
-      case "completed":
-        return (
-          <CheckCircle
-            {...commonProps}
-            className="text-emerald-400 dark:text-emerald-300"
-          />
-        );
-      case "error":
-        return (
-          <AlertCircle
-            {...commonProps}
-            className="text-red-400 dark:text-red-300"
-          />
-        );
-      default:
-        return (
-          <Clock
-            {...commonProps}
-            className="text-gray-400 dark:text-gray-300"
-          />
-        );
-    }
-  };
-
   return (
     <motion.div
       initial={isLatest ? { opacity: 0, y: -10 } : false}
@@ -128,7 +61,6 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
     >
       <div className="p-3 flex items-center cursor-pointer" onClick={onToggle}>
         <div className="flex items-center flex-1 min-w-0">
-          {getStatusIcon(activity.status)}
           <span className="ml-2 text-sm font-medium truncate">
             {activity.tool}
           </span>
@@ -154,20 +86,26 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-0">
-              <p className="text-sm text-muted-foreground">
-                {activity.message}
-              </p>
-              {activity.metadata && (
-                <pre className="mt-2 text-xs bg-muted/50 p-2 rounded overflow-x-auto">
-                  {JSON.stringify(activity.metadata, null, 2)}
-                </pre>
+              {activity.params && (
+                <div className="mb-2">
+                  <h4 className="text-sm font-medium">Parameters:</h4>
+                  <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
+                    {JSON.stringify(activity.params, null, 2)}
+                  </pre>
+                </div>
               )}
-              {activity.progress > 0 && (
-                <div className="w-full h-1 bg-secondary rounded-full overflow-hidden mt-3">
-                  <div
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${activity.progress}%` }}
-                  />
+              {activity.result && (
+                <div className="mb-2">
+                  <h4 className="text-sm font-medium">Result:</h4>
+                  <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
+                    {JSON.stringify(activity.result, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {activity.error && (
+                <div className="mb-2">
+                  <h4 className="text-sm font-medium text-red-500">Error:</h4>
+                  <p className="text-sm text-red-500">{activity.error}</p>
                 </div>
               )}
             </div>
@@ -178,7 +116,6 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
   );
 };
 
-// 主组件
 export function ToolStatus({ data }: { data: any[] }) {
   const [state, dispatch] = useReducer(toolReducer, initialToolState);
   const [expandedIds, setExpandedIds] = React.useState(new Set());
@@ -191,15 +128,24 @@ export function ToolStatus({ data }: { data: any[] }) {
     }
   }, [state.activities.length]);
 
+  // 处理新数据
   useEffect(() => {
     if (!data?.length) return;
     const latestData = data[data.length - 1];
-    if (typeof latestData === "object" && latestData !== null) {
+
+    // 确保数据格式符合预期
+    if (
+      typeof latestData === "object" &&
+      latestData !== null &&
+      "tool" in latestData &&
+      "content" in latestData
+    ) {
       dispatch(latestData);
     }
   }, [data]);
 
-  if (state.status === "idle" || state.activities.length === 0) {
+  // 如果没有活动记录，不显示任何内容
+  if (state.activities.length === 0) {
     return null;
   }
 
@@ -215,15 +161,20 @@ export function ToolStatus({ data }: { data: any[] }) {
     });
   };
 
+  // 按时间排序显示活动记录
+  const sortedActivities = [...state.activities].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
   return (
-    <div className="space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto">
-      {state.activities.map((activity, index) => (
+    <div className="space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto p-4">
+      {sortedActivities.map((activity, index) => (
         <StatusRecord
           key={activity.id}
           activity={activity}
           isExpanded={expandedIds.has(activity.id)}
           onToggle={() => toggleExpanded(activity.id)}
-          isLatest={index === state.activities.length - 1}
+          isLatest={index === 0} // 因为已经排序，所以第一个就是最新的
         />
       ))}
     </div>
