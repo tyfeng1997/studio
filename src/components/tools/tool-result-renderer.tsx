@@ -1,6 +1,4 @@
 "use client";
-
-import { WeatherCard } from "./weather-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircle } from "lucide-react";
 
@@ -37,8 +35,8 @@ export function ToolResultRenderer({
 
   try {
     switch (tool) {
-      case "weather":
-        return <WeatherCard data={data} />;
+      case "xxx":
+        return <></>;
       default:
         return (
           <Alert>

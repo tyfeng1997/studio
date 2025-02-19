@@ -1,11 +1,9 @@
-import { weatherTool } from "./weather";
 import { tool as tooltype, Tool } from "ai";
 import { searchTool } from "./serach-web";
 import { scrapeTool } from "./scrape";
 import { extractTool } from "./extract-url";
 // 工具注册表
 export const tools = {
-  weather: weatherTool,
   scrape: scrapeTool,
   search: searchTool,
   extract: extractTool,

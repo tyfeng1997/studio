@@ -6,10 +6,10 @@ import {
   createIdGenerator,
   appendResponseMessages,
   createDataStreamResponse,
+  DataStreamWriter,
 } from "ai";
 import { type ToolExecuteResult } from "@/app/types/tools";
 import { saveChat, loadChat } from "@/utils/store/chat-store";
-
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
@@ -31,82 +31,24 @@ export async function POST(req: Request) {
             console.warn(`Invalid tool configuration for ${name}`);
             return acc;
           }
-
           acc[name] = {
             ...config,
             execute: async (params: any) => {
               try {
                 // 发送工具开始执行的状态
-                dataStream.writeData({
-                  type: "tool-status",
-                  content: {
-                    tool: name,
-                    status: "started",
-                    message: `Starting ${name} execution`,
-                    timestamp: new Date().toISOString(),
-                  },
-                });
-
-                // 发送进度初始化
-                dataStream.writeData({
-                  type: "progress-init",
-                  content: {
-                    tool: name,
-                    totalSteps: config.estimatedSteps || 1,
-                  },
-                });
 
                 const result = (await config.execute(
-                  params
+                  params,
+                  dataStream
                 )) as ToolExecuteResult;
-
                 if (!result.success) {
-                  // 发送错误状态
-                  dataStream.writeData({
-                    type: "tool-status",
-                    content: {
-                      tool: name,
-                      status: "error",
-                      message: result.error || `Failed to execute ${name} tool`,
-                      timestamp: new Date().toISOString(),
-                    },
-                  });
-
                   return {
                     error: result.error || `Failed to execute ${name} tool`,
                   };
                 }
-
-                // 发送完成状态
-                dataStream.writeData({
-                  type: "tool-status",
-                  content: {
-                    tool: name,
-                    status: "completed",
-                    message: `${name} execution completed`,
-                    timestamp: new Date().toISOString(),
-                    metadata: result.metadata,
-                  },
-                });
-
                 return result.data;
               } catch (error) {
                 console.error(`Error executing tool ${name}:`, error);
-
-                // 发送错误状态
-                dataStream.writeData({
-                  type: "tool-status",
-                  content: {
-                    tool: name,
-                    status: "error",
-                    message:
-                      error instanceof Error
-                        ? error.message
-                        : `Unexpected error in ${name} tool`,
-                    timestamp: new Date().toISOString(),
-                  },
-                });
-
                 return {
                   error:
                     error instanceof Error
