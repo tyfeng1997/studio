@@ -57,7 +57,7 @@ const WorkspaceUpload = ({
     });
 
     try {
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/workspace/upload", {
         method: "POST",
         body: formData,
       });
