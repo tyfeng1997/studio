@@ -12,11 +12,27 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Upload } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
 interface WorkspaceUploadProps {
   onSuccess?: () => void;
+  workspaces?: Array<{ workspace: string; document_count: number }>;
+  defaultMode?: "new" | "existing";
 }
 
-const WorkspaceUpload = ({ onSuccess }: WorkspaceUploadProps) => {
+const WorkspaceUpload = ({
+  onSuccess,
+  workspaces = [],
+  defaultMode,
+}: WorkspaceUploadProps) => {
+  const [mode, setMode] = useState<"new" | "existing">(defaultMode || "new");
   const [workspace, setWorkspace] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -61,32 +77,79 @@ const WorkspaceUpload = ({ onSuccess }: WorkspaceUploadProps) => {
       setUploading(false);
     }
   };
+
   return (
     <Card className="w-full max-w-2xl mx-auto bg-card">
       <CardHeader>
         <CardTitle className="text-card-foreground">
-          Create Vector Index
+          {mode === "new" ? "Create Vector Index" : "Add to Existing Workspace"}
         </CardTitle>
         <CardDescription className="text-muted-foreground">
-          Upload documents to create searchable vectors for your workspace
+          {mode === "new"
+            ? "Upload documents to create a new searchable workspace"
+            : "Add more documents to an existing workspace"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Mode Selection */}
+          <div className="flex space-x-2">
+            <Button
+              type="button"
+              variant={mode === "new" ? "default" : "outline"}
+              onClick={() => setMode("new")}
+              className={cn(
+                "flex-1",
+                mode === "new" && "bg-primary text-primary-foreground"
+              )}
+            >
+              New Workspace
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "existing" ? "default" : "outline"}
+              onClick={() => setMode("existing")}
+              disabled={workspaces.length === 0}
+              className={cn(
+                "flex-1",
+                mode === "existing" && "bg-primary text-primary-foreground"
+              )}
+            >
+              Existing Workspace
+            </Button>
+          </div>
+
+          {/* Workspace Input */}
           <div className="space-y-2">
             <Label htmlFor="workspace" className="text-card-foreground">
               Workspace Name
             </Label>
-            <Input
-              id="workspace"
-              type="text"
-              placeholder="Enter workspace name"
-              value={workspace}
-              onChange={(e) => setWorkspace(e.target.value)}
-              className="bg-background border-input text-foreground placeholder:text-muted-foreground"
-            />
+            {mode === "new" ? (
+              <Input
+                id="workspace"
+                type="text"
+                placeholder="Enter workspace name"
+                value={workspace}
+                onChange={(e) => setWorkspace(e.target.value)}
+                className="bg-background border-input text-foreground placeholder:text-muted-foreground"
+              />
+            ) : (
+              <Select value={workspace} onValueChange={setWorkspace}>
+                <SelectTrigger className="w-full bg-background border-input">
+                  <SelectValue placeholder="Select workspace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((ws) => (
+                    <SelectItem key={ws.workspace} value={ws.workspace}>
+                      {ws.workspace} ({ws.document_count} documents)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
+          {/* File Upload */}
           <div className="space-y-2">
             <Label htmlFor="files" className="text-card-foreground">
               Upload Files
@@ -118,6 +181,7 @@ const WorkspaceUpload = ({ onSuccess }: WorkspaceUploadProps) => {
             </div>
           </div>
 
+          {/* Alerts */}
           {error && (
             <Alert
               variant="destructive"
@@ -150,8 +214,10 @@ const WorkspaceUpload = ({ onSuccess }: WorkspaceUploadProps) => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing
             </>
+          ) : mode === "new" ? (
+            "Create and Index"
           ) : (
-            "Upload and Index Files"
+            "Upload to Workspace"
           )}
         </Button>
       </CardFooter>

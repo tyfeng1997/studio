@@ -36,6 +36,7 @@ export function WelcomeView({
   onWorkspaceCreated,
 }: WelcomeViewProps) {
   const [showUpload, setShowUpload] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"new" | "existing">("new");
 
   const handleWorkspaceCreated = () => {
     setShowUpload(false);
@@ -79,23 +80,38 @@ export function WelcomeView({
               </SelectContent>
             </Select>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or</span>
-              </div>
-            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setUploadMode("existing");
+                  setShowUpload(true);
+                }}
+                disabled={workspaces.length === 0}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Files
+              </Button>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowUpload(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create New Workspace
-            </Button>
+              <div className="relative px-2 flex items-center">
+                <span className="text-xs uppercase text-muted-foreground">
+                  or
+                </span>
+              </div>
+
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setUploadMode("new");
+                  setShowUpload(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Workspace
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -103,12 +119,22 @@ export function WelcomeView({
       <Dialog open={showUpload} onOpenChange={setShowUpload}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Create New Workspace</DialogTitle>
+            <DialogTitle>
+              {uploadMode === "new"
+                ? "Create New Workspace"
+                : "Add Files to Workspace"}
+            </DialogTitle>
             <DialogDescription>
-              Upload your documents and create a searchable workspace
+              {uploadMode === "new"
+                ? "Upload your documents and create a searchable workspace"
+                : "Add more documents to your existing workspace"}
             </DialogDescription>
           </DialogHeader>
-          <WorkspaceUpload onSuccess={handleWorkspaceCreated} />
+          <WorkspaceUpload
+            onSuccess={handleWorkspaceCreated}
+            workspaces={workspaces}
+            defaultMode={uploadMode}
+          />
         </DialogContent>
       </Dialog>
     </>
