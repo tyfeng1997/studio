@@ -32,17 +32,6 @@ export type ToolState = {
   }>;
 };
 
-type ToolAction = {
-  type: "tool-status" | "progress-init" | "chat-status";
-  content: {
-    tool?: string;
-    status?: string;
-    message?: string;
-    timestamp?: string;
-    metadata?: any;
-  };
-};
-
 const initialToolState: ToolState = {
   status: "idle",
   currentTool: null,
@@ -90,41 +79,6 @@ function toolReducer(state: ToolState, action: any): ToolState {
 
     default:
       return state;
-  }
-}
-
-function getStatusIcon(status: string) {
-  const commonProps = { className: "w-5 h-5" };
-
-  switch (status) {
-    case "started":
-      return (
-        <Search
-          {...commonProps}
-          className="w-5 h-5 text-blue-400 dark:text-blue-300"
-        />
-      );
-    case "completed":
-      return (
-        <CheckCircle
-          {...commonProps}
-          className="w-5 h-5 text-emerald-400 dark:text-emerald-300"
-        />
-      );
-    case "error":
-      return (
-        <AlertCircle
-          {...commonProps}
-          className="w-5 h-5 text-red-400 dark:text-red-300"
-        />
-      );
-    default:
-      return (
-        <Clock
-          {...commonProps}
-          className="w-5 h-5 text-gray-400 dark:text-gray-300"
-        />
-      );
   }
 }
 
