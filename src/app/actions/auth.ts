@@ -2,7 +2,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
 
@@ -17,14 +16,13 @@ export async function login(formData: FormData) {
   const email = formData.get("email");
   const password = formData.get("password");
 
-  // Validate form data
   try {
     authSchema.parse({ email, password });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      redirect(`/login?error=${encodeURIComponent(error.errors[0].message)}`);
+      return { error: error.errors[0].message };
     }
-    redirect("/login?error=Invalid form data");
+    return { error: "Invalid form data" };
   }
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -33,11 +31,11 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message };
   }
 
   revalidatePath("/", "layout");
-  redirect("/chat");
+  return { success: true, redirect: "/chat" };
 }
 
 export async function signup(formData: FormData) {
@@ -46,16 +44,13 @@ export async function signup(formData: FormData) {
   const email = formData.get("email");
   const password = formData.get("password");
 
-  // Validate form data
   try {
     authSchema.parse({ email, password });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      redirect(
-        `/register?error=${encodeURIComponent(error.errors[0].message)}`
-      );
+      return { error: error.errors[0].message };
     }
-    redirect("/register?error=Invalid form data");
+    return { error: "Invalid form data" };
   }
 
   const { error } = await supabase.auth.signUp({
@@ -64,8 +59,11 @@ export async function signup(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/register?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message };
   }
 
-  redirect("/register?message=Check your email to confirm your account");
+  return {
+    success: true,
+    message: "Check your email to confirm your account",
+  };
 }
