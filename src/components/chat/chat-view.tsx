@@ -9,7 +9,7 @@ import { Message, useChat } from "@ai-sdk/react";
 import { createIdGenerator } from "ai";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw, Trash2, X } from "lucide-react";
 import { ToolStatus } from "@/components/tool-status";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -25,7 +25,7 @@ export function ChatView({
     Array<{ workspace: string; document_count: number }>
   >([]);
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
-  const [hasToolStatus, setHasToolStatus] = React.useState(false);
+  const [showToolStatus, setShowToolStatus] = React.useState(false); // 改为手动控制显示状态
 
   const {
     messages,
@@ -83,19 +83,15 @@ export function ChatView({
     fetchWorkspaces();
   }, []);
 
+  // 修改这个 useEffect
   React.useEffect(() => {
-    if (data && data.length > 0) {
-      const latestData = data[data.length - 1];
-      if (
-        latestData.type === "chat-status" &&
-        latestData.content.status === "completed"
-      ) {
-        setHasToolStatus(false);
-      } else {
-        setHasToolStatus(true);
+    if (data && data.length > 0 && !showToolStatus) {
+      const hasToolData = data.some((item) => item.tool);
+      if (hasToolData) {
+        setShowToolStatus(true);
       }
     }
-  }, [data]);
+  }, [data, showToolStatus]);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     handleSubmit(e, {
@@ -124,7 +120,7 @@ export function ChatView({
         <div className="flex-1 flex justify-center overflow-hidden">
           <div
             className={`flex flex-col ${
-              hasToolStatus ? "w-4/5" : "w-full"
+              showToolStatus ? "w-4/5" : "w-full"
             } max-w-5xl transition-all duration-300`}
           >
             <ScrollArea className="flex-1 px-4">
@@ -172,9 +168,11 @@ export function ChatView({
             </ScrollArea>
           </div>
 
-          {hasToolStatus && (
-            <div className="w-1/5 min-w-[250px] max-w-[300px] border-l border-border">
-              <div className="sticky top-0 p-4">
+          {showToolStatus && (
+            <div className="w-1/5 min-w-[250px] max-w-[300px] border-l border-border flex flex-col h-full">
+              <div className="flex-1 overflow-hidden">
+                {" "}
+                {/* 修改这里 */}
                 <ToolStatus data={data || []} />
               </div>
             </div>
@@ -184,7 +182,7 @@ export function ChatView({
         <div className="border-t bg-background p-4 mt-auto">
           <div
             className={`mx-auto ${
-              hasToolStatus ? "w-4/5" : "w-full"
+              showToolStatus ? "w-4/5" : "w-full"
             } max-w-5xl transition-all duration-300`}
           >
             <ChatInput

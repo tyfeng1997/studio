@@ -78,14 +78,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </div>
         )}
 
-        {message.toolInvocations?.map((tool) => (
+        {/* {message.toolInvocations?.map((tool) => (
           <ToolResultRenderer
             key={`${tool.toolCallId}`}
             tool={tool.toolName}
             data={tool.result}
             error={tool.error}
           />
-        ))}
+        ))} */}
       </div>
     </div>
   );

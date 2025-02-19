@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // ToolStatus.tsx
 export type ToolState = {
@@ -34,6 +35,10 @@ const initialToolState: ToolState = {
 };
 
 function toolReducer(state: ToolState, action: any): ToolState {
+  if (action.type === "clear") {
+    return initialToolState;
+  }
+
   const { tool, content } = action;
   if (!tool || !content) return state;
 
@@ -89,23 +94,31 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
               {activity.params && (
                 <div className="mb-2">
                   <h4 className="text-sm font-medium">Parameters:</h4>
-                  <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
-                    {JSON.stringify(activity.params, null, 2)}
-                  </pre>
+                  <div className="relative max-h-40 overflow-y-auto">
+                    <pre className="text-xs bg-muted/50 p-2 rounded whitespace-pre-wrap break-all">
+                      {JSON.stringify(activity.params, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               )}
               {activity.result && (
                 <div className="mb-2">
                   <h4 className="text-sm font-medium">Result:</h4>
-                  <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto">
-                    {JSON.stringify(activity.result, null, 2)}
-                  </pre>
+                  <div className="relative max-h-40 overflow-y-auto">
+                    <pre className="text-xs bg-muted/50 p-2 rounded whitespace-pre-wrap break-all">
+                      {JSON.stringify(activity.result, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               )}
               {activity.error && (
                 <div className="mb-2">
                   <h4 className="text-sm font-medium text-red-500">Error:</h4>
-                  <p className="text-sm text-red-500">{activity.error}</p>
+                  <div className="relative max-h-40 overflow-y-auto">
+                    <p className="text-sm text-red-500 break-all">
+                      {activity.error}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -119,7 +132,38 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
 export function ToolStatus({ data }: { data: any[] }) {
   const [state, dispatch] = useReducer(toolReducer, initialToolState);
   const [expandedIds, setExpandedIds] = React.useState(new Set());
+  const processedItems = React.useRef(new Set<string>()); // 用于跟踪已处理的项
 
+  // 处理新数据，修改去重逻辑
+  useEffect(() => {
+    if (!data?.length) return;
+
+    data.forEach((item) => {
+      if (
+        typeof item === "object" &&
+        item !== null &&
+        "tool" in item &&
+        "content" in item
+      ) {
+        // 创建唯一键
+        const key = `${item.tool}-${item.content.timestamp}-${JSON.stringify(
+          item.content
+        )}`;
+
+        // 如果这个项目还没有被处理过，则处理它
+        if (!processedItems.current.has(key)) {
+          processedItems.current.add(key);
+          dispatch(item);
+        }
+      }
+    });
+  }, [data]);
+
+  // 清除时也要清除已处理项的记录
+  const handleClearAll = () => {
+    dispatch({ type: "clear" });
+    processedItems.current.clear();
+  };
   // 更新时自动展开最新的状态
   useEffect(() => {
     if (state.activities.length > 0) {
@@ -128,27 +172,15 @@ export function ToolStatus({ data }: { data: any[] }) {
     }
   }, [state.activities.length]);
 
-  // 处理新数据
-  useEffect(() => {
-    if (!data?.length) return;
-    const latestData = data[data.length - 1];
-
-    // 确保数据格式符合预期
-    if (
-      typeof latestData === "object" &&
-      latestData !== null &&
-      "tool" in latestData &&
-      "content" in latestData
-    ) {
-      dispatch(latestData);
-    }
-  }, [data]);
-
-  // 如果没有活动记录，不显示任何内容
   if (state.activities.length === 0) {
-    return null;
+    return (
+      <div className="p-4 text-center text-sm text-muted-foreground">
+        No tool executions yet
+      </div>
+    );
   }
 
+  // 添加回 toggleExpanded 函数
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -167,16 +199,33 @@ export function ToolStatus({ data }: { data: any[] }) {
   );
 
   return (
-    <div className="space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto p-4">
-      {sortedActivities.map((activity, index) => (
-        <StatusRecord
-          key={activity.id}
-          activity={activity}
-          isExpanded={expandedIds.has(activity.id)}
-          onToggle={() => toggleExpanded(activity.id)}
-          isLatest={index === 0} // 因为已经排序，所以第一个就是最新的
-        />
-      ))}
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-background z-10">
+        <span className="text-sm text-muted-foreground">
+          {sortedActivities.length} executions
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClearAll}
+          className="h-8"
+        >
+          Clear All
+        </Button>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-2">
+          {sortedActivities.map((activity, index) => (
+            <StatusRecord
+              key={activity.id}
+              activity={activity}
+              isExpanded={expandedIds.has(activity.id)}
+              onToggle={() => toggleExpanded(activity.id)}
+              isLatest={index === 0}
+            />
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
