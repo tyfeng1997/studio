@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       {
         query_embedding: embeddings[0],
         workspace_name: workspace,
-        match_count: 5,
+        match_count: 10,
       }
     );
 
