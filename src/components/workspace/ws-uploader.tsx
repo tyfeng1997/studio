@@ -12,8 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Upload } from "lucide-react";
+interface WorkspaceUploadProps {
+  onSuccess?: () => void;
+}
 
-const WorkspaceUpload = () => {
+const WorkspaceUpload = ({ onSuccess }: WorkspaceUploadProps) => {
   const [workspace, setWorkspace] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -51,13 +54,13 @@ const WorkspaceUpload = () => {
       setSuccess("Files uploaded and indexed successfully!");
       setWorkspace("");
       setFiles(null);
+      onSuccess?.();
     } catch (err) {
       setError("Failed to upload files. Please try again.");
     } finally {
       setUploading(false);
     }
   };
-
   return (
     <Card className="w-full max-w-2xl mx-auto bg-card">
       <CardHeader>
