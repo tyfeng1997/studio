@@ -4,13 +4,11 @@ import { Github } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { useToolStore } from "@/lib/store/tool-store";
 import { X } from "lucide-react";
 import { ChatHistoryDropdown } from "../chat-history-dropdown";
 import { UserMenu } from "../user-menu";
+import RAGDialog from "../workspace/rag-config";
 export function Navbar() {
-  const setActiveTool = useToolStore((state) => state.setActiveTool);
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -27,23 +25,10 @@ export function Navbar() {
             <div className="p-4">
               <ChatHistoryDropdown />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setActiveTool(null)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setActiveTool("rag")}
-            >
-              Test RAG
-            </Button>
+            <RAGDialog />
 
             <Link
-              href="https://github.com/yourusername/your-repo"
+              href="https://github.com/tyfeng1997/studio.git"
               target="_blank"
               rel="noreferrer"
             >

@@ -1,7 +1,5 @@
 import { loadChat } from "@/utils/store/chat-store";
 import { ChatView } from "@/components/chat/chat-view";
-import { ToolConfig } from "@/components/tools/tool-config";
-import { SplitView } from "@/components/layout/split-view";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -16,10 +14,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const messages = await loadChat(id); // load the chat messages
   return (
     <div className="flex-1">
-      <SplitView
-        leftPane={<ChatView id={id} initialMessages={messages} />}
-        rightPane={<ToolConfig />}
-      />
+      <ChatView id={id} initialMessages={messages} />
     </div>
   );
 }
