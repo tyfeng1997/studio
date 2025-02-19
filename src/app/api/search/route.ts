@@ -3,11 +3,10 @@ import { NextResponse } from "next/server";
 import { cohere } from "@ai-sdk/cohere";
 import { embedMany } from "ai";
 
-const embeddingModel = cohere.embedding("embed-english-v3.0", {
+const embeddingModel = cohere.embedding("embed-multilingual-v3.0", {
   inputType: "search_query",
   truncate: "NONE",
 });
-
 export async function POST(request: Request) {
   const supabase = await createClient();
 

@@ -6,7 +6,7 @@ import { cohere } from "@ai-sdk/cohere";
 import { embedMany } from "ai";
 import { splitIntoChunks } from "@/utils/chunker";
 
-const embeddingModel = cohere.embedding("embed-english-v3.0", {
+const embeddingModel = cohere.embedding("embed-multilingual-v3.0", {
   inputType: "search_document",
   truncate: "NONE",
 });
