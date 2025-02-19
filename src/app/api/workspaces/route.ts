@@ -12,11 +12,8 @@ export async function GET() {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      console.log("no auth..");
-
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.log("here..");
     // 使用原始 SQL 查询
     const { data, error } = await supabase.rpc("get_workspace_stats", {
       user_id_input: user.id,

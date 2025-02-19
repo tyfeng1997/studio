@@ -59,17 +59,19 @@ const WorkspaceUpload = () => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-2xl mx-auto bg-card">
       <CardHeader>
-        <CardTitle className="text-zinc-900">Create Vector Index</CardTitle>
-        <CardDescription className="text-zinc-500">
+        <CardTitle className="text-card-foreground">
+          Create Vector Index
+        </CardTitle>
+        <CardDescription className="text-muted-foreground">
           Upload documents to create searchable vectors for your workspace
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="workspace" className="text-zinc-700">
+            <Label htmlFor="workspace" className="text-card-foreground">
               Workspace Name
             </Label>
             <Input
@@ -78,22 +80,25 @@ const WorkspaceUpload = () => {
               placeholder="Enter workspace name"
               value={workspace}
               onChange={(e) => setWorkspace(e.target.value)}
-              className="border-zinc-300 focus:ring-zinc-400"
+              className="bg-background border-input text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="files" className="text-zinc-700">
+            <Label htmlFor="files" className="text-card-foreground">
               Upload Files
             </Label>
             <div className="flex items-center justify-center w-full">
               <label
                 htmlFor="files"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-zinc-300 border-dashed rounded-lg cursor-pointer hover:bg-zinc-50"
+                className="flex flex-col items-center justify-center w-full h-32 
+                  border-2 border-dashed rounded-lg cursor-pointer
+                  border-input hover:bg-accent hover:bg-opacity-50
+                  transition-colors duration-200"
               >
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 mb-2 text-zinc-500" />
-                  <p className="text-sm text-zinc-500">
+                  <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
                     {files?.length
                       ? `${files.length} files selected`
                       : "Drop files here or click to upload"}
@@ -111,14 +116,21 @@ const WorkspaceUpload = () => {
           </div>
 
           {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+            <Alert
+              variant="destructive"
+              className="border-destructive/50 bg-destructive/10"
+            >
+              <AlertDescription className="text-destructive-foreground">
+                {error}
+              </AlertDescription>
             </Alert>
           )}
 
           {success && (
-            <Alert>
-              <AlertDescription>{success}</AlertDescription>
+            <Alert className="border-green-500/50 bg-green-500/10 dark:border-green-900/50 dark:bg-green-900/20">
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                {success}
+              </AlertDescription>
             </Alert>
           )}
         </form>
@@ -127,7 +139,8 @@ const WorkspaceUpload = () => {
         <Button
           onClick={handleSubmit}
           disabled={uploading || !workspace || !files?.length}
-          className="w-full bg-zinc-900 hover:bg-zinc-800"
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90
+            disabled:bg-muted disabled:text-muted-foreground"
         >
           {uploading ? (
             <>
