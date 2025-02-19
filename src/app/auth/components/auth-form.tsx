@@ -1,6 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { login, signup } from "@/app/actions/auth";
 import {
@@ -57,15 +58,39 @@ function parseAuthError(error: string): AuthError {
 
 export function AuthForm({
   type,
-  error,
-  message,
+  error: initialError,
+  message: initialMessage,
 }: {
   type: "login" | "register";
   error?: string;
   message?: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState(initialError);
+  const [message, setMessage] = useState(initialMessage);
+  const router = useRouter();
   const parsedError = error ? parseAuthError(error) : null;
+
+  async function handleSubmit(formData: FormData) {
+    startTransition(async () => {
+      const result = await (type === "login"
+        ? login(formData)
+        : signup(formData));
+
+      if (result.error) {
+        setError(result.error);
+        setMessage(undefined);
+      } else if (result.success) {
+        setError(undefined);
+        if (result.message) {
+          setMessage(result.message);
+        }
+        if (result.redirect) {
+          router.push(result.redirect);
+        }
+      }
+    });
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -80,7 +105,7 @@ export function AuthForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={type === "login" ? login : signup} className="space-y-4">
+        <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -114,14 +139,11 @@ export function AuthForm({
             </Alert>
           )}
 
-          {type === "register" && message && (
+          {message && (
             <Alert>
               <MailCheck className="h-4 w-4" />
               <AlertTitle>Check your email</AlertTitle>
-              <AlertDescription>
-                We've sent you a verification link. Please check your email to
-                complete your registration.
-              </AlertDescription>
+              <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}
 
@@ -133,16 +155,24 @@ export function AuthForm({
           {type === "login" ? (
             <>
               Don't have an account?{" "}
-              <a href="/register" className="text-primary hover:underline">
+              <Button
+                variant="link"
+                className="p-0 h-auto font-normal"
+                onClick={() => router.push("/register")}
+              >
                 Sign up
-              </a>
+              </Button>
             </>
           ) : (
             <>
               Already have an account?{" "}
-              <a href="/login" className="text-primary hover:underline">
+              <Button
+                variant="link"
+                className="p-0 h-auto font-normal"
+                onClick={() => router.push("/login")}
+              >
                 Sign in
-              </a>
+              </Button>
             </>
           )}
         </p>

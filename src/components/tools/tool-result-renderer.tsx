@@ -1,9 +1,6 @@
 "use client";
-
-import { WeatherCard } from "./weather-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircle } from "lucide-react";
-import { OrderCard } from "./order-card";
 
 interface ToolResultRendererProps {
   tool: string;
@@ -38,10 +35,8 @@ export function ToolResultRenderer({
 
   try {
     switch (tool) {
-      case "weather":
-        return <WeatherCard data={data} />;
-      case "order":
-        return <OrderCard data={data} />;
+      case "xxx":
+        return <></>;
       default:
         return (
           <Alert>
