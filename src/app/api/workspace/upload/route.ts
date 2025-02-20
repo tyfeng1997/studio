@@ -137,7 +137,7 @@ export async function POST(request: Request) {
           continue;
         }
 
-        const chunks = splitIntoChunks(text, 200);
+        const chunks = splitIntoChunks(text, 150);
         const embeddedChunks = await generateEmbeddings(chunks);
 
         // Store chunks with embeddings in batches

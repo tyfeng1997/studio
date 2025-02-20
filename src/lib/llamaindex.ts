@@ -44,8 +44,8 @@ const checkParsingStatus = async (jobId: string): Promise<string> => {
 const getParsingResult = async (jobId: string): Promise<string> => {
   try {
     const { data } = await llamaAPI.get(`/job/${jobId}/result/markdown`);
-    console.log("Parsing result data:", JSON.stringify(data));
-    return JSON.stringify(data) || "";
+    console.log("Parsing result data:", data.markdown);
+    return data.markdown || "";
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(
