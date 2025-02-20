@@ -11,13 +11,13 @@ const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
 });
 
-// 辅助函数：确保能安全截取文本片段
-function safeSubstring(text: any, start: number, end: number): string {
+// Helper function: safely get a substring from text
+function safeString(text: any): string {
   if (typeof text === "string") {
-    return text.substring(start, end);
+    return text;
   }
   try {
-    return JSON.stringify(text).substring(start, end);
+    return JSON.stringify(text);
   } catch (error) {
     return "";
   }
@@ -26,7 +26,7 @@ function safeSubstring(text: any, start: number, end: number): string {
 // Define research state types
 type Finding = {
   source: string;
-  text: any; // 修改类型为 any 以容忍非字符串情况
+  text: any; // allow non-string types
   type: "vector" | "web";
   timestamp: string;
   similarity?: number;
@@ -53,22 +53,24 @@ type LLMAnalysis = {
   shouldContinue: boolean;
   nextSearchTopic?: string;
   urlToSearch?: string;
+  vectorQuery?: string;
+  extractionPrompt?: string;
 };
 
-// Enhanced prompts for better research guidance
-const ANALYSIS_PROMPT = `You are an advanced research agent tasked with investigating: {topic}
+// Optimized analysis prompt in English
+const ANALYSIS_PROMPT = `You are an advanced research agent tasked with conducting in-depth research on: {topic}
 
 Current Research Status:
 - Time remaining: {timeRemaining} minutes
-- Current iteration: {iteration} of {maxIterations}
-- Phase: {currentPhase}
+- Current iteration: {iteration} / {maxIterations}
+- Current phase: {currentPhase}
 
-Information Sources Available:
+Available Information Sources:
 - Vector Database: {vectorAvailable}
 - Web Search: Always available
 - URL Content Extraction: Available for detailed analysis
 
-Current Research State:
+Research State Details:
 {vectorContext}
 {webContext}
 
@@ -76,36 +78,32 @@ Recent Findings:
 {findings}
 
 Research Progress Analysis:
-1. What we've learned so far:
-   - Key discoveries and insights
-   - Main themes emerging
-   - Conflicting information if any
+1. What have we learned so far:
+   - Key findings and insights
+   - Emerging main themes
+   - Any conflicting information (if any)
 
 2. Knowledge Assessment:
-   - What do we know with confidence?
-   - What remains unclear or needs verification?
-   - Which aspects need deeper investigation?
+   - What facts can we be confident about?
+   - Which aspects remain unclear or require verification?
+   - Which areas need further investigation?
 
 3. Strategic Direction:
-   - Should we dive deeper into existing findings?
-   - Do we need to explore new angles?
+   - Should we delve deeper into existing findings?
+   - Should we explore new angles?
    - Is there a need to verify or cross-reference information?
 
 4. Resource Allocation:
-   - Is vector search likely to yield relevant results for our current needs?
-   - Would web search be more appropriate for our next step?
+   - Can vector search provide relevant results?
+   - Is web search more appropriate for the next step?
    - Should we extract detailed information from specific sources?
 
-Decision Making Guidelines:
-- If findings are getting repetitive, explore new angles
-- If information is shallow, seek detailed sources
-- If concepts are unclear, look for explanatory content
-- If claims need verification, search for supporting evidence
+Please provide an in-depth and critical analysis, explaining your reasoning, identifying potential research gaps, and offering specific improvement recommendations. Be sure to clearly outline specific next steps in your response.
 
-Respond in this exact JSON format:
+Output in the exact JSON format:
 {
   "analysis": {
-    "summary": "Current state of research understanding",
+    "summary": "Summary of current research understanding",
     "confidence": {
       "highConfidence": ["fact 1", "fact 2"],
       "needsVerification": ["aspect 1", "aspect 2"]
@@ -122,41 +120,42 @@ Respond in this exact JSON format:
   }
 }`;
 
-// Content extraction prompt template
-const EXTRACTION_PROMPT = `Extract the most relevant information about {topic} from this content. Focus on:
-1. Key facts and findings
-2. Unique insights
-3. Supporting evidence
-4. Quantitative data
-5. Expert opinions
-Ignore generic or irrelevant content.`;
+// Optimized extraction prompt in English
+const EXTRACTION_PROMPT = `Please extract the most relevant information about {topic} from the content provided below. Focus on:
+1. Key facts and research findings
+2. Unique insights and details
+3. Supporting evidence and data
+4. Quantitative data and statistics
+5. Expert opinions and explanations
+Ignore irrelevant content and generalities, ensuring that the extracted information is detailed and accurate.`;
 
-const FINAL_SYNTHESIS_PROMPT = `You are synthesizing research findings about: {topic}
+// Optimized final synthesis prompt in English
+const FINAL_SYNTHESIS_PROMPT = `You are synthesizing all research findings on the topic: {topic}
 
 Research Statistics:
 - Total iterations: {totalIterations}
-- Vector sources used: {vectorSources}
-- Web sources analyzed: {webSources}
+- Number of vector sources used: {vectorSources}
+- Number of web sources analyzed: {webSources}
 - Total research time: {researchTime} minutes
 
-All findings:
+All Findings:
 {allFindings}
 
-Create a comprehensive research synthesis that:
-1. Summarizes key findings
-2. Identifies main themes
-3. Highlights important discoveries
-4. Notes remaining uncertainties
-5. Suggests potential future research directions
+Please create a comprehensive research synthesis that includes:
+1. A summary of key findings
+2. Emerging main themes
+3. Important breakthroughs and discoveries
+4. Unresolved uncertainties and controversies
+5. Specific recommendations for future research directions
 
-Respond in this exact JSON format:
+Output in the exact JSON format:
 {
   "synthesis": {
-    "summary": "comprehensive summary",
+    "summary": "Comprehensive summary",
     "keyFindings": ["key finding 1", "key finding 2"],
     "mainThemes": ["theme 1", "theme 2"],
     "uncertainties": ["uncertainty 1", "uncertainty 2"],
-    "futureDirections": ["direction 1", "direction 2"]
+    "futureDirections": ["future direction 1", "future direction 2"]
   }
 }`;
 
@@ -167,26 +166,30 @@ const DeepResearchParams = z.object({
     .boolean()
     .optional()
     .default(false)
-    .describe("Whether to include vector database search"),
+    .describe("Whether to enable vector database search"),
   workspace: z
     .string()
     .optional()
-    .describe("Workspace ID for vector search when useVectorDB is true"),
+    .describe("Workspace ID to use for vector search when enabled"),
   maxIterations: z
     .number()
     .optional()
-    .default(5)
-    .describe("Maximum research iterations"),
-  timeLimit: z.number().optional().default(3).describe("Time limit in minutes"),
+    .default(15)
+    .describe("Maximum number of research iterations"),
+  timeLimit: z
+    .number()
+    .optional()
+    .default(10)
+    .describe("Time limit in minutes"),
 });
 
 export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
   name: "deep_research",
   description:
-    "Perform comprehensive research using LLM-guided analysis of multiple information sources, including vector database and web content",
+    "Conduct comprehensive research using LLM-guided analysis of multiple information sources, including vector database and web content",
   parameters: DeepResearchParams,
   execute: async (
-    { topic, useVectorDB, workspace, maxIterations = 5, timeLimit = 3 },
+    { topic, useVectorDB, workspace, maxIterations = 15, timeLimit = 10 },
     dataStream?: DataStreamWriter
   ): Promise<ToolExecuteResult> => {
     try {
@@ -211,14 +214,14 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         },
       });
 
-      // Initial vector search if enabled
+      // Perform initial vector search if enabled
       if (useVectorDB && workspace) {
         state.phase = "vector_search";
         dataStream?.writeData({
           tool: "deep_research",
           content: {
             phase: state.phase,
-            message: "Performing initial vector search",
+            message: "Executing initial vector search",
             timestamp: new Date().toISOString(),
           },
         });
@@ -242,14 +245,15 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         }
       }
 
+      // Research iterations
       while (state.iteration < maxIterations && state.timeRemaining > 120000) {
         state.iteration++;
         state.timeRemaining =
           timeLimit * 60 * 1000 - (Date.now() - state.startTime);
 
-        // Prepare context for LLM with most recent findings only
+        // Prepare context for LLM using only the most recent findings to control token usage
         const timeRemainingMinutes = Math.floor(state.timeRemaining / 60000);
-        const recentFindings = state.findings.slice(-3); // Only use latest 3 findings to reduce token count
+        const recentFindings = state.findings;
 
         const prompt = ANALYSIS_PROMPT.replace("{topic}", topic)
           .replace("{timeRemaining}", timeRemainingMinutes.toString())
@@ -258,7 +262,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
           .replace("{currentPhase}", state.phase)
           .replace(
             "{vectorAvailable}",
-            useVectorDB ? "Available and enabled" : "Not available"
+            useVectorDB ? "Enabled and available" : "Not enabled"
           )
           .replace(
             "{vectorContext}",
@@ -279,16 +283,14 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
             recentFindings
               .map(
                 (f) =>
-                  `[${f.type.toUpperCase()} | ${f.source}]: ${safeSubstring(
-                    f.text,
-                    0,
-                    200
-                  )}...`
+                  `[${f.type.toUpperCase()} | ${f.source}]: ${safeString(
+                    f.text
+                  )}`
               )
               .join("\n\n")
           );
 
-        console.log("prompt , ", prompt);
+        console.log("Prompt:", prompt);
 
         // Get LLM analysis
         const { text: analysisResult } = await generateText({
@@ -300,7 +302,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         try {
           analysis = JSON.parse(analysisResult).analysis;
           state.currentAnalysis = analysis;
-          console.log("analysis ", analysis);
+          console.log("Analysis:", analysis);
         } catch (error) {
           console.error("Failed to parse LLM response:", error);
           continue;
@@ -330,7 +332,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
           if (searchResult.success && searchResult.data?.length > 0) {
             const topUrls = searchResult.data.slice(0, 2).map((r) => r.url); // Get top 2 URLs
 
-            // Use extract API with custom prompt
+            // Use extraction API with custom prompt
             const extractPrompt = EXTRACTION_PROMPT.replace("{topic}", topic);
             const extractResult = await app.extract(topUrls, {
               prompt: analysis.strategy.extractionPrompt || extractPrompt,
@@ -366,7 +368,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
           const vectorResults = await vectorSearchTool.execute({
             query: analysis.strategy.vectorQuery,
             workspace,
-            topK: 5, // Reduced from 10 to control token usage
+            topK: 5,
           });
 
           if (vectorResults.success && vectorResults.data.results) {
@@ -383,7 +385,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         }
       }
 
-      // Final synthesis
+      // Final synthesis phase
       state.phase = "synthesis";
       dataStream?.writeData({
         tool: "deep_research",
@@ -411,9 +413,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         .replace(
           "{allFindings}",
           state.findings
-            .map(
-              (f) => `[From ${f.source}]: ${safeSubstring(f.text, 0, 300)}...`
-            )
+            .map((f) => `[From ${f.source}]: ${safeString(f.text)}`)
             .join("\n\n")
         );
 
@@ -449,7 +449,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
                 ).length,
                 keyFindings: state.findings
                   .filter((f) => f.type === "vector")
-                  .map((f) => safeSubstring(f.text, 0, 200) + "..."),
+                  .map((f) => safeString(f.text)),
               }
             : undefined,
           webInsights: {
@@ -457,7 +457,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
               .length,
             keyFindings: state.findings
               .filter((f) => f.type === "web")
-              .map((f) => safeSubstring(f.text, 0, 200) + "..."),
+              .map((f) => safeString(f.text)),
           },
           synthesis: {
             keyFindings: synthesis.keyFindings,
