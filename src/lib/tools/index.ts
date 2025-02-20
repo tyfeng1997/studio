@@ -2,11 +2,13 @@ import { tool as tooltype, Tool } from "ai";
 import { searchTool } from "./serach-web";
 import { scrapeTool } from "./scrape";
 import { extractTool } from "./extract-url";
+import { vectorSearchTool } from "./vector-query";
 // 工具注册表
 export const tools = {
   scrape: scrapeTool,
   search: searchTool,
   extract: extractTool,
+  vector_search: vectorSearchTool,
 };
 
 // 获取所有工具的配置，用于AI SDK

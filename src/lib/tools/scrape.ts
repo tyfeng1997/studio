@@ -61,7 +61,6 @@ export const scrapeTool: ToolDefinition<typeof ScrapeParams> = {
       console.error("Extraction error:", error);
       if (error instanceof Error) {
         console.error(error.message);
-        console.error(error.error);
       }
       return {
         success: false,

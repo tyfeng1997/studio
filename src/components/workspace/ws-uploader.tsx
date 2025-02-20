@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, FileType } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,6 +27,15 @@ interface WorkspaceUploadProps {
   defaultMode?: "new" | "existing";
 }
 
+const ACCEPTED_FILE_TYPES = {
+  "application/pdf": ".pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    ".docx",
+  "text/plain": ".txt",
+};
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 const WorkspaceUpload = ({
   onSuccess,
   workspaces = [],
@@ -38,6 +47,47 @@ const WorkspaceUpload = ({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const validateFiles = (fileList: FileList): string | null => {
+    const files = Array.from(fileList);
+
+    // Check file types
+    const invalidFiles = files.filter(
+      (file) => !Object.keys(ACCEPTED_FILE_TYPES).includes(file.type)
+    );
+    if (invalidFiles.length > 0) {
+      return `Invalid file type(s): ${invalidFiles
+        .map((f) => f.name)
+        .join(", ")}. 
+              Only PDF, DOCX, and TXT files are supported.`;
+    }
+
+    // Check file sizes
+    const oversizedFiles = files.filter((file) => file.size > MAX_FILE_SIZE);
+    if (oversizedFiles.length > 0) {
+      return `File(s) too large: ${oversizedFiles
+        .map((f) => f.name)
+        .join(", ")}. 
+              Maximum file size is 10MB.`;
+    }
+
+    return null;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+
+    const error = validateFiles(fileList);
+    if (error) {
+      setError(error);
+      e.target.value = ""; // Reset input
+      return;
+    }
+
+    setFiles(fileList);
+    setError("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +113,8 @@ const WorkspaceUpload = ({
       });
 
       if (!response.ok) {
-        throw new Error("Upload failed");
+        const data = await response.json();
+        throw new Error(data.message || "Upload failed");
       }
 
       const data = await response.json();
@@ -72,7 +123,11 @@ const WorkspaceUpload = ({
       setFiles(null);
       onSuccess?.();
     } catch (err) {
-      setError("Failed to upload files. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload files. Please try again."
+      );
     } finally {
       setUploading(false);
     }
@@ -154,30 +209,54 @@ const WorkspaceUpload = ({
             <Label htmlFor="files" className="text-card-foreground">
               Upload Files
             </Label>
-            <div className="flex items-center justify-center w-full">
-              <label
-                htmlFor="files"
-                className="flex flex-col items-center justify-center w-full h-32 
-                  border-2 border-dashed rounded-lg cursor-pointer
-                  border-input hover:bg-accent hover:bg-opacity-50
-                  transition-colors duration-200"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {files?.length
-                      ? `${files.length} files selected`
-                      : "Drop files here or click to upload"}
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center justify-center w-full">
+                <label
+                  htmlFor="files"
+                  className="flex flex-col items-center justify-center w-full h-32 
+                    border-2 border-dashed rounded-lg cursor-pointer
+                    border-input hover:bg-accent hover:bg-opacity-50
+                    transition-colors duration-200"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      {files?.length
+                        ? `${files.length} files selected`
+                        : "Drop files here or click to upload"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Supported formats: PDF, DOCX, TXT (Max 10MB per file)
+                    </p>
+                  </div>
+                  <input
+                    id="files"
+                    type="file"
+                    multiple
+                    accept=".pdf,.docx,.txt"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </div>
+              {files && files.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">
+                    Selected Files:
                   </p>
+                  <div className="space-y-1">
+                    {Array.from(files).map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center text-sm text-muted-foreground"
+                      >
+                        <FileType className="w-4 h-4 mr-2" />
+                        {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <input
-                  id="files"
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => setFiles(e.target.files)}
-                />
-              </label>
+              )}
             </div>
           </div>
 
