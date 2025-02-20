@@ -11,10 +11,22 @@ const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
 });
 
+// 辅助函数：确保能安全截取文本片段
+function safeSubstring(text: any, start: number, end: number): string {
+  if (typeof text === "string") {
+    return text.substring(start, end);
+  }
+  try {
+    return JSON.stringify(text).substring(start, end);
+  } catch (error) {
+    return "";
+  }
+}
+
 // Define research state types
 type Finding = {
   source: string;
-  text: string;
+  text: any; // 修改类型为 any 以容忍非字符串情况
   type: "vector" | "web";
   timestamp: string;
   similarity?: number;
@@ -267,7 +279,8 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
             recentFindings
               .map(
                 (f) =>
-                  `[${f.type.toUpperCase()} | ${f.source}]: ${f.text.substring(
+                  `[${f.type.toUpperCase()} | ${f.source}]: ${safeSubstring(
+                    f.text,
                     0,
                     200
                   )}...`
@@ -326,10 +339,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
             if (extractResult.success) {
               state.findings.push({
                 source: topUrls.join(", "),
-                text:
-                  extractResult.markdown ||
-                  extractResult.text ||
-                  "No content extracted",
+                text: extractResult.data || "No content extracted",
                 type: "web",
                 timestamp: new Date().toISOString(),
               });
@@ -347,10 +357,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
           if (extractResult.success) {
             state.findings.push({
               source: analysis.strategy.urlToSearch,
-              text:
-                extractResult.markdown ||
-                extractResult.text ||
-                "No content extracted",
+              text: extractResult.data || "No content extracted",
               type: "web",
               timestamp: new Date().toISOString(),
             });
@@ -404,7 +411,9 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         .replace(
           "{allFindings}",
           state.findings
-            .map((f) => `[From ${f.source}]: ${f.text.substring(0, 300)}...`)
+            .map(
+              (f) => `[From ${f.source}]: ${safeSubstring(f.text, 0, 300)}...`
+            )
             .join("\n\n")
         );
 
@@ -440,7 +449,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
                 ).length,
                 keyFindings: state.findings
                   .filter((f) => f.type === "vector")
-                  .map((f) => f.text.substring(0, 200) + "..."),
+                  .map((f) => safeSubstring(f.text, 0, 200) + "..."),
               }
             : undefined,
           webInsights: {
@@ -448,7 +457,7 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
               .length,
             keyFindings: state.findings
               .filter((f) => f.type === "web")
-              .map((f) => f.text.substring(0, 200) + "..."),
+              .map((f) => safeSubstring(f.text, 0, 200) + "..."),
           },
           synthesis: {
             keyFindings: synthesis.keyFindings,
