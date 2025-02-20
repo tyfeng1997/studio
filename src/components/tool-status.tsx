@@ -17,8 +17,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
-// ToolStatus.tsx
+// Enhanced ToolState type with deep research specific fields
 export type ToolState = {
   activities: Array<{
     id: string;
@@ -27,6 +28,14 @@ export type ToolState = {
     result?: Record<string, any>;
     error?: string;
     timestamp: string;
+    // Deep research specific fields
+    phase?: string;
+    iteration?: number;
+    timeRemaining?: number;
+    foundDocuments?: number;
+    findingsCount?: number;
+    vectorResults?: number;
+    webResults?: number;
   }>;
 };
 
@@ -46,6 +55,14 @@ function toolReducer(state: ToolState, action: any): ToolState {
     id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
     tool,
     ...content,
+    // Extract deep research specific fields
+    phase: content.phase,
+    iteration: content.iteration,
+    timeRemaining: content.timeRemaining,
+    foundDocuments: content.foundDocuments,
+    findingsCount: content.findingsCount,
+    vectorResults: content.vectorResults,
+    webResults: content.webResults,
   };
 
   return {
@@ -54,8 +71,34 @@ function toolReducer(state: ToolState, action: any): ToolState {
   };
 }
 
-// 状态记录组件
+// Enhanced status badge component
+const PhaseBadge = ({ phase }: { phase: string }) => {
+  const getPhaseColor = (phase: string) => {
+    switch (phase) {
+      case "initialization":
+        return "bg-blue-500";
+      case "vector_search":
+        return "bg-purple-500";
+      case "iteration_start":
+        return "bg-yellow-500";
+      case "iteration_complete":
+        return "bg-green-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  return (
+    <Badge variant="secondary" className={`${getPhaseColor(phase)} text-white`}>
+      {phase?.replace(/_/g, " ")}
+    </Badge>
+  );
+};
+
+// Enhanced status record component
 const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
+  const isDeepResearch = activity.tool === "deep_research";
+
   return (
     <motion.div
       initial={isLatest ? { opacity: 0, y: -10 } : false}
@@ -65,11 +108,13 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
       } mb-2`}
     >
       <div className="p-3 flex items-center cursor-pointer" onClick={onToggle}>
-        <div className="flex items-center flex-1 min-w-0">
-          <span className="ml-2 text-sm font-medium truncate">
-            {activity.tool}
-          </span>
-          <span className="ml-2 text-xs text-muted-foreground">
+        <div className="flex items-center flex-1 min-w-0 gap-2">
+          <span className="text-sm font-medium truncate">{activity.tool}</span>
+          {activity.phase && <PhaseBadge phase={activity.phase} />}
+          {activity.iteration && (
+            <Badge variant="outline">Iteration {activity.iteration}</Badge>
+          )}
+          <span className="text-xs text-muted-foreground">
             {new Date(activity.timestamp).toLocaleTimeString()}
           </span>
         </div>
@@ -91,6 +136,48 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-0">
+              {isDeepResearch && activity.phase && (
+                <div className="mb-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {activity.timeRemaining !== undefined && (
+                      <div className="bg-muted/50 p-2 rounded">
+                        <p className="text-xs font-medium">Time Remaining</p>
+                        <p className="text-sm">
+                          {activity.timeRemaining} minutes
+                        </p>
+                      </div>
+                    )}
+                    {activity.foundDocuments !== undefined && (
+                      <div className="bg-muted/50 p-2 rounded">
+                        <p className="text-xs font-medium">Documents Found</p>
+                        <p className="text-sm">{activity.foundDocuments}</p>
+                      </div>
+                    )}
+                    {activity.findingsCount !== undefined && (
+                      <div className="bg-muted/50 p-2 rounded">
+                        <p className="text-xs font-medium">Total Findings</p>
+                        <p className="text-sm">{activity.findingsCount}</p>
+                      </div>
+                    )}
+                    {(activity.vectorResults !== undefined ||
+                      activity.webResults !== undefined) && (
+                      <div className="bg-muted/50 p-2 rounded">
+                        <p className="text-xs font-medium">Results</p>
+                        <p className="text-sm">
+                          {activity.vectorResults !== undefined &&
+                            `Vector: ${activity.vectorResults}`}
+                          {activity.vectorResults !== undefined &&
+                            activity.webResults !== undefined &&
+                            " | "}
+                          {activity.webResults !== undefined &&
+                            `Web: ${activity.webResults}`}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {activity.params && (
                 <div className="mb-2">
                   <h4 className="text-sm font-medium">Parameters:</h4>
@@ -132,9 +219,8 @@ const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
 export function ToolStatus({ data }: { data: any[] }) {
   const [state, dispatch] = useReducer(toolReducer, initialToolState);
   const [expandedIds, setExpandedIds] = React.useState(new Set());
-  const processedItems = React.useRef(new Set<string>()); // 用于跟踪已处理的项
+  const processedItems = React.useRef(new Set<string>());
 
-  // 处理新数据，修改去重逻辑
   useEffect(() => {
     if (!data?.length) return;
 
@@ -145,12 +231,10 @@ export function ToolStatus({ data }: { data: any[] }) {
         "tool" in item &&
         "content" in item
       ) {
-        // 创建唯一键
         const key = `${item.tool}-${item.content.timestamp}-${JSON.stringify(
           item.content
         )}`;
 
-        // 如果这个项目还没有被处理过，则处理它
         if (!processedItems.current.has(key)) {
           processedItems.current.add(key);
           dispatch(item);
@@ -159,12 +243,11 @@ export function ToolStatus({ data }: { data: any[] }) {
     });
   }, [data]);
 
-  // 清除时也要清除已处理项的记录
   const handleClearAll = () => {
     dispatch({ type: "clear" });
     processedItems.current.clear();
   };
-  // 更新时自动展开最新的状态
+
   useEffect(() => {
     if (state.activities.length > 0) {
       const latestId = state.activities[state.activities.length - 1].id;
@@ -180,7 +263,6 @@ export function ToolStatus({ data }: { data: any[] }) {
     );
   }
 
-  // 添加回 toggleExpanded 函数
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -193,7 +275,6 @@ export function ToolStatus({ data }: { data: any[] }) {
     });
   };
 
-  // 按时间排序显示活动记录
   const sortedActivities = [...state.activities].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );

@@ -70,7 +70,7 @@ export async function POST(req: Request) {
           prefix: "msgs",
           size: 16,
         }),
-        maxSteps: 10,
+        maxSteps: 20,
         async onFinish({ response }) {
           // 保存聊天记录
           await saveChat({
