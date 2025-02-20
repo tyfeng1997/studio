@@ -43,48 +43,81 @@ type LLMAnalysis = {
   urlToSearch?: string;
 };
 
-// Research prompts
-const ANALYSIS_PROMPT = `You are a research agent analyzing findings about: {topic}
+// Enhanced prompts for better research guidance
+const ANALYSIS_PROMPT = `You are an advanced research agent tasked with investigating: {topic}
 
-Time Status:
+Current Research Status:
 - Time remaining: {timeRemaining} minutes
-- Current iteration: {iteration}
+- Current iteration: {iteration} of {maxIterations}
+- Phase: {currentPhase}
+
+Information Sources Available:
+- Vector Database: {vectorAvailable}
+- Web Search: Always available
+- URL Content Extraction: Available for detailed analysis
 
 Current Research State:
 {vectorContext}
 {webContext}
 
-Current findings:
+Recent Findings:
 {findings}
 
-Your task is to:
-1. Analyze current findings
-2. Identify knowledge gaps
-3. Determine next research steps
-4. Decide if more research is needed
+Research Progress Analysis:
+1. What we've learned so far:
+   - Key discoveries and insights
+   - Main themes emerging
+   - Conflicting information if any
 
-If you need more information, you can:
-- Specify a search topic for web search
-- Provide a URL to extract detailed information
-- Request vector database search with a specific query
+2. Knowledge Assessment:
+   - What do we know with confidence?
+   - What remains unclear or needs verification?
+   - Which aspects need deeper investigation?
 
-Important:
-- If less than 2 minutes remain, set shouldContinue to false to allow time for final synthesis
-- If findings are sufficient, set shouldContinue to false
-- Ensure progressive exploration of the topic
+3. Strategic Direction:
+   - Should we dive deeper into existing findings?
+   - Do we need to explore new angles?
+   - Is there a need to verify or cross-reference information?
+
+4. Resource Allocation:
+   - Is vector search likely to yield relevant results for our current needs?
+   - Would web search be more appropriate for our next step?
+   - Should we extract detailed information from specific sources?
+
+Decision Making Guidelines:
+- If findings are getting repetitive, explore new angles
+- If information is shallow, seek detailed sources
+- If concepts are unclear, look for explanatory content
+- If claims need verification, search for supporting evidence
 
 Respond in this exact JSON format:
 {
   "analysis": {
-    "summary": "Comprehensive summary of current findings",
-    "gaps": ["Specific gap 1", "Specific gap 2"],
-    "nextSteps": ["Detailed next step 1", "Detailed next step 2"],
+    "summary": "Current state of research understanding",
+    "confidence": {
+      "highConfidence": ["fact 1", "fact 2"],
+      "needsVerification": ["aspect 1", "aspect 2"]
+    },
+    "gaps": ["specific gap 1", "specific gap 2"],
+    "nextSteps": ["detailed step 1", "detailed step 2"],
     "shouldContinue": true/false,
-    "nextSearchTopic": "optional specific search query",
-    "urlToSearch": "optional specific URL to analyze",
-    "vectorQuery": "optional specific query for vector search"
+    "strategy": {
+      "nextSearchTopic": "optional specific search query",
+      "urlToSearch": "optional specific URL to analyze",
+      "vectorQuery": "optional specific query for vector search",
+      "extractionPrompt": "optional prompt for content extraction"
+    }
   }
 }`;
+
+// Content extraction prompt template
+const EXTRACTION_PROMPT = `Extract the most relevant information about {topic} from this content. Focus on:
+1. Key facts and findings
+2. Unique insights
+3. Supporting evidence
+4. Quantitative data
+5. Expert opinions
+Ignore generic or irrelevant content.`;
 
 const FINAL_SYNTHESIS_PROMPT = `You are synthesizing research findings about: {topic}
 
@@ -153,19 +186,6 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         timeRemaining: timeLimit * 60 * 1000,
         phase: "initialization",
       };
-      dataStream?.writeData({
-        tool: "deep_research",
-        content: {
-          params: {
-            topic,
-            useVectorDB,
-            workspace,
-            maxIterations,
-            timeLimit,
-          },
-          timestamp: new Date().toISOString(),
-        },
-      });
 
       // Log initialization
       dataStream?.writeData({
@@ -210,57 +230,64 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
         }
       }
 
-      // Research loop
       while (state.iteration < maxIterations && state.timeRemaining > 120000) {
-        // 2 minutes minimum
         state.iteration++;
         state.timeRemaining =
           timeLimit * 60 * 1000 - (Date.now() - state.startTime);
 
-        // Prepare context for LLM
+        // Prepare context for LLM with most recent findings only
         const timeRemainingMinutes = Math.floor(state.timeRemaining / 60000);
-        const vectorContext = useVectorDB
-          ? `Vector database search has found ${
-              state.findings.filter((f) => f.type === "vector").length
-            } relevant documents.`
-          : "Vector database search is not enabled.";
-        const webContext = `Web search has found ${
-          state.findings.filter((f) => f.type === "web").length
-        } relevant sources.`;
-
-        // Get LLM analysis
-        state.phase = "analysis";
-        dataStream?.writeData({
-          tool: "deep_research",
-          content: {
-            phase: state.phase,
-            iteration: state.iteration,
-            timeRemaining: timeRemainingMinutes,
-            timestamp: new Date().toISOString(),
-          },
-        });
+        const recentFindings = state.findings.slice(-3); // Only use latest 3 findings to reduce token count
 
         const prompt = ANALYSIS_PROMPT.replace("{topic}", topic)
           .replace("{timeRemaining}", timeRemainingMinutes.toString())
           .replace("{iteration}", state.iteration.toString())
-          .replace("{vectorContext}", vectorContext)
-          .replace("{webContext}", webContext)
+          .replace("{maxIterations}", maxIterations.toString())
+          .replace("{currentPhase}", state.phase)
+          .replace(
+            "{vectorAvailable}",
+            useVectorDB ? "Available and enabled" : "Not available"
+          )
+          .replace(
+            "{vectorContext}",
+            useVectorDB
+              ? `Vector database has provided ${
+                  state.findings.filter((f) => f.type === "vector").length
+                } relevant documents`
+              : "Vector database search is not enabled"
+          )
+          .replace(
+            "{webContext}",
+            `Web search has found ${
+              state.findings.filter((f) => f.type === "web").length
+            } sources`
+          )
           .replace(
             "{findings}",
-            state.findings
-              .map((f) => `[From ${f.source}]: ${f.text.substring(0, 500)}...`)
+            recentFindings
+              .map(
+                (f) =>
+                  `[${f.type.toUpperCase()} | ${f.source}]: ${f.text.substring(
+                    0,
+                    200
+                  )}...`
+              )
               .join("\n\n")
           );
 
-        const { text } = await generateText({
-          model: anthropic("claude-3-5-sonnet-20241022"),
-          prompt: prompt,
-        });
-        const analysisResult = text;
-        console.log("analysisResult", analysisResult);
+        console.log("prompt , ", prompt);
 
+        // Get LLM analysis
+        const { text: analysisResult } = await generateText({
+          model: anthropic("claude-3-5-sonnet-20241022"),
+          prompt,
+        });
+
+        let analysis;
         try {
-          state.currentAnalysis = JSON.parse(analysisResult).analysis;
+          analysis = JSON.parse(analysisResult).analysis;
+          state.currentAnalysis = analysis;
+          console.log("analysis ", analysis);
         } catch (error) {
           console.error("Failed to parse LLM response:", error);
           continue;
@@ -271,28 +298,34 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
           tool: "deep_research",
           content: {
             phase: state.phase,
-            analysis: state.currentAnalysis,
+            iteration: state.iteration,
+            timeRemaining: timeRemainingMinutes,
+            analysis: analysis,
             timestamp: new Date().toISOString(),
           },
         });
 
-        if (!state.currentAnalysis.shouldContinue) {
-          break;
-        }
+        if (!analysis.shouldContinue) break;
 
         // Execute next steps based on LLM guidance
         state.phase = "web_search";
-        if (state.currentAnalysis.nextSearchTopic) {
+        if (analysis.strategy.nextSearchTopic) {
           const searchResult = await app.search(
-            state.currentAnalysis.nextSearchTopic
+            analysis.strategy.nextSearchTopic
           );
+
           if (searchResult.success && searchResult.data?.length > 0) {
-            const topUrl = searchResult.data[0].url;
-            const extractResult = await app.scrapeUrl(topUrl);
+            const topUrls = searchResult.data.slice(0, 2).map((r) => r.url); // Get top 2 URLs
+
+            // Use extract API with custom prompt
+            const extractPrompt = EXTRACTION_PROMPT.replace("{topic}", topic);
+            const extractResult = await app.extract(topUrls, {
+              prompt: analysis.strategy.extractionPrompt || extractPrompt,
+            });
 
             if (extractResult.success) {
               state.findings.push({
-                source: topUrl,
+                source: topUrls.join(", "),
                 text:
                   extractResult.markdown ||
                   extractResult.text ||
@@ -302,13 +335,18 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
               });
             }
           }
-        } else if (state.currentAnalysis.urlToSearch) {
-          const extractResult = await app.scrapeUrl(
-            state.currentAnalysis.urlToSearch
+        } else if (analysis.strategy.urlToSearch) {
+          const extractPrompt = EXTRACTION_PROMPT.replace("{topic}", topic);
+          const extractResult = await app.extract(
+            [analysis.strategy.urlToSearch],
+            {
+              prompt: analysis.strategy.extractionPrompt || extractPrompt,
+            }
           );
+
           if (extractResult.success) {
             state.findings.push({
-              source: state.currentAnalysis.urlToSearch,
+              source: analysis.strategy.urlToSearch,
               text:
                 extractResult.markdown ||
                 extractResult.text ||
@@ -317,15 +355,11 @@ export const deepResearchTool: ToolDefinition<typeof DeepResearchParams> = {
               timestamp: new Date().toISOString(),
             });
           }
-        } else if (
-          state.currentAnalysis.vectorQuery &&
-          useVectorDB &&
-          workspace
-        ) {
+        } else if (analysis.strategy.vectorQuery && useVectorDB && workspace) {
           const vectorResults = await vectorSearchTool.execute({
-            query: state.currentAnalysis.vectorQuery,
+            query: analysis.strategy.vectorQuery,
             workspace,
-            topK: 10,
+            topK: 5, // Reduced from 10 to control token usage
           });
 
           if (vectorResults.success && vectorResults.data.results) {
