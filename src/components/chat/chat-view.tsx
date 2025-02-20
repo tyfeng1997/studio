@@ -39,7 +39,7 @@ export function ChatView({
     reload,
     data,
   } = useChat({
-    maxSteps: 10,
+    maxSteps: 20,
     id,
     initialMessages,
     sendExtraMessageFields: true,
