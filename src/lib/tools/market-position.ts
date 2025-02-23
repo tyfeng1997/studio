@@ -5,6 +5,11 @@ import FirecrawlApp from "@mendable/firecrawl-js";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
+// 简单的 sleep 方法，用于延时处理
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
 });
@@ -36,10 +41,9 @@ type SearchProgress = {
 const MarketPositionParams = z.object({
   company: z.string().describe("Company name to analyze market position"),
 });
+
 /*
-使用MARKET POSITION SEARCH 研究一下Nvidia，报告尽可能的正式，详细，不要简化内容。像买方分析师的报告一样 ，每个数据点在报告正文中都应该标注对应的引用编号[n],以便读者查证，引用要写在报告的结尾。
-
-
+使用 MARKET POSITION SEARCH 研究一下 Nvidia，报告尽可能的正式，详细，不要简化内容。像买方分析师的报告一样，每个数据点在报告正文中都应该标注对应的引用编号[n], 以便读者查证，引用要写在报告的结尾。
 */
 const MARKET_POSITION_SEARCH_PROMPT = `You are a buy-side analyst tasked with thoroughly researching {company}'s market position. Your objective is to generate 5 highly targeted search queries that yield actionable insights on the following aspects:
 1. Current market share and competitive positioning within the industry.
@@ -104,6 +108,7 @@ async function executeMarketPositionSearch(
       },
     });
     console.log("[searchPlan]\n", searchPlan);
+
     // 先收集所有查询得到的 URL
     const allUrls: { url: string; title: string; description: string }[] = [];
     for (const queryInfo of searchPlan.queries) {
@@ -124,7 +129,9 @@ async function executeMarketPositionSearch(
           },
         },
       });
-      //加一点时间间隔，以防请求速率过快 TODO
+      // 加入延时，防止请求速率过快
+      await sleep(1000);
+
       const searchResult = await app.search(queryInfo.query);
       console.log("[searchResult]", searchResult);
       if (searchResult.success && searchResult.data?.length > 0) {
@@ -155,7 +162,8 @@ async function executeMarketPositionSearch(
       }
     }
     console.log("[URLS]\n", allUrls);
-    // 利用 Firecrawl 的批量提取功能，一次性提取所有 URL 信息
+
+    // 利用 Firecrawl 的批量提取功能，一次性提取所有 URL 信息，每批3个
     if (allUrls.length > 0) {
       const extractionPrompt = MARKET_POSITION_EXTRACTION_PROMPT.replace(
         "{company}",
@@ -181,26 +189,31 @@ async function executeMarketPositionSearch(
 
       const urlsToExtract = allUrls.map((item) => item.url);
       console.log("[urlsToExtract]\n", urlsToExtract);
-      //每三个一组进行extract，太多会导致API 速率错误。TODO
-      const extractResult = await app.extract(urlsToExtract.slice(0, 3), {
-        prompt: extractionPrompt,
-      });
 
-      if (extractResult.success && extractResult.data) {
-        // 假设返回的 extractResult.data 与 urlsToExtract 顺序一致
-        for (let i = 0; i < allUrls.length; i++) {
-          const urlData = allUrls[i];
-          const extractedContent = extractResult.data[i];
-          sources.push({
-            url: urlData.url,
-            title: urlData.title || "Untitled",
-            content: {
-              raw: urlData.description || "",
-              extracted: JSON.stringify(extractedContent),
-            },
-          });
-          processedSources++;
+      const batchSize = 2;
+      for (let i = 0; i < urlsToExtract.length; i += batchSize) {
+        const batch = urlsToExtract.slice(i, i + batchSize);
+        const batchExtractResult = await app.extract(batch, {
+          prompt: extractionPrompt,
+        });
+        if (batchExtractResult.success && batchExtractResult.data) {
+          for (let j = 0; j < batch.length; j++) {
+            const urlIndex = i + j;
+            const urlData = allUrls[urlIndex];
+            const extractedContent = batchExtractResult.data[j];
+            sources.push({
+              url: urlData.url,
+              title: urlData.title || "Untitled",
+              content: {
+                raw: urlData.description || "",
+                extracted: JSON.stringify(extractedContent),
+              },
+            });
+            processedSources++;
+          }
         }
+        // 每批提取后等待一段时间，避免触发 API 速率限制
+        await sleep(1000);
       }
     }
   } catch (error) {
