@@ -36,7 +36,12 @@ type SearchProgress = {
 const MarketPositionParams = z.object({
   company: z.string().describe("Company name to analyze market position"),
 });
-const MARKET_POSITION_SEARCH_PROMPT = `You are a buy-side analyst tasked with thoroughly researching {company}'s market position. Your objective is to generate 5-7 highly targeted search queries that yield actionable insights on the following aspects:
+/*
+使用MARKET POSITION SEARCH 研究一下Nvidia，报告尽可能的正式，详细，不要简化内容。像买方分析师的报告一样 ，每个数据点在报告正文中都应该标注对应的引用编号[n],以便读者查证，引用要写在报告的结尾。
+
+
+*/
+const MARKET_POSITION_SEARCH_PROMPT = `You are a buy-side analyst tasked with thoroughly researching {company}'s market position. Your objective is to generate 5 highly targeted search queries that yield actionable insights on the following aspects:
 1. Current market share and competitive positioning within the industry.
 2. Brand strength, recognition, and overall customer sentiment.
 3. Geographic presence, market penetration, and regional performance.
@@ -53,7 +58,6 @@ Output the results in the exact JSON format:
   ]
 }`;
 
-// Extraction prompt
 const MARKET_POSITION_EXTRACTION_PROMPT = `Extract detailed and comprehensive information on {company}'s market position by focusing on:
 - Overall market share and competitive positioning,
 - Brand strength, recognition, and customer sentiment,
@@ -71,7 +75,7 @@ async function executeMarketPositionSearch(
   let totalSources = 0;
 
   try {
-    // Get search plan
+    // 生成搜索计划
     const searchPrompt = MARKET_POSITION_SEARCH_PROMPT.replace(
       "{company}",
       company
@@ -80,10 +84,8 @@ async function executeMarketPositionSearch(
       model: anthropic("claude-3-5-sonnet-20241022"),
       prompt: searchPrompt,
     });
-
     const searchPlan = JSON.parse(planResult);
 
-    // Stream search plan
     dataStream?.writeData({
       tool: "market_position_analysis",
       content: {
@@ -101,10 +103,10 @@ async function executeMarketPositionSearch(
         },
       },
     });
-
-    // Execute searches
+    console.log("[searchPlan]\n", searchPlan);
+    // 先收集所有查询得到的 URL
+    const allUrls: { url: string; title: string; description: string }[] = [];
     for (const queryInfo of searchPlan.queries) {
-      // Stream current query info
       dataStream?.writeData({
         tool: "market_position_analysis",
         content: {
@@ -122,19 +124,17 @@ async function executeMarketPositionSearch(
           },
         },
       });
-
+      //加一点时间间隔，以防请求速率过快 TODO
       const searchResult = await app.search(queryInfo.query);
-
+      console.log("[searchResult]", searchResult);
       if (searchResult.success && searchResult.data?.length > 0) {
         const urls = searchResult.data.slice(0, 5).map((result) => ({
           url: result.url,
           title: result.title,
           description: result.description,
         }));
-
+        allUrls.push(...urls);
         totalSources += urls.length;
-
-        // Stream found documents
         dataStream?.writeData({
           tool: "market_position_analysis",
           content: {
@@ -152,76 +152,54 @@ async function executeMarketPositionSearch(
             },
           },
         });
+      }
+    }
+    console.log("[URLS]\n", allUrls);
+    // 利用 Firecrawl 的批量提取功能，一次性提取所有 URL 信息
+    if (allUrls.length > 0) {
+      const extractionPrompt = MARKET_POSITION_EXTRACTION_PROMPT.replace(
+        "{company}",
+        company
+      );
+      dataStream?.writeData({
+        tool: "market_position_analysis",
+        content: {
+          phase: "data_collection",
+          timestamp: new Date().toISOString(),
+          searchState: {
+            query: "Batch extraction",
+            source: "Extraction Execution",
+            foundDocuments: totalSources,
+            extractedInsights: processedSources,
+          },
+          progress: {
+            totalSources,
+            processedSources,
+          },
+        },
+      });
 
-        // Process each URL
-        for (const urlData of urls) {
-          try {
-            // Stream current processing URL
-            dataStream?.writeData({
-              tool: "market_position_analysis",
-              content: {
-                phase: "data_collection",
-                timestamp: new Date().toISOString(),
-                searchState: {
-                  query: queryInfo.query,
-                  source: urlData.url,
-                  foundDocuments: urls.length,
-                  extractedInsights: processedSources,
-                },
-                progress: {
-                  totalSources,
-                  processedSources,
-                },
-              },
-            });
+      const urlsToExtract = allUrls.map((item) => item.url);
+      console.log("[urlsToExtract]\n", urlsToExtract);
+      //每三个一组进行extract，太多会导致API 速率错误。TODO
+      const extractResult = await app.extract(urlsToExtract.slice(0, 3), {
+        prompt: extractionPrompt,
+      });
 
-            const extractionPrompt = MARKET_POSITION_EXTRACTION_PROMPT.replace(
-              "{company}",
-              company
-            );
-            const extractResult = await app.extract([urlData.url], {
-              prompt: extractionPrompt,
-            });
-
-            if (extractResult.success && extractResult.data) {
-              const source = {
-                url: urlData.url,
-                title: urlData.title || "Untitled",
-                content: {
-                  raw: urlData.description || "",
-                  extracted: JSON.stringify(extractResult.data),
-                },
-              };
-              console.log("source \n", source);
-              sources.push(source);
-              processedSources++;
-            }
-          } catch (extractError) {
-            console.error(
-              `Error extracting data from ${urlData.url}:`,
-              extractError
-            );
-
-            // Stream error information
-            dataStream?.writeData({
-              tool: "market_position_analysis",
-              content: {
-                phase: "data_collection",
-                timestamp: new Date().toISOString(),
-                searchState: {
-                  query: queryInfo.query,
-                  source: urlData.url,
-                  foundDocuments: urls.length,
-                  extractedInsights: processedSources,
-                },
-                progress: {
-                  totalSources,
-                  processedSources,
-                },
-                error: `Failed to extract data from ${urlData.url}: ${extractError.message}`,
-              },
-            });
-          }
+      if (extractResult.success && extractResult.data) {
+        // 假设返回的 extractResult.data 与 urlsToExtract 顺序一致
+        for (let i = 0; i < allUrls.length; i++) {
+          const urlData = allUrls[i];
+          const extractedContent = extractResult.data[i];
+          sources.push({
+            url: urlData.url,
+            title: urlData.title || "Untitled",
+            content: {
+              raw: urlData.description || "",
+              extracted: JSON.stringify(extractedContent),
+            },
+          });
+          processedSources++;
         }
       }
     }
@@ -233,7 +211,6 @@ async function executeMarketPositionSearch(
   return sources;
 }
 
-// Main tool definition remains similar but with enhanced error handling
 export const marketPositionTool: ToolDefinition<typeof MarketPositionParams> = {
   name: "market_position_analysis",
   description:
@@ -256,7 +233,6 @@ export const marketPositionTool: ToolDefinition<typeof MarketPositionParams> = {
         })),
       };
 
-      // Final completion stream
       dataStream?.writeData({
         tool: "market_position_analysis",
         content: {
@@ -282,7 +258,6 @@ export const marketPositionTool: ToolDefinition<typeof MarketPositionParams> = {
         data: JSON.stringify(aggregatedData),
       };
     } catch (error) {
-      // Stream error state
       dataStream?.writeData({
         tool: "market_position_analysis",
         content: {
