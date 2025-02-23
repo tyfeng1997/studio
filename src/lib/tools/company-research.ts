@@ -206,6 +206,7 @@ async function executeSearch(
 
     const searchPlan: SearchPlan = JSON.parse(planResult);
     console.log("[SearchPlan]\n", searchPlan);
+
     // Log search plan
     dataStream?.writeData({
       tool: "company_research",
@@ -225,42 +226,54 @@ async function executeSearch(
     for (const queryInfo of prioritizedQueries) {
       const searchResult = await app.search(queryInfo.query);
       console.log("[SearchResult]\n", searchResult);
+
       if (searchResult.success && searchResult.data?.length > 0) {
         const urls = searchResult.data.slice(0, 3).map((result) => ({
           url: result.url,
           title: result.title,
           description: result.description,
         }));
-        console.log("[URLS] \n", urls);
-        const extractResult = await app.extract(
-          urls.map((u) => u.url),
-          {
-            prompt: EXTRACTION_PROMPT.replace("{company}", company),
-          }
-        );
-
-        if (extractResult.success) {
-          console.log("[EXTRACT] \n", extractResult);
-          urls.forEach((result, index) => {
-            const extractedData = extractResult.data[index];
-
-            sources.push({
-              url: result.url,
-              title: result.title || "Untitled",
-              type: mapSourceType(result.url),
-              timestamp: new Date().toISOString(),
-              content: {
-                raw: result.description || "",
-                extracted: extractedData.extracted,
-              },
-              metadata: {
-                competitors: searchPlan.competitorsToTrack,
-                dataType: queryInfo.expectedDataType,
-                reliability: extractedData.sourceAssessment.reliability,
-                relevance: extractedData.sourceAssessment.relevance,
-              },
+        // Process each URL individually
+        for (const urlData of urls) {
+          try {
+            const extractResult = await app.extract([urlData.url], {
+              prompt: EXTRACTION_PROMPT.replace("{company}", company),
             });
-          });
+
+            if (extractResult.success && extractResult.data) {
+              // Create source entry for this specific URL
+              console.log("url \n", urlData.url);
+              console.log(extractResult.data.extracted);
+              sources.push({
+                url: urlData.url,
+                title: urlData.title || "Untitled",
+                type: mapSourceType(urlData.url),
+                timestamp: new Date().toISOString(),
+                content: {
+                  raw: urlData.description || "",
+                  extracted: extractResult.data.extracted,
+                },
+                metadata: {
+                  competitors: searchPlan.competitorsToTrack,
+                  dataType: queryInfo.expectedDataType,
+                  reliability:
+                    extractResult.data.sourceAssessment?.reliability ||
+                    assessSourceReliability(urlData.url),
+                  relevance:
+                    extractResult.data.sourceAssessment?.relevance || "medium",
+                },
+              });
+
+              // Log successful extraction
+              console.log(`Successfully extracted data from: ${urlData.url}`);
+            }
+          } catch (extractError) {
+            // Log extraction error but continue with other URLs
+            console.error(
+              `Error extracting from ${urlData.url}:`,
+              extractError
+            );
+          }
         }
       }
     }
