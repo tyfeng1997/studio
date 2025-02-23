@@ -1,28 +1,20 @@
-"use client";
 import React from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   AlertCircle,
-  CheckCircle,
-  Clock,
   Search,
   Database,
-  Cog,
-  LineChart,
-  Shield,
-  Target,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useEffect, useReducer } from "react";
-import { JSONValue } from "ai";
-import { generateId } from "../utils/id";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
-// 定义证券研究工具的状态类型
+// 简化的工具状态类型
 export type ToolState = {
   activities: Array<{
     id: string;
@@ -31,8 +23,8 @@ export type ToolState = {
     result?: Record<string, any>;
     error?: string;
     timestamp: string;
-    // 证券研究特定字段
-    phase?: ResearchPhase;
+    // Market Position 特定字段
+    phase?: string;
     searchState?: {
       query: string;
       source: string;
@@ -42,28 +34,15 @@ export type ToolState = {
     progress?: {
       totalSources: number;
       processedSources: number;
-      reliability: {
-        high: number;
-        medium: number;
-        low: number;
-      };
     };
-    findings?: {
-      competitorInsights: number;
-      marketMetrics: number;
-      financialData: number;
-      riskFactors: number;
+    latestExtraction?: {
+      url: string;
+      title: string;
+      marketPosition?: any;
+      keyMetrics?: any;
     };
   }>;
 };
-
-// 研究阶段类型
-type ResearchPhase =
-  | "data_collection"
-  | "competitor_analysis"
-  | "financial_analysis"
-  | "market_analysis"
-  | "risk_analysis";
 
 // 初始工具状态
 const initialToolState: ToolState = {
@@ -83,11 +62,10 @@ function toolReducer(state: ToolState, action: any): ToolState {
     id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
     tool,
     ...content,
-    // 提取研究特定字段
     phase: content.phase,
     searchState: content.searchState,
     progress: content.progress,
-    findings: content.findings,
+    latestExtraction: content.latestExtraction,
     timestamp: content.timestamp || new Date().toISOString(),
   };
 
@@ -97,61 +75,6 @@ function toolReducer(state: ToolState, action: any): ToolState {
   };
 }
 
-// 阶段标签组件
-const PhaseBadge = ({ phase }: { phase: ResearchPhase }) => {
-  const phaseConfig: Record<
-    ResearchPhase,
-    {
-      color: string;
-      icon: LucideIcon;
-      label: string;
-    }
-  > = {
-    data_collection: {
-      color: "bg-blue-500",
-      icon: Search,
-      label: "Data Collection",
-    },
-    competitor_analysis: {
-      color: "bg-purple-500",
-      icon: Target,
-      label: "Competitor Analysis",
-    },
-    financial_analysis: {
-      color: "bg-green-500",
-      icon: LineChart,
-      label: "Financial Analysis",
-    },
-    market_analysis: {
-      color: "bg-yellow-500",
-      icon: Database,
-      label: "Market Analysis",
-    },
-    risk_analysis: {
-      color: "bg-red-500",
-      icon: Shield,
-      label: "Risk Analysis",
-    },
-  };
-
-  // 确保 phase 存在于配置中
-  if (!phase || !(phase in phaseConfig)) {
-    return null;
-  }
-
-  const config = phaseConfig[phase];
-
-  return (
-    <Badge
-      variant="secondary"
-      className={`${config.color} text-white flex items-center gap-1`}
-    >
-      <config.icon className="h-3 w-3" />
-      {config.label}
-    </Badge>
-  );
-};
-
 // 进度指示器组件
 const ProgressIndicator = ({
   current,
@@ -160,12 +83,12 @@ const ProgressIndicator = ({
   current: number;
   total: number;
 }) => {
-  const percentage = Math.round((current / total) * 100);
+  const percentage = Math.round((current / total) * 100) || 0;
 
   return (
     <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
       <div
-        className="bg-blue-600 h-2.5 rounded-full"
+        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
         style={{ width: `${percentage}%` }}
       ></div>
     </div>
@@ -184,7 +107,7 @@ const StatusRecord = ({
   onToggle: () => void;
   isLatest: boolean;
 }) => {
-  const isResearchTool = activity.tool === "company_research";
+  const isMarketPositionTool = activity.tool === "market_position_analysis";
 
   return (
     <motion.div
@@ -196,8 +119,11 @@ const StatusRecord = ({
     >
       <div className="p-3 flex items-center cursor-pointer" onClick={onToggle}>
         <div className="flex items-center flex-1 min-w-0 gap-2">
-          <span className="text-sm font-medium truncate">{activity.tool}</span>
-          {activity.phase && <PhaseBadge phase={activity.phase} />}
+          <span className="text-sm font-medium truncate">
+            {activity.tool === "market_position_analysis"
+              ? "Market Position Analysis"
+              : activity.tool}
+          </span>
           {activity.progress && (
             <Badge variant="outline">
               {activity.progress.processedSources}/
@@ -226,18 +152,21 @@ const StatusRecord = ({
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-0">
-              {isResearchTool && (
+              {isMarketPositionTool && (
                 <div className="mb-3 space-y-2">
                   {/* 搜索状态 */}
                   {activity.searchState && (
                     <div className="bg-muted/50 p-2 rounded">
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-xs font-medium">Current Search</p>
-                        <Badge variant="outline">
+                        <Badge
+                          variant="outline"
+                          className="truncate max-w-[200px]"
+                        >
                           {activity.searchState.source}
                         </Badge>
                       </div>
-                      <p className="text-sm mb-2">
+                      <p className="text-sm mb-2 break-words">
                         {activity.searchState.query}
                       </p>
                       <div className="grid grid-cols-2 gap-2">
@@ -266,97 +195,60 @@ const StatusRecord = ({
                     <div className="space-y-2">
                       <div className="bg-muted/50 p-2 rounded">
                         <p className="text-xs font-medium mb-2">
-                          Overall Progress
+                          Analysis Progress
                         </p>
                         <ProgressIndicator
                           current={activity.progress.processedSources}
                           total={activity.progress.totalSources}
                         />
                       </div>
+                    </div>
+                  )}
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-muted/50 p-2 rounded">
-                          <p className="text-xs font-medium">
-                            Source Reliability
-                          </p>
-                          <div className="space-y-1 mt-1">
-                            <div className="flex justify-between">
-                              <span className="text-xs">High</span>
-                              <span className="text-xs font-medium">
-                                {activity.progress.reliability.high}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-xs">Medium</span>
-                              <span className="text-xs font-medium">
-                                {activity.progress.reliability.medium}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-xs">Low</span>
-                              <span className="text-xs font-medium">
-                                {activity.progress.reliability.low}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {activity.findings && (
-                          <div className="bg-muted/50 p-2 rounded">
-                            <p className="text-xs font-medium">Findings</p>
-                            <div className="space-y-1 mt-1">
-                              <div className="flex justify-between">
-                                <span className="text-xs">Competitors</span>
-                                <span className="text-xs font-medium">
-                                  {activity.findings.competitorInsights}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-xs">Market Metrics</span>
-                                <span className="text-xs font-medium">
-                                  {activity.findings.marketMetrics}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-xs">Financial Data</span>
-                                <span className="text-xs font-medium">
-                                  {activity.findings.financialData}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-xs">Risk Factors</span>
-                                <span className="text-xs font-medium">
-                                  {activity.findings.riskFactors}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                  {/* 最新提取的内容 */}
+                  {activity.latestExtraction && (
+                    <div className="bg-muted/50 p-2 rounded">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-xs font-medium">Latest Extraction</p>
+                        <Badge
+                          variant="outline"
+                          className="truncate max-w-[200px]"
+                        >
+                          {activity.latestExtraction.url}
+                        </Badge>
                       </div>
+                      {activity.latestExtraction.marketPosition && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium">
+                            Market Position:
+                          </p>
+                          <pre className="text-xs whitespace-pre-wrap break-words">
+                            {JSON.stringify(
+                              activity.latestExtraction.marketPosition,
+                              null,
+                              2
+                            )}
+                          </pre>
+                        </div>
+                      )}
+                      {activity.latestExtraction.keyMetrics && (
+                        <div className="space-y-1 mt-2">
+                          <p className="text-xs font-medium">Key Metrics:</p>
+                          <pre className="text-xs whitespace-pre-wrap break-words">
+                            {JSON.stringify(
+                              activity.latestExtraction.keyMetrics,
+                              null,
+                              2
+                            )}
+                          </pre>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* 参数和结果显示 */}
-              {activity.params && (
-                <div className="mb-2">
-                  <h4 className="text-sm font-medium">Parameters:</h4>
-                  <pre className="text-xs bg-muted/50 p-2 rounded overflow-auto">
-                    {JSON.stringify(activity.params, null, 2)}
-                  </pre>
-                </div>
-              )}
-
-              {activity.result && (
-                <div className="mb-2">
-                  <h4 className="text-sm font-medium">Result:</h4>
-                  <pre className="text-xs bg-muted/50 p-2 rounded overflow-auto">
-                    {JSON.stringify(activity.result, null, 2)}
-                  </pre>
-                </div>
-              )}
-
+              {/* 错误显示 */}
               {activity.error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -428,7 +320,7 @@ export function ToolStatus({ data }: { data: any[] }) {
   if (state.activities.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-muted-foreground">
-        No research activities yet
+        No analysis activities yet
       </div>
     );
   }
@@ -441,7 +333,7 @@ export function ToolStatus({ data }: { data: any[] }) {
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-background z-10">
         <span className="text-sm text-muted-foreground">
-          {sortedActivities.length} research activities
+          {sortedActivities.length} analysis activities
         </span>
         <Button
           variant="ghost"
