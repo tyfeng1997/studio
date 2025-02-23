@@ -9,7 +9,7 @@ const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
 });
 
-// 定义类型
+// Define types
 type SearchQuery = {
   purpose: string;
   query: string;
@@ -92,12 +92,8 @@ Output in the exact JSON format:
   ]
 }`;
 
-const EXTRACTION_PROMPT = `As a professional buy-side analyst, analyze the following content about {company} and extract key information. 
+const EXTRACTION_PROMPT = `As a professional buy-side analyst, analyze the provided webpage content about {company} and extract key information in the following format:
 
-Content to analyze:
-{content}
-
-Required output format:
 {
   "extracted": {
     "keyFindings": [
@@ -135,24 +131,9 @@ Required output format:
     "dataFreshness": "date or period of data",
     "keyLimitations": ["limitation1", "limitation2"]
   }
-}
+}`;
 
-Focus on:
-1. Quantitative data and specific metrics
-2. Market dynamics and competitive position
-3. Evidence-based advantages and disadvantages
-4. Verifiable facts rather than opinions
-5. Recent developments and trends
-6. Forward-looking indicators
-7. Risk factors and growth catalysts
-
-Ensure each finding is:
-- Specific and actionable
-- Supported by data when possible
-- Relevant to investment analysis
-- Properly contextualized`;
-
-// 参数定义
+// Parameters definition
 const CompanyResearchParams = z.object({
   company: z.string().describe("Company name or ticker to research"),
   timeframe: z
@@ -166,7 +147,7 @@ const CompanyResearchParams = z.object({
     .describe("Specific areas to focus research on"),
 });
 
-// 辅助函数
+// Helper functions
 function assessSourceReliability(url: string): "high" | "medium" | "low" {
   const highReliabilityDomains = [
     "sec.gov",
@@ -224,7 +205,7 @@ async function executeSearch(
     });
 
     const searchPlan: SearchPlan = JSON.parse(planResult);
-
+    console.log("[SearchPlan]\n", searchPlan);
     // Log search plan
     dataStream?.writeData({
       tool: "company_research",
@@ -234,7 +215,7 @@ async function executeSearch(
         timestamp: new Date().toISOString(),
       },
     });
-    console.log("searchPlan ", searchPlan);
+
     // Execute prioritized searches
     const prioritizedQueries = searchPlan.queries.sort((a, b) => {
       const priority = { high: 3, medium: 2, low: 1 };
@@ -242,25 +223,26 @@ async function executeSearch(
     });
 
     for (const queryInfo of prioritizedQueries) {
-      console.log("current queryInfo", queryInfo);
       const searchResult = await app.search(queryInfo.query);
-
+      console.log("[SearchResult]\n", searchResult);
       if (searchResult.success && searchResult.data?.length > 0) {
-        const topUrls = searchResult.data.slice(0, 3);
-        console.log("top urls", topUrls);
-        for (const result of topUrls) {
-          const extractPrompt = EXTRACTION_PROMPT.replace(
-            "{company}",
-            company
-          ).replace("{content}", result.snippet || "");
-          console.log("current url and url snippet  ", result);
-          const extractResult = await app.extract([result.url], {
-            prompt: extractPrompt,
-          });
+        const urls = searchResult.data.slice(0, 3).map((result) => ({
+          url: result.url,
+          title: result.title,
+          description: result.description,
+        }));
+        console.log("[URLS] \n", urls);
+        const extractResult = await app.extract(
+          urls.map((u) => u.url),
+          {
+            prompt: EXTRACTION_PROMPT.replace("{company}", company),
+          }
+        );
 
-          if (extractResult.success) {
-            const extractedData = extractResult.data;
-            console.log("extract Result", extractedData);
+        if (extractResult.success) {
+          console.log("[EXTRACT] \n", extractResult);
+          urls.forEach((result, index) => {
+            const extractedData = extractResult.data[index];
 
             sources.push({
               url: result.url,
@@ -268,7 +250,7 @@ async function executeSearch(
               type: mapSourceType(result.url),
               timestamp: new Date().toISOString(),
               content: {
-                raw: result.snippet || "",
+                raw: result.description || "",
                 extracted: extractedData.extracted,
               },
               metadata: {
@@ -278,7 +260,7 @@ async function executeSearch(
                 relevance: extractedData.sourceAssessment.relevance,
               },
             });
-          }
+          });
         }
       }
     }
@@ -290,7 +272,7 @@ async function executeSearch(
   return sources;
 }
 
-// 主工具定义
+// Main tool definition
 export const companyResearchTool: ToolDefinition<typeof CompanyResearchParams> =
   {
     name: "company_research",
@@ -366,7 +348,6 @@ export const companyResearchTool: ToolDefinition<typeof CompanyResearchParams> =
             }, {} as Record<"high" | "medium" | "low", number>),
           },
         };
-        console.log("aggregatedData", aggregatedData);
 
         return {
           success: true,
