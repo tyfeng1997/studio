@@ -134,26 +134,21 @@ async function executeSearch(
     });
 
     // Execute prioritized searches
-    const prioritizedQueries = searchPlan.queries
-      .sort((a, b) => {
-        const priority = { high: 3, medium: 2, low: 1 };
-        return priority[b.priority] - priority[a.priority];
-      })
-      .slice(0, 1);
-
-    console.log(`[prioritizedQueries for ${phase}] 1\n`, prioritizedQueries);
+    const prioritizedQueries = searchPlan.queries.sort((a, b) => {
+      const priority = { high: 3, medium: 2, low: 1 };
+      return priority[b.priority] - priority[a.priority];
+    });
 
     for (const queryInfo of prioritizedQueries) {
       const searchResult = await app.search(queryInfo.query);
       console.log("[SearchResult]\n", searchResult);
 
       if (searchResult.success && searchResult.data?.length > 0) {
-        const urls = searchResult.data.slice(0, 1).map((result) => ({
+        const urls = searchResult.data.slice(0, 3).map((result) => ({
           url: result.url,
           title: result.title,
           description: result.description,
         }));
-        console.log("[SearchResult] 1\n", urls);
 
         // Process each URL with phase-specific extraction prompt
         for (const urlData of urls) {
