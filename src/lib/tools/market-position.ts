@@ -9,50 +9,12 @@ const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
 });
 
-// Types remain the same as before...
-type SearchQuery = {
-  purpose: string;
-  query: string;
-};
-
-type MarketPosition = {
-  overallPosition: string;
-  marketShare: {
-    overall: string;
-    bySegment: Record<string, string>;
-    trend: string;
-  };
-  brandStrength: {
-    brandValue: string;
-    brandPerception: string;
-    brandAwareness: string;
-  };
-  geographicPresence: {
-    strongMarkets: string[];
-    emergingMarkets: string[];
-    marketExpansionPlans: string[];
-  };
-  productPortfolio: {
-    keyProducts: string[];
-    marketShareByProduct: Record<string, string>;
-    portfolioStrengths: string[];
-    portfolioWeaknesses: string[];
-  };
-};
-
 type Source = {
   url: string;
   title: string;
   content: {
     raw: string;
-    extracted: {
-      marketPosition?: MarketPosition;
-      keyMetrics?: {
-        market_penetration: string;
-        market_growth_rate: string;
-        relative_market_share: string;
-      };
-    };
+    extracted: string;
   };
 };
 
@@ -74,64 +36,31 @@ type SearchProgress = {
 const MarketPositionParams = z.object({
   company: z.string().describe("Company name to analyze market position"),
 });
-const MARKET_POSITION_SEARCH_PROMPT = `As a buy-side analyst researching {company}'s market position, generate 3-5 specific search queries to find information about:
-1. Current market share and positioning
-2. Brand strength and recognition
-3. Geographic presence and market penetration
-4. Product portfolio and market coverage
+const MARKET_POSITION_SEARCH_PROMPT = `You are a buy-side analyst tasked with thoroughly researching {company}'s market position. Your objective is to generate 5-7 highly targeted search queries that yield actionable insights on the following aspects:
+1. Current market share and competitive positioning within the industry.
+2. Brand strength, recognition, and overall customer sentiment.
+3. Geographic presence, market penetration, and regional performance.
+4. Product portfolio diversity, market coverage, and recent innovations or expansions.
 
-Output in the exact JSON format:
+Each query should be designed to extract both quantitative metrics (e.g., market percentages, revenue figures, growth rates) and qualitative insights (e.g., consumer opinions, brand reputation). Ensure that each query is distinct and avoids redundancy.
+Output the results in the exact JSON format:
 {
   "queries": [
     {
-      "purpose": "string (what information this query aims to find)",
-      "query": "string (the actual search query)"
+      "purpose": "string (describe what specific information this query is intended to extract)",
+      "query": "string (the precise search query)"
     }
   ]
 }`;
 
 // Extraction prompt
-const MARKET_POSITION_EXTRACTION_PROMPT = `As a buy-side analyst focusing on market positioning, analyze the provided content about {company} and extract key information in this format:
+const MARKET_POSITION_EXTRACTION_PROMPT = `Extract detailed and comprehensive information on {company}'s market position by focusing on:
+- Overall market share and competitive positioning,
+- Brand strength, recognition, and customer sentiment,
+- Geographic presence, market penetration, and regional performance,
+- Product portfolio diversity, including recent product launches, innovations, or market expansions.
 
-{
-  "extracted": {
-    "marketPosition": {
-      "overallPosition": "Detailed description of company's current market position",
-      "marketShare": {
-        "overall": "X%",
-        "bySegment": {
-          "segment1": "X%",
-          "segment2": "Y%"
-        },
-        "trend": "Description of market share trends"
-      },
-      "brandStrength": {
-        "brandValue": "Quantitative measure if available",
-        "brandPerception": "Key findings about brand perception",
-        "brandAwareness": "Metrics or qualitative assessment"
-      },
-      "geographicPresence": {
-        "strongMarkets": ["Market1", "Market2"],
-        "emergingMarkets": ["Market1", "Market2"],
-        "marketExpansionPlans": ["Specific plan 1", "Specific plan 2"]
-      },
-      "productPortfolio": {
-        "keyProducts": ["Product1", "Product2"],
-        "marketShareByProduct": {
-          "product1": "X%",
-          "product2": "Y%"
-        },
-        "portfolioStrengths": ["Strength1", "Strength2"],
-        "portfolioWeaknesses": ["Weakness1", "Weakness2"]
-      }
-    },
-    "keyMetrics": {
-      "market_penetration": "X%",
-      "market_growth_rate": "X%",
-      "relative_market_share": "X%"
-    }
-  }
-}`;
+Prioritize quantitative data (such as market share percentages, revenue figures, and growth rates) and incorporate qualitative insights to provide context and depth.`;
 
 async function executeMarketPositionSearch(
   company: string,
@@ -197,7 +126,7 @@ async function executeMarketPositionSearch(
       const searchResult = await app.search(queryInfo.query);
 
       if (searchResult.success && searchResult.data?.length > 0) {
-        const urls = searchResult.data.slice(0, 3).map((result) => ({
+        const urls = searchResult.data.slice(0, 5).map((result) => ({
           url: result.url,
           title: result.title,
           description: result.description,
@@ -260,37 +189,12 @@ async function executeMarketPositionSearch(
                 title: urlData.title || "Untitled",
                 content: {
                   raw: urlData.description || "",
-                  extracted: extractResult.data.extracted,
+                  extracted: JSON.stringify(extractResult.data),
                 },
               };
-
+              console.log("source \n", source);
               sources.push(source);
               processedSources++;
-
-              // Stream extracted content
-              dataStream?.writeData({
-                tool: "market_position_analysis",
-                content: {
-                  phase: "data_collection",
-                  timestamp: new Date().toISOString(),
-                  searchState: {
-                    query: queryInfo.query,
-                    source: urlData.url,
-                    foundDocuments: urls.length,
-                    extractedInsights: processedSources,
-                  },
-                  progress: {
-                    totalSources,
-                    processedSources,
-                  },
-                  latestExtraction: {
-                    url: urlData.url,
-                    title: urlData.title,
-                    marketPosition: extractResult.data.extracted.marketPosition,
-                    keyMetrics: extractResult.data.extracted.keyMetrics,
-                  },
-                },
-              });
             }
           } catch (extractError) {
             console.error(
@@ -344,18 +248,11 @@ export const marketPositionTool: ToolDefinition<typeof MarketPositionParams> = {
       const sources = await executeMarketPositionSearch(company, dataStream);
 
       const aggregatedData = {
-        marketPosition: sources
-          .filter((s) => s.content.extracted.marketPosition)
-          .map((s) => s.content.extracted.marketPosition),
-        metrics: sources.reduce((acc, source) => {
-          if (source.content.extracted.keyMetrics) {
-            Object.assign(acc, source.content.extracted.keyMetrics);
-          }
-          return acc;
-        }, {} as Record<string, string>),
         sources: sources.map((s) => ({
           url: s.url,
           title: s.title,
+          extracted: s.content.extracted,
+          raw: s.content.raw,
         })),
       };
 
