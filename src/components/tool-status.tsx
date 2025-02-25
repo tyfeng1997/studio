@@ -1,20 +1,25 @@
+"use client";
 import React from "react";
-import type { LucideIcon } from "lucide-react";
 import {
   AlertCircle,
+  CheckCircle,
+  Clock,
   Search,
   Database,
-  ChevronDown,
-  ChevronRight,
+  Cog,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useEffect, useReducer } from "react";
+import { JSONValue } from "ai";
+import { generateId } from "../utils/id";
 import { motion, AnimatePresence } from "framer-motion";
+
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
-// 简化的工具状态类型
+// Enhanced ToolState type with deep research specific fields
 export type ToolState = {
   activities: Array<{
     id: string;
@@ -23,33 +28,21 @@ export type ToolState = {
     result?: Record<string, any>;
     error?: string;
     timestamp: string;
-    // Market Position 特定字段
+    // Deep research specific fields
     phase?: string;
-    searchState?: {
-      query: string;
-      source: string;
-      foundDocuments: number;
-      extractedInsights: number;
-    };
-    progress?: {
-      totalSources: number;
-      processedSources: number;
-    };
-    latestExtraction?: {
-      url: string;
-      title: string;
-      marketPosition?: any;
-      keyMetrics?: any;
-    };
+    iteration?: number;
+    timeRemaining?: number;
+    foundDocuments?: number;
+    findingsCount?: number;
+    vectorResults?: number;
+    webResults?: number;
   }>;
 };
 
-// 初始工具状态
 const initialToolState: ToolState = {
   activities: [],
 };
 
-// 工具状态更新reducer
 function toolReducer(state: ToolState, action: any): ToolState {
   if (action.type === "clear") {
     return initialToolState;
@@ -62,11 +55,14 @@ function toolReducer(state: ToolState, action: any): ToolState {
     id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
     tool,
     ...content,
+    // Extract deep research specific fields
     phase: content.phase,
-    searchState: content.searchState,
-    progress: content.progress,
-    latestExtraction: content.latestExtraction,
-    timestamp: content.timestamp || new Date().toISOString(),
+    iteration: content.iteration,
+    timeRemaining: content.timeRemaining,
+    foundDocuments: content.foundDocuments,
+    findingsCount: content.findingsCount,
+    vectorResults: content.vectorResults,
+    webResults: content.webResults,
   };
 
   return {
@@ -75,39 +71,33 @@ function toolReducer(state: ToolState, action: any): ToolState {
   };
 }
 
-// 进度指示器组件
-const ProgressIndicator = ({
-  current,
-  total,
-}: {
-  current: number;
-  total: number;
-}) => {
-  const percentage = Math.round((current / total) * 100) || 0;
+// Enhanced status badge component
+const PhaseBadge = ({ phase }: { phase: string }) => {
+  const getPhaseColor = (phase: string) => {
+    switch (phase) {
+      case "initialization":
+        return "bg-blue-500";
+      case "vector_search":
+        return "bg-purple-500";
+      case "iteration_start":
+        return "bg-yellow-500";
+      case "iteration_complete":
+        return "bg-green-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
 
   return (
-    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-      <div
-        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-        style={{ width: `${percentage}%` }}
-      ></div>
-    </div>
+    <Badge variant="secondary" className={`${getPhaseColor(phase)} text-white`}>
+      {phase?.replace(/_/g, " ")}
+    </Badge>
   );
 };
 
-// 状态记录组件
-const StatusRecord = ({
-  activity,
-  isExpanded,
-  onToggle,
-  isLatest,
-}: {
-  activity: ToolState["activities"][0];
-  isExpanded: boolean;
-  onToggle: () => void;
-  isLatest: boolean;
-}) => {
-  const isMarketPositionTool = activity.tool === "market_position_analysis";
+// Enhanced status record component
+const StatusRecord = ({ activity, isExpanded, onToggle, isLatest }) => {
+  const isDeepResearch = activity.tool === "deep_research";
 
   return (
     <motion.div
@@ -119,16 +109,10 @@ const StatusRecord = ({
     >
       <div className="p-3 flex items-center cursor-pointer" onClick={onToggle}>
         <div className="flex items-center flex-1 min-w-0 gap-2">
-          <span className="text-sm font-medium truncate">
-            {activity.tool === "market_position_analysis"
-              ? "Market Position Analysis"
-              : activity.tool}
-          </span>
-          {activity.progress && (
-            <Badge variant="outline">
-              {activity.progress.processedSources}/
-              {activity.progress.totalSources} Sources
-            </Badge>
+          <span className="text-sm font-medium truncate">{activity.tool}</span>
+          {activity.phase && <PhaseBadge phase={activity.phase} />}
+          {activity.iteration && (
+            <Badge variant="outline">Iteration {activity.iteration}</Badge>
           )}
           <span className="text-xs text-muted-foreground">
             {new Date(activity.timestamp).toLocaleTimeString()}
@@ -152,109 +136,77 @@ const StatusRecord = ({
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-0">
-              {isMarketPositionTool && (
+              {isDeepResearch && activity.phase && (
                 <div className="mb-3 space-y-2">
-                  {/* 搜索状态 */}
-                  {activity.searchState && (
-                    <div className="bg-muted/50 p-2 rounded">
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-xs font-medium">Current Search</p>
-                        <Badge
-                          variant="outline"
-                          className="truncate max-w-[200px]"
-                        >
-                          {activity.searchState.source}
-                        </Badge>
-                      </div>
-                      <p className="text-sm mb-2 break-words">
-                        {activity.searchState.query}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Documents Found
-                          </p>
-                          <p className="text-sm font-medium">
-                            {activity.searchState.foundDocuments}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Insights Extracted
-                          </p>
-                          <p className="text-sm font-medium">
-                            {activity.searchState.extractedInsights}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 进度统计 */}
-                  {activity.progress && (
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {activity.timeRemaining !== undefined && (
                       <div className="bg-muted/50 p-2 rounded">
-                        <p className="text-xs font-medium mb-2">
-                          Analysis Progress
+                        <p className="text-xs font-medium">Time Remaining</p>
+                        <p className="text-sm">
+                          {activity.timeRemaining} minutes
                         </p>
-                        <ProgressIndicator
-                          current={activity.progress.processedSources}
-                          total={activity.progress.totalSources}
-                        />
                       </div>
-                    </div>
-                  )}
-
-                  {/* 最新提取的内容 */}
-                  {activity.latestExtraction && (
-                    <div className="bg-muted/50 p-2 rounded">
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-xs font-medium">Latest Extraction</p>
-                        <Badge
-                          variant="outline"
-                          className="truncate max-w-[200px]"
-                        >
-                          {activity.latestExtraction.url}
-                        </Badge>
+                    )}
+                    {activity.foundDocuments !== undefined && (
+                      <div className="bg-muted/50 p-2 rounded">
+                        <p className="text-xs font-medium">Documents Found</p>
+                        <p className="text-sm">{activity.foundDocuments}</p>
                       </div>
-                      {activity.latestExtraction.marketPosition && (
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium">
-                            Market Position:
-                          </p>
-                          <pre className="text-xs whitespace-pre-wrap break-words">
-                            {JSON.stringify(
-                              activity.latestExtraction.marketPosition,
-                              null,
-                              2
-                            )}
-                          </pre>
-                        </div>
-                      )}
-                      {activity.latestExtraction.keyMetrics && (
-                        <div className="space-y-1 mt-2">
-                          <p className="text-xs font-medium">Key Metrics:</p>
-                          <pre className="text-xs whitespace-pre-wrap break-words">
-                            {JSON.stringify(
-                              activity.latestExtraction.keyMetrics,
-                              null,
-                              2
-                            )}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    {activity.findingsCount !== undefined && (
+                      <div className="bg-muted/50 p-2 rounded">
+                        <p className="text-xs font-medium">Total Findings</p>
+                        <p className="text-sm">{activity.findingsCount}</p>
+                      </div>
+                    )}
+                    {(activity.vectorResults !== undefined ||
+                      activity.webResults !== undefined) && (
+                      <div className="bg-muted/50 p-2 rounded">
+                        <p className="text-xs font-medium">Results</p>
+                        <p className="text-sm">
+                          {activity.vectorResults !== undefined &&
+                            `Vector: ${activity.vectorResults}`}
+                          {activity.vectorResults !== undefined &&
+                            activity.webResults !== undefined &&
+                            " | "}
+                          {activity.webResults !== undefined &&
+                            `Web: ${activity.webResults}`}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* 错误显示 */}
+              {activity.params && (
+                <div className="mb-2">
+                  <h4 className="text-sm font-medium">Parameters:</h4>
+                  <div className="relative max-h-40 overflow-y-auto">
+                    <pre className="text-xs bg-muted/50 p-2 rounded whitespace-pre-wrap break-all">
+                      {JSON.stringify(activity.params, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+              {activity.result && (
+                <div className="mb-2">
+                  <h4 className="text-sm font-medium">Result:</h4>
+                  <div className="relative max-h-40 overflow-y-auto">
+                    <pre className="text-xs bg-muted/50 p-2 rounded whitespace-pre-wrap break-all">
+                      {JSON.stringify(activity.result, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
               {activity.error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{activity.error}</AlertDescription>
-                </Alert>
+                <div className="mb-2">
+                  <h4 className="text-sm font-medium text-red-500">Error:</h4>
+                  <div className="relative max-h-40 overflow-y-auto">
+                    <p className="text-sm text-red-500 break-all">
+                      {activity.error}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           </motion.div>
@@ -264,7 +216,6 @@ const StatusRecord = ({
   );
 };
 
-// 主工具状态组件
 export function ToolStatus({ data }: { data: any[] }) {
   const [state, dispatch] = useReducer(toolReducer, initialToolState);
   const [expandedIds, setExpandedIds] = React.useState(new Set());
@@ -295,7 +246,6 @@ export function ToolStatus({ data }: { data: any[] }) {
   const handleClearAll = () => {
     dispatch({ type: "clear" });
     processedItems.current.clear();
-    setExpandedIds(new Set());
   };
 
   useEffect(() => {
@@ -304,6 +254,14 @@ export function ToolStatus({ data }: { data: any[] }) {
       setExpandedIds(new Set([latestId]));
     }
   }, [state.activities.length]);
+
+  if (state.activities.length === 0) {
+    return (
+      <div className="p-4 text-center text-sm text-muted-foreground">
+        No tool executions yet
+      </div>
+    );
+  }
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
@@ -317,14 +275,6 @@ export function ToolStatus({ data }: { data: any[] }) {
     });
   };
 
-  if (state.activities.length === 0) {
-    return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
-        No analysis activities yet
-      </div>
-    );
-  }
-
   const sortedActivities = [...state.activities].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
@@ -333,7 +283,7 @@ export function ToolStatus({ data }: { data: any[] }) {
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-background z-10">
         <span className="text-sm text-muted-foreground">
-          {sortedActivities.length} analysis activities
+          {sortedActivities.length} executions
         </span>
         <Button
           variant="ghost"
