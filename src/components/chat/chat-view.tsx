@@ -8,7 +8,16 @@ import { Message, useChat } from "@ai-sdk/react";
 import { createIdGenerator } from "ai";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trash2, X, PanelRight, ChevronRight } from "lucide-react";
+import {
+  RefreshCw,
+  Trash2,
+  X,
+  PanelRight,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  ArrowRight,
+} from "lucide-react";
 import { ToolStatus } from "@/components/tool-status";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ArtifactManager } from "@/components/artifact-manager";
@@ -83,6 +92,7 @@ export function ChatView({
   const [streamedChunks, setStreamedChunks] = React.useState<
     Record<string, string>
   >({});
+  const [isFloatingPanel, setIsFloatingPanel] = React.useState(true);
 
   // 检测消息流中的特殊内容模式
   const analyzeMessageChunk = (messageId, chunk, existingContent) => {
@@ -409,24 +419,54 @@ export function ChatView({
     setExpandedView((prev) => !prev);
   };
 
+  const handleToggleFloating = () => {
+    setIsFloatingPanel((prev) => !prev);
+  };
+
   // 获取特定消息的pending artifacts
   const getPendingArtifactsForMessage = (messageId: string) => {
     return pendingArtifacts.filter((p) => p.messageId === messageId);
   };
 
+  // 计算主聊天区域的样式
+  const mainChatAreaStyle = React.useMemo(() => {
+    if (!showArtifacts && !showToolStatus) {
+      return "w-full max-w-5xl mx-auto";
+    }
+
+    if (isFloatingPanel) {
+      return "w-full max-w-5xl mx-auto";
+    }
+
+    return cn("transition-all duration-300", "w-3/5 max-w-3xl");
+  }, [showArtifacts, showToolStatus, isFloatingPanel]);
+
+  // 悬浮面板样式
+  const floatingPanelStyle = React.useMemo(() => {
+    if (!isFloatingPanel) return {};
+
+    return {
+      position: "absolute",
+      right: "1rem",
+      top: "1rem",
+      bottom: "5rem",
+      width: expandedView ? "45%" : "35%",
+      maxWidth: "600px",
+      minWidth: "380px",
+      zIndex: 50,
+      borderRadius: "0.75rem",
+      boxShadow:
+        "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+    };
+  }, [isFloatingPanel, expandedView]);
+
   return (
     <TooltipProvider>
       <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
-        <div className="flex-1 flex justify-center overflow-hidden">
+        <div className="flex-1 flex justify-center overflow-hidden relative">
           {/* Main chat area */}
-          <div
-            className={cn(
-              "flex flex-col transition-all duration-300",
-              showToolStatus || showArtifacts ? "w-4/5" : "w-full",
-              expandedView ? "max-w-full" : "max-w-5xl"
-            )}
-          >
-            <ScrollArea className="flex-1 px-4">
+          <div className={mainChatAreaStyle}>
+            <ScrollArea className="flex-1 px-4 h-full">
               <div className="pt-4 pb-4">
                 {error ? (
                   <Alert variant="destructive" className="mb-4">
@@ -480,21 +520,91 @@ export function ChatView({
             </ScrollArea>
           </div>
 
-          {/* Right sidebar for tools/artifacts */}
+          {/* Right sidebar or floating panel for tools/artifacts */}
           <AnimatePresence>
             {(showToolStatus || showArtifacts) && (
               <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{
-                  width: "20%",
-                  opacity: 1,
-                  minWidth: "250px",
-                  maxWidth: expandedView ? "500px" : "300px",
-                }}
-                exit={{ width: 0, opacity: 0 }}
+                initial={
+                  isFloatingPanel
+                    ? { opacity: 0, scale: 0.95, x: 20 }
+                    : { width: 0, opacity: 0 }
+                }
+                animate={
+                  isFloatingPanel
+                    ? { opacity: 1, scale: 1, x: 0 }
+                    : {
+                        width: "40%",
+                        opacity: 1,
+                        minWidth: "380px",
+                        maxWidth: expandedView ? "600px" : "500px",
+                      }
+                }
+                exit={
+                  isFloatingPanel
+                    ? { opacity: 0, scale: 0.95, x: 20 }
+                    : { width: 0, opacity: 0 }
+                }
                 transition={{ duration: 0.3 }}
-                className="border-l border-border flex flex-col h-full"
+                style={floatingPanelStyle}
+                className={cn(
+                  "flex flex-col",
+                  isFloatingPanel
+                    ? "bg-background border border-border"
+                    : "border-l border-border h-full"
+                )}
               >
+                {/* 面板标题和控制按钮 */}
+                <div className="flex justify-between items-center p-3 border-b sticky top-0 bg-background z-10 rounded-t-lg">
+                  <span className="text-sm font-medium">
+                    {showToolStatus ? "Tool Status" : "Artifacts"}
+                    {showArtifacts &&
+                      artifacts.length > 0 &&
+                      ` (${artifacts.length})`}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleToggleFloating}
+                      title={isFloatingPanel ? "Dock panel" : "Float panel"}
+                    >
+                      {isFloatingPanel ? (
+                        <ArrowRight className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleToggleExpanded}
+                      title={expandedView ? "Collapse" : "Expand"}
+                    >
+                      {expandedView ? (
+                        <Minimize2 className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={
+                        showToolStatus
+                          ? handleToggleTools
+                          : handleToggleArtifacts
+                      }
+                      title="Close"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 面板内容 */}
                 <div className="flex-1 overflow-hidden">
                   {showToolStatus && !showArtifacts && (
                     <ToolStatus data={data || []} />
@@ -517,11 +627,7 @@ export function ChatView({
         {/* Bottom input area */}
         <div className="border-t bg-background p-4 mt-auto">
           <div
-            className={cn(
-              "mx-auto transition-all duration-300",
-              showToolStatus || showArtifacts ? "w-4/5" : "w-full",
-              expandedView ? "max-w-full" : "max-w-5xl"
-            )}
+            className={cn("mx-auto transition-all duration-300", "max-w-5xl")}
           >
             <div className="flex gap-2 mb-2">
               <Button
