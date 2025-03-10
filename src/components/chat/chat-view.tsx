@@ -12,30 +12,19 @@ import {
   RefreshCw,
   Trash2,
   X,
-  PanelRight,
-  ChevronRight,
   Maximize2,
   Minimize2,
   ArrowRight,
+  Layers,
 } from "lucide-react";
-import { ToolStatus } from "@/components/tool-status";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ArtifactManager } from "@/components/artifact-manager";
-import { getArtifactType } from "@/components/artifact-manager";
 import { AnimatePresence, motion } from "framer-motion";
-
-// 辅助函数：从内容中检测代码块
-const detectCodeLanguage = (codeBlock) => {
-  const match = codeBlock.match(/```(\w+)/);
-  return match ? match[1] : "plaintext";
-};
-
-// 辅助函数：从内容中提取代码
-const extractCodeFromBlock = (codeBlock) => {
-  return codeBlock
-    .replace(/```(\w+)?\n/, "") // 移除开头的 ```language
-    .replace(/```$/, ""); // 移除结尾的 ```
-};
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // 检测是否包含代码块
 const containsCodeBlock = (content) => {
@@ -76,7 +65,6 @@ export function ChatView({
   initialMessages?: Message[];
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
-  const [showToolStatus, setShowToolStatus] = React.useState(false);
   const [showArtifacts, setShowArtifacts] = React.useState(false);
   const [expandedView, setExpandedView] = React.useState(false);
   const [artifacts, setArtifacts] = React.useState<Artifact[]>([]);
@@ -92,7 +80,8 @@ export function ChatView({
   const [streamedChunks, setStreamedChunks] = React.useState<
     Record<string, string>
   >({});
-  const [isFloatingPanel, setIsFloatingPanel] = React.useState(true);
+  const [isHovering, setIsHovering] = React.useState(false);
+  const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // 检测消息流中的特殊内容模式
   const analyzeMessageChunk = (messageId, chunk, existingContent) => {
@@ -273,9 +262,6 @@ export function ChatView({
     onResponse: (response) => {
       console.log("Received HTTP response from server:", response);
     },
-    experimental_onFunctionCall: () => {
-      // 当调用函数时，暂停artifact生成
-    },
     generateId: createIdGenerator({
       prefix: "msgc",
       size: 16,
@@ -317,19 +303,6 @@ export function ChatView({
       }
     }
   }, [data, currentStreamingMessage, messages]);
-
-  // 检查工具数据，显示工具状态面板
-  React.useEffect(() => {
-    if (data && data.length > 0 && !showToolStatus) {
-      const hasToolData = data.some(
-        (item) => typeof item === "object" && item !== null && "tool" in item
-      );
-
-      if (hasToolData) {
-        setShowToolStatus(true);
-      }
-    }
-  }, [data, showToolStatus]);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     // 重置流状态
@@ -397,21 +370,12 @@ export function ChatView({
         ]);
       }
     }
-
-    // 可以添加滚动到指定artifact的逻辑
-  };
-
-  const handleToggleTools = () => {
-    setShowToolStatus((prev) => !prev);
-    if (!showToolStatus) {
-      setShowArtifacts(false);
-    }
   };
 
   const handleToggleArtifacts = () => {
     setShowArtifacts((prev) => !prev);
     if (!showArtifacts) {
-      setShowToolStatus(false);
+      setIsHovering(true);
     }
   };
 
@@ -419,8 +383,30 @@ export function ChatView({
     setExpandedView((prev) => !prev);
   };
 
-  const handleToggleFloating = () => {
-    setIsFloatingPanel((prev) => !prev);
+  // 处理悬浮按钮的鼠标事件
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+
+    // 如果悬浮时未显示Artifacts，则显示它
+    if (!showArtifacts) {
+      setShowArtifacts(true);
+    }
+
+    setIsHovering(true);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovering(false);
+
+      // 如果是通过悬浮打开的（没有点击固定），则关闭Artifacts
+      if (!showArtifacts) {
+        setShowArtifacts(false);
+      }
+    }, 300); // 略微延迟，避免过快关闭
   };
 
   // 获取特定消息的pending artifacts
@@ -428,44 +414,12 @@ export function ChatView({
     return pendingArtifacts.filter((p) => p.messageId === messageId);
   };
 
-  // 计算主聊天区域的样式
-  const mainChatAreaStyle = React.useMemo(() => {
-    if (!showArtifacts && !showToolStatus) {
-      return "w-full max-w-5xl mx-auto";
-    }
-
-    if (isFloatingPanel) {
-      return "w-full max-w-5xl mx-auto";
-    }
-
-    return cn("transition-all duration-300", "w-3/5 max-w-3xl");
-  }, [showArtifacts, showToolStatus, isFloatingPanel]);
-
-  // 悬浮面板样式
-  const floatingPanelStyle = React.useMemo(() => {
-    if (!isFloatingPanel) return {};
-
-    return {
-      position: "absolute",
-      right: "1rem",
-      top: "1rem",
-      bottom: "5rem",
-      width: expandedView ? "45%" : "35%",
-      maxWidth: "600px",
-      minWidth: "380px",
-      zIndex: 50,
-      borderRadius: "0.75rem",
-      boxShadow:
-        "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-    };
-  }, [isFloatingPanel, expandedView]);
-
   return (
     <TooltipProvider>
       <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
         <div className="flex-1 flex justify-center overflow-hidden relative">
           {/* Main chat area */}
-          <div className={mainChatAreaStyle}>
+          <div className="w-full max-w-5xl mx-auto">
             <ScrollArea className="flex-1 px-4 h-full">
               <div className="pt-4 pb-4">
                 {error ? (
@@ -520,61 +474,37 @@ export function ChatView({
             </ScrollArea>
           </div>
 
-          {/* Right sidebar or floating panel for tools/artifacts */}
+          {/* Floating Artifacts Panel - 调整高度更长 */}
           <AnimatePresence>
-            {(showToolStatus || showArtifacts) && (
+            {showArtifacts && (
               <motion.div
-                initial={
-                  isFloatingPanel
-                    ? { opacity: 0, scale: 0.95, x: 20 }
-                    : { width: 0, opacity: 0 }
-                }
-                animate={
-                  isFloatingPanel
-                    ? { opacity: 1, scale: 1, x: 0 }
-                    : {
-                        width: "40%",
-                        opacity: 1,
-                        minWidth: "380px",
-                        maxWidth: expandedView ? "600px" : "500px",
-                      }
-                }
-                exit={
-                  isFloatingPanel
-                    ? { opacity: 0, scale: 0.95, x: 20 }
-                    : { width: 0, opacity: 0 }
-                }
+                initial={{ opacity: 0, scale: 0.95, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95, x: 20 }}
                 transition={{ duration: 0.3 }}
-                style={floatingPanelStyle}
-                className={cn(
-                  "flex flex-col",
-                  isFloatingPanel
-                    ? "bg-background border border-border"
-                    : "border-l border-border h-full"
-                )}
+                style={{
+                  position: "absolute",
+                  right: "1rem",
+                  top: "0.5rem", // 调高上边距，使面板更长
+                  bottom: "5rem",
+                  width: expandedView ? "45%" : "35%",
+                  maxWidth: "600px",
+                  minWidth: "380px",
+                  zIndex: 50,
+                  borderRadius: "0.75rem",
+                  boxShadow:
+                    "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+                }}
+                className="bg-background border border-border flex flex-col"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
               >
-                {/* 面板标题和控制按钮 */}
+                {/* Panel title bar */}
                 <div className="flex justify-between items-center p-3 border-b sticky top-0 bg-background z-10 rounded-t-lg">
                   <span className="text-sm font-medium">
-                    {showToolStatus ? "Tool Status" : "Artifacts"}
-                    {showArtifacts &&
-                      artifacts.length > 0 &&
-                      ` (${artifacts.length})`}
+                    Artifacts {artifacts.length > 0 && `(${artifacts.length})`}
                   </span>
                   <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handleToggleFloating}
-                      title={isFloatingPanel ? "Dock panel" : "Float panel"}
-                    >
-                      {isFloatingPanel ? (
-                        <ArrowRight className="h-4 w-4" />
-                      ) : (
-                        <Maximize2 className="h-4 w-4" />
-                      )}
-                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -592,11 +522,7 @@ export function ChatView({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={
-                        showToolStatus
-                          ? handleToggleTools
-                          : handleToggleArtifacts
-                      }
+                      onClick={handleToggleArtifacts}
                       title="Close"
                     >
                       <X className="h-4 w-4" />
@@ -604,20 +530,14 @@ export function ChatView({
                   </div>
                 </div>
 
-                {/* 面板内容 */}
+                {/* Panel content */}
                 <div className="flex-1 overflow-hidden">
-                  {showToolStatus && !showArtifacts && (
-                    <ToolStatus data={data || []} />
-                  )}
-
-                  {showArtifacts && (
-                    <ArtifactManager
-                      artifacts={artifacts}
-                      onClose={() => setShowArtifacts(false)}
-                      onExpand={handleToggleExpanded}
-                      expanded={expandedView}
-                    />
-                  )}
+                  <ArtifactManager
+                    artifacts={artifacts}
+                    onClose={() => setShowArtifacts(false)}
+                    onExpand={handleToggleExpanded}
+                    expanded={expandedView}
+                  />
                 </div>
               </motion.div>
             )}
@@ -626,40 +546,7 @@ export function ChatView({
 
         {/* Bottom input area */}
         <div className="border-t bg-background p-4 mt-auto">
-          <div
-            className={cn("mx-auto transition-all duration-300", "max-w-5xl")}
-          >
-            <div className="flex gap-2 mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToggleTools}
-                className={cn("h-8", showToolStatus && "bg-muted")}
-              >
-                <ChevronRight
-                  className={cn(
-                    "h-4 w-4 mr-1.5 transition-transform",
-                    showToolStatus && "rotate-90"
-                  )}
-                />
-                Tool Status
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToggleArtifacts}
-                className={cn("h-8", showArtifacts && "bg-muted")}
-              >
-                <PanelRight className="h-4 w-4 mr-1.5" />
-                Artifacts
-                {artifacts.length > 0 && (
-                  <span className="ml-1.5 bg-primary/20 text-primary text-xs rounded-full px-1.5">
-                    {artifacts.length}
-                  </span>
-                )}
-              </Button>
-            </div>
-
+          <div className="mx-auto max-w-5xl relative">
             <ChatInput
               input={input}
               handleInputChange={handleInputChange}
@@ -669,6 +556,40 @@ export function ChatView({
               setFiles={setFiles}
               stop={stop}
             />
+
+            {/* Floating Artifacts Button */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-20 right-10 z-10" // 位置调整为右上方一点
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    className={`h-12 w-12 rounded-full shadow-lg ${
+                      showArtifacts
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "bg-card hover:bg-card/90 text-foreground border border-border"
+                    }`}
+                    onClick={handleToggleArtifacts}
+                  >
+                    <Layers className="h-5 w-5" />
+                    {artifacts.length > 0 && !showArtifacts && (
+                      <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-medium border-2 border-background">
+                        {artifacts.length}
+                      </span>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  {showArtifacts ? "Hide Artifacts" : "Show Artifacts"}
+                </TooltipContent>
+              </Tooltip>
+            </motion.div>
           </div>
         </div>
       </div>

@@ -1,21 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Paperclip, SendHorizonal, X, Square, FolderOpen } from "lucide-react";
+import { Paperclip, SendHorizonal, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  TooltipProvider,
 } from "@/components/ui/tooltip";
 
 interface ChatInputProps {
@@ -87,30 +79,45 @@ export function ChatInput({
           />
           <div className="absolute bottom-2 right-2 flex gap-2">
             {isLoading ? (
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => stop()}
-              >
-                <Square className="h-4 w-4" />
-                <span className="sr-only">Stop generating</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => stop()}
+                  >
+                    <Square className="h-4 w-4" />
+                    <span className="sr-only">Stop generating</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Stop generating</TooltipContent>
+              </Tooltip>
             ) : (
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Paperclip className="h-4 w-4" />
-                <span className="sr-only">Attach files</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    <span className="sr-only">Attach files</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Attach files</TooltipContent>
+              </Tooltip>
             )}
-            <Button type="submit" size="icon" disabled={isLoading}>
-              <SendHorizonal className="h-4 w-4" />
-              <span className="sr-only">Send message</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="submit" size="icon" disabled={isLoading}>
+                  <SendHorizonal className="h-4 w-4" />
+                  <span className="sr-only">Send message</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Send message</TooltipContent>
+            </Tooltip>
           </div>
         </form>
       </div>
