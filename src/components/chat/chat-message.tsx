@@ -8,7 +8,7 @@ import { ToolResultRenderer } from "@/components/tools/tool-result-renderer";
 import {
   ContentGeneratorIndicator,
   TypingIndicator,
-} from "@/components/content-generator-indicator";
+} from "@/components/artifact-manager";
 
 interface ChatMessageProps {
   message: Message;

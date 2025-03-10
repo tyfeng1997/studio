@@ -379,7 +379,7 @@ export function ChatView({
   );
 }
 
-// // Helper function for conditional class names
-// function cn(...classes: any[]) {
-//   return classes.filter(Boolean).join(' ');
-// }
+// Helper function for conditional class names
+function cn(...classes: any[]) {
+  return classes.filter(Boolean).join(" ");
+}
