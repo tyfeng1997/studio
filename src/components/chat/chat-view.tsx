@@ -3,7 +3,6 @@
 import * as React from "react";
 import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
-import { WelcomeView } from "@/components/welcome";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Message, useChat } from "@ai-sdk/react";
 import { createIdGenerator } from "ai";
@@ -20,10 +19,6 @@ export function ChatView({
   id?: string | undefined;
   initialMessages?: Message[];
 } = {}) {
-  const [selectedWorkspace, setSelectedWorkspace] = React.useState<string>("");
-  const [workspaces, setWorkspaces] = React.useState<
-    Array<{ workspace: string; document_count: number }>
-  >([]);
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
   const [showToolStatus, setShowToolStatus] = React.useState(false); // 改为手动控制显示状态
 
@@ -62,26 +57,9 @@ export function ChatView({
       return {
         message: messages[messages.length - 1],
         id,
-        workspace: selectedWorkspace,
       };
     },
   });
-
-  const fetchWorkspaces = async () => {
-    try {
-      const response = await fetch("/api/workspaces");
-      if (response.ok) {
-        const data = await response.json();
-        setWorkspaces(data.workspaces);
-      }
-    } catch (error) {
-      console.error("Failed to fetch workspaces:", error);
-    }
-  };
-
-  React.useEffect(() => {
-    fetchWorkspaces();
-  }, []);
 
   // 修改这个 useEffect
   React.useEffect(() => {
@@ -104,14 +82,6 @@ export function ChatView({
     setMessages((prevMessages) =>
       prevMessages.filter((msg) => msg.id !== messageId)
     );
-  };
-
-  const handleWorkspaceChange = (workspace: string) => {
-    setSelectedWorkspace(workspace);
-  };
-
-  const handleWorkspaceCreated = () => {
-    fetchWorkspaces();
   };
 
   return (
@@ -158,11 +128,7 @@ export function ChatView({
                     </div>
                   ))
                 ) : (
-                  <WelcomeView
-                    workspaces={workspaces}
-                    onWorkspaceSelect={handleWorkspaceChange}
-                    onWorkspaceCreated={handleWorkspaceCreated}
-                  />
+                  <></>
                 )}
               </div>
             </ScrollArea>
@@ -193,9 +159,6 @@ export function ChatView({
               files={files}
               setFiles={setFiles}
               stop={stop}
-              selectedWorkspace={selectedWorkspace}
-              onWorkspaceChange={handleWorkspaceChange}
-              workspaces={workspaces}
             />
           </div>
         </div>

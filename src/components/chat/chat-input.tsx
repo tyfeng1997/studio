@@ -26,9 +26,6 @@ interface ChatInputProps {
   files?: FileList;
   setFiles: (files: FileList | undefined) => void;
   stop: () => void;
-  selectedWorkspace?: string;
-  onWorkspaceChange?: (workspace: string) => void;
-  workspaces?: Array<{ workspace: string; document_count: number }>;
 }
 
 export function ChatInput({
@@ -39,9 +36,6 @@ export function ChatInput({
   files,
   setFiles,
   stop,
-  selectedWorkspace,
-  onWorkspaceChange,
-  workspaces = [],
 }: ChatInputProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -60,49 +54,6 @@ export function ChatInput({
 
   return (
     <div className="space-y-4">
-      {/* Workspace selector */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <FolderOpen className="h-4 w-4" />
-          <span>Workspace:</span>
-        </div>
-        <Select
-          value={selectedWorkspace || "none"}
-          onValueChange={(value) =>
-            onWorkspaceChange?.(value === "none" ? "" : value)
-          }
-        >
-          <SelectTrigger className="h-8 w-[200px] bg-background border-input">
-            <SelectValue placeholder="Select workspace" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No workspace</SelectItem>
-            {workspaces.map((ws) => (
-              <SelectItem key={ws.workspace} value={ws.workspace}>
-                {ws.workspace} ({ws.document_count} docs)
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedWorkspace && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => onWorkspaceChange?.("")}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Clear workspace selection</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
-
       <div className="space-y-2">
         {/* File attachments preview */}
         {files && files.length > 0 && (
@@ -131,11 +82,7 @@ export function ChatInput({
           <Textarea
             value={input}
             onChange={handleInputChange}
-            placeholder={
-              selectedWorkspace
-                ? `Ask me anything about ${selectedWorkspace}...`
-                : "Send a message..."
-            }
+            placeholder={"Send a message..."}
             className="min-h-[60px] w-full resize-none rounded-lg pr-24 bg-background border-input"
           />
           <div className="absolute bottom-2 right-2 flex gap-2">

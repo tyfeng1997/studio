@@ -13,7 +13,7 @@ import { saveChat, loadChat } from "@/utils/store/chat-store";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { message, id, currentWorkspace } = await req.json();
+  const { message, id } = await req.json();
   const previousMessages = await loadChat(id);
   const toolsConfig = getToolsConfig();
   const messages = appendClientMessage({
