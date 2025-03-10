@@ -5,12 +5,28 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { FileText } from "lucide-react";
 import { ToolResultRenderer } from "@/components/tools/tool-result-renderer";
+import {
+  ContentGeneratorIndicator,
+  TypingIndicator,
+} from "@/components/content-generator-indicator";
 
 interface ChatMessageProps {
   message: Message;
+  isLoading?: boolean;
+  onShowArtifact?: (artifactId: string) => void;
+  pendingArtifacts?: Array<{
+    id: string;
+    type: "text" | "code" | "image" | "markdown" | "file";
+    status: "generating" | "complete";
+  }>;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  isLoading,
+  onShowArtifact,
+  pendingArtifacts = [],
+}: ChatMessageProps) {
   // Separate attachments by type
   const imageAttachments =
     message?.experimental_attachments?.filter((attachment) =>
@@ -21,6 +37,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
     message?.experimental_attachments?.filter(
       (attachment) => attachment?.contentType === "application/pdf"
     ) || [];
+
+  // Split content to identify code blocks, etc. for artifact generation
+  // This is a simplified version - in a real implementation you'd use
+  // proper markdown/code block parsing
+  const hasMarkdownContent =
+    message.content?.includes("```") ||
+    message.content?.includes("#") ||
+    message.content?.length > 500;
 
   return (
     <div
@@ -38,7 +62,21 @@ export function ChatMessage({ message }: ChatMessageProps) {
           "shadow-md"
         )}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        {/* Message content */}
+        {message.content.trim() ? (
+          <div className="whitespace-pre-wrap">{message.content}</div>
+        ) : isLoading ? (
+          <TypingIndicator />
+        ) : null}
+
+        {/* Pending artifact indicators */}
+        {pendingArtifacts.map((artifact) => (
+          <ContentGeneratorIndicator
+            key={artifact.id}
+            type={artifact.type}
+            onClick={() => onShowArtifact?.(artifact.id)}
+          />
+        ))}
 
         {/* Display PDF attachments */}
         {pdfAttachments.length > 0 && (
@@ -78,32 +116,16 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </div>
         )}
 
-        {/* {message.toolInvocations?.map((tool) => (
+        {/* Display tool results */}
+        {message.toolInvocations?.map((tool) => (
           <ToolResultRenderer
             key={`${tool.toolCallId}`}
             tool={tool.toolName}
             data={tool.result}
             error={tool.error}
           />
-        ))} */}
+        ))}
       </div>
     </div>
   );
 }
-
-/*
-{
-    "state": "result",
-    "step": 0,
-    "toolCallId": "toolu_012rvPkf2AjW5cKVZjXYorVA",
-    "toolName": "weather",
-    "args": {
-      "location": "Kyoto"
-    },
-    "result": {
-      "location": "Kyoto",
-      "temperature": 80
-    }
-  },
-
-*/
