@@ -26,11 +26,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// 检测是否包含代码块
-const containsCodeBlock = (content) => {
-  return /```[\s\S]*?```/.test(content);
-};
-
 // 检测是否为长/复杂Markdown
 const isComplexMarkdown = (content) => {
   const headingCount = (content.match(/#/g) || []).length;
@@ -499,37 +494,6 @@ export function ChatView({
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                {/* Panel title bar */}
-                <div className="flex justify-between items-center p-3 border-b sticky top-0 bg-background z-10 rounded-t-lg">
-                  <span className="text-sm font-medium">
-                    Artifacts {artifacts.length > 0 && `(${artifacts.length})`}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handleToggleExpanded}
-                      title={expandedView ? "Collapse" : "Expand"}
-                    >
-                      {expandedView ? (
-                        <Minimize2 className="h-4 w-4" />
-                      ) : (
-                        <Maximize2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handleToggleArtifacts}
-                      title="Close"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
                 {/* Panel content */}
                 <div className="flex-1 overflow-hidden">
                   <ArtifactManager
