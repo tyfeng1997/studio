@@ -1,61 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Message } from "ai";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { FileText, Code, ExternalLink, Share2 } from "lucide-react";
+import { FileText, Code, ExternalLink } from "lucide-react";
 import { ToolResultRenderer } from "@/components/tools/tool-result-renderer";
 import {
   ContentGeneratorIndicator,
   TypingIndicator,
 } from "@/components/artifact-manager";
 import { Button } from "@/components/ui/button";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
-// 在ChatMessage组件中增加内容过滤逻辑
+// 新的过滤逻辑：只过滤代码块，不过滤常规 Markdown
 function filterMessageContent(content) {
-  if (!content) return { visibleContent: "", hasSpecialContent: false };
+  if (!content) return { visibleContent: content, hasSpecialContent: false };
 
   // 检查是否包含代码块
   const codeBlockRegex = /```[\s\S]*?```/g;
   const hasCodeBlock = codeBlockRegex.test(content);
 
   if (hasCodeBlock) {
-    // 提取所有代码块
+    // 我们现在不替换代码块，而是提取它们用于可能的 Artifact 生成
     const codeBlockMatches = content.match(codeBlockRegex) || [];
-    let processedContent = content;
-
-    // 替换每个代码块为占位符
-    codeBlockMatches.forEach((match, index) => {
-      const placeholder = `\n\n[代码块 #${index + 1}]\n\n`;
-      processedContent = processedContent.replace(match, placeholder);
-    });
 
     return {
-      visibleContent: processedContent,
+      visibleContent: content, // 保留完整内容用于渲染
       hasCodeBlock: true,
       codeBlocks: codeBlockMatches,
-      fullContent: content,
-    };
-  }
-
-  // 检查是否是长文本或复杂markdown (包含多个标题)
-  const headingCount = (content.match(/#/g) || []).length;
-  if (content.length > 800 || headingCount > 2) {
-    // 提取前150个字符作为摘要
-    const firstParagraphMatch = content.match(/^(.*?)(\n\n|$)/);
-    const firstParagraph = firstParagraphMatch
-      ? firstParagraphMatch[1]
-      : content.slice(0, 150);
-
-    let summary = firstParagraph;
-    if (summary.length < 150 && content.length > summary.length) {
-      summary += "...";
-    }
-
-    return {
-      visibleContent: summary,
-      hasLongContent: true,
       fullContent: content,
     };
   }
@@ -96,47 +72,66 @@ export function ChatMessage({
     filterMessageContent(message.content)
   );
   const [artifactsGenerated, setArtifactsGenerated] = useState(false);
+  // 使用 ref 来跟踪已生成的 artifact 的 ID，避免重复生成
+  const generatedArtifactIds = useRef(new Set());
 
   // 当消息内容更新时重新过滤
   useEffect(() => {
     setFilteredContent(filterMessageContent(message.content));
   }, [message.content]);
 
-  // 在组件挂载时检测是否需要生成artifacts
+  // 仅为代码块创建 Artifacts（不为普通 Markdown 创建）
   useEffect(() => {
     if (
       !artifactsGenerated &&
       message.role === "assistant" &&
-      filteredContent.hasSpecialContent
+      filteredContent.hasCodeBlock
     ) {
       generateArtifactsFromContent();
       setArtifactsGenerated(true);
     }
   }, [filteredContent, artifactsGenerated, message.role]);
 
-  // 生成artifacts的函数
+  // 生成artifacts的函数 - 仅为代码块生成，并确保不重复生成
   const generateArtifactsFromContent = () => {
     if (filteredContent.hasCodeBlock && filteredContent.codeBlocks) {
-      // 为每个代码块生成一个单独的artifact
+      // 为每个代码块生成一个单独的 artifact
       filteredContent.codeBlocks.forEach((codeBlock, index) => {
+        const artifactId = `code-${message.id}-${index}`;
+
+        // 检查是否已经生成过这个 artifact
+        if (generatedArtifactIds.current.has(artifactId)) {
+          return;
+        }
+
         const languageMatch = codeBlock.match(/```(\w*)\n/);
         const language = languageMatch ? languageMatch[1] : "plaintext";
         const code = codeBlock.replace(/```(\w*)\n/, "").replace(/```$/, "");
 
-        const artifactId = `code-${message.id}-${index}`;
         onShowArtifact?.(artifactId, code, "code", language);
+        generatedArtifactIds.current.add(artifactId);
       });
-    } else if (filteredContent.hasLongContent) {
-      // 为长文本生成一个markdown artifact
-      const artifactId = `markdown-${message.id}`;
-      onShowArtifact?.(artifactId, filteredContent.fullContent, "markdown");
     }
   };
 
-  // 处理"查看完整内容"按钮点击
-  const handleViewFullContent = () => {
-    const artifactId = artifactIds[message.id] || `markdown-${message.id}`;
-    onShowArtifact?.(artifactId, filteredContent.fullContent, "markdown");
+  // 处理"复制代码"按钮点击
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code).then(
+      () => console.log("Code copied to clipboard"),
+      (err) => console.error("Could not copy code: ", err)
+    );
+  };
+
+  // 处理"在Artifacts中查看"按钮点击
+  const handleViewInArtifacts = (index) => {
+    const artifactId = `code-${message.id}-${index}`;
+    const codeBlock = filteredContent.codeBlocks?.[index];
+    if (codeBlock) {
+      const languageMatch = codeBlock.match(/```(\w*)\n/);
+      const language = languageMatch ? languageMatch[1] : "plaintext";
+      const code = codeBlock.replace(/```(\w*)\n/, "").replace(/```$/, "");
+      onShowArtifact?.(artifactId, code, "code", language);
+    }
   };
 
   // Separate attachments by type
@@ -150,45 +145,191 @@ export function ChatMessage({
       (attachment) => attachment?.contentType === "application/pdf"
     ) || [];
 
+  // 根据消息角色计算样式
+  const messageStyles =
+    message.role === "user"
+      ? {
+          container: "justify-end",
+          bubble: "bg-primary text-primary-foreground",
+          attachmentBg: "bg-primary-foreground/10",
+        }
+      : {
+          container: "justify-start",
+          bubble: "bg-muted text-foreground",
+          attachmentBg: "bg-background",
+        };
+
   return (
     <div
       className={cn(
         "group relative mb-4 flex items-start md:mb-6",
-        message.role === "user" ? "justify-end" : "justify-start"
+        messageStyles.container
       )}
     >
       <div
         className={cn(
           "flex max-w-[85%] flex-col gap-4 rounded-lg px-4 py-3",
-          message.role === "user"
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted",
+          messageStyles.bubble,
           "shadow-md"
         )}
       >
-        {/* Message content - 根据过滤后的内容显示 */}
+        {/* 使用 ReactMarkdown 渲染消息内容 */}
         {filteredContent.visibleContent.trim() ? (
-          <div className="whitespace-pre-wrap">
-            {filteredContent.visibleContent}
+          <div
+            className={cn(
+              "prose prose-sm max-w-none",
+              message.role === "user" ? "prose-invert" : "dark:prose-invert"
+            )}
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code({ node, inline, className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  const codeContent = String(children).replace(/\n$/, "");
+
+                  if (!inline && match) {
+                    // 生成一个稳定唯一的键，包含消息ID、代码内容哈希
+                    const codeHash = String(codeContent)
+                      .slice(0, 20)
+                      .replace(/\s+/g, "");
+                    const uniqueKey = `code-${message.id}-${match[1]}-${codeHash}`;
+
+                    return (
+                      <div
+                        className="relative my-2 rounded-md overflow-hidden"
+                        key={uniqueKey}
+                      >
+                        <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
+                          <span>{match[1]}</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleCopyCode(codeContent)}
+                              className="hover:text-white"
+                            >
+                              复制
+                            </button>
+                            <button
+                              onClick={() => {
+                                // 找到当前代码块在所有代码块中的索引
+                                const index =
+                                  filteredContent.codeBlocks?.findIndex(
+                                    (block) => block.includes(codeContent)
+                                  );
+                                if (index !== undefined && index >= 0) {
+                                  handleViewInArtifacts(index);
+                                }
+                              }}
+                              className="hover:text-white"
+                            >
+                              在Artifacts中查看
+                            </button>
+                          </div>
+                        </div>
+                        <SyntaxHighlighter
+                          language={match[1]}
+                          style={oneDark}
+                          customStyle={{ margin: 0, borderRadius: 0 }}
+                        >
+                          {codeContent}
+                        </SyntaxHighlighter>
+                      </div>
+                    );
+                  } else if (!inline) {
+                    // 无语言标记的代码块
+                    const codeHash = String(codeContent)
+                      .slice(0, 20)
+                      .replace(/\s+/g, "");
+                    const uniqueKey = `code-${message.id}-plain-${codeHash}`;
+
+                    return (
+                      <div
+                        className="relative my-2 rounded-md overflow-hidden"
+                        key={uniqueKey}
+                      >
+                        <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
+                          <span>代码</span>
+                          <button
+                            onClick={() => handleCopyCode(codeContent)}
+                            className="hover:text-white"
+                          >
+                            复制
+                          </button>
+                        </div>
+                        <SyntaxHighlighter
+                          language="text"
+                          style={oneDark}
+                          customStyle={{ margin: 0, borderRadius: 0 }}
+                        >
+                          {codeContent}
+                        </SyntaxHighlighter>
+                      </div>
+                    );
+                  }
+
+                  // 内联代码
+                  const inlineKey = `inline-${message.id}-${String(
+                    children
+                  ).slice(0, 10)}`;
+                  return (
+                    <code
+                      className="bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded text-sm"
+                      key={inlineKey}
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  );
+                },
+                // 自定义其他 Markdown 元素样式
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0">{children}</p>
+                ),
+                h1: ({ children }) => (
+                  <h1 className="text-2xl font-bold my-4">{children}</h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-xl font-bold my-3">{children}</h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-lg font-bold my-2">{children}</h3>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc pl-6 mb-3">{children}</ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal pl-6 mb-3">{children}</ol>
+                ),
+                li: ({ children }) => <li className="mb-1">{children}</li>,
+                a: ({ href, children }) => {
+                  const linkKey = `link-${message.id}-${href
+                    ?.toString()
+                    .slice(0, 10)}`;
+                  return (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      key={linkKey}
+                    >
+                      {children}
+                    </a>
+                  );
+                },
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-3 italic my-2">
+                    {children}
+                  </blockquote>
+                ),
+              }}
+            >
+              {filteredContent.visibleContent}
+            </ReactMarkdown>
           </div>
         ) : isLoading ? (
           <TypingIndicator />
         ) : null}
-
-        {/* 如果有被过滤的内容，显示查看完整内容按钮 */}
-        {(filteredContent.hasCodeBlock || filteredContent.hasLongContent) && (
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleViewFullContent}
-              className="flex items-center gap-1 text-xs"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              {filteredContent.hasCodeBlock ? "查看完整代码" : "查看完整内容"}
-            </Button>
-          </div>
-        )}
 
         {/* Pending artifact indicators */}
         {pendingArtifacts.map((artifact) => (
@@ -207,9 +348,7 @@ export function ChatMessage({
                 key={`pdf-${message.id}-${index}`}
                 className={cn(
                   "flex items-center gap-2 rounded-md p-2",
-                  message.role === "user"
-                    ? "bg-primary-foreground/10"
-                    : "bg-background"
+                  messageStyles.attachmentBg
                 )}
               >
                 <FileText className="h-4 w-4" />
