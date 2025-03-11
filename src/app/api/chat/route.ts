@@ -13,7 +13,7 @@ import { saveChat, loadChat } from "@/utils/store/chat-store";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { message, id, currentWorkspace } = await req.json();
+  const { message, id } = await req.json();
   const previousMessages = await loadChat(id);
   const toolsConfig = getToolsConfig();
   const messages = appendClientMessage({
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       );
 
       const result = streamText({
-        model: anthropic("claude-3-5-sonnet-20241022"),
+        model: anthropic("claude-3-7-sonnet-20250219"),
         messages,
         tools: wrappedTools,
         experimental_generateMessageId: createIdGenerator({
