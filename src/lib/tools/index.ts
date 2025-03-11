@@ -4,7 +4,7 @@ import { scrapeTool } from "./scrape";
 import { extractTool } from "./extract-url";
 // 工具注册表
 export const tools = {
-  scrape: scrapeTool,
+  // scrape: scrapeTool,
   search: searchTool,
   extract: extractTool,
 };

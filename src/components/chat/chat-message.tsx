@@ -5,7 +5,7 @@ import { Message } from "ai";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { FileText, Code, ExternalLink } from "lucide-react";
-import { ToolResultRenderer } from "@/components/tools/tool-result-renderer";
+import { ToolResultRenderer } from "@/components/tool-result-render";
 import {
   ContentGeneratorIndicator,
   TypingIndicator,
