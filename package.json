@@ -15,6 +15,7 @@
     "@ai-sdk/react": "^1.1.13",
     "@aws-crypto/sha256-js": "^5.2.0",
     "@mendable/firecrawl-js": "^1.17.0",
+    "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
