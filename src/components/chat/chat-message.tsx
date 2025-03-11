@@ -146,39 +146,29 @@ export function ChatMessage({
     ) || [];
 
   // 根据消息角色计算样式
-  const messageStyles =
-    message.role === "user"
-      ? {
-          container: "justify-end",
-          bubble: "bg-primary text-primary-foreground",
-          attachmentBg: "bg-primary-foreground/10",
-        }
-      : {
-          container: "justify-start",
-          bubble: "bg-muted text-foreground",
-          attachmentBg: "bg-background",
-        };
+  const isUserMessage = message.role === "user";
 
   return (
     <div
       className={cn(
         "group relative mb-4 flex items-start md:mb-6",
-        messageStyles.container
+        isUserMessage ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
-          "flex max-w-[85%] flex-col gap-4 rounded-lg px-4 py-3",
-          messageStyles.bubble,
-          "shadow-md"
+          "flex max-w-[85%] flex-col gap-4 rounded-lg px-4 py-3 shadow-md",
+          isUserMessage
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground"
         )}
       >
         {/* 使用 ReactMarkdown 渲染消息内容 */}
         {filteredContent.visibleContent.trim() ? (
           <div
             className={cn(
-              "prose prose-sm max-w-none",
-              message.role === "user" ? "prose-invert" : "dark:prose-invert"
+              "markdown-content", // 自定义类，将在下面实现
+              isUserMessage ? "user-message" : "assistant-message"
             )}
           >
             <ReactMarkdown
@@ -229,7 +219,12 @@ export function ChatMessage({
                         <SyntaxHighlighter
                           language={match[1]}
                           style={oneDark}
-                          customStyle={{ margin: 0, borderRadius: 0 }}
+                          customStyle={{
+                            margin: 0,
+                            borderRadius: 0,
+                            fontSize: "14px", // 添加这一行来设置字体大小
+                            lineHeight: "1.5", // 可选，添加行高以提高可读性
+                          }}
                         >
                           {codeContent}
                         </SyntaxHighlighter>
@@ -256,10 +251,16 @@ export function ChatMessage({
                             复制
                           </button>
                         </div>
+                        // 对于无语言的代码块也做相同修改
                         <SyntaxHighlighter
                           language="text"
                           style={oneDark}
-                          customStyle={{ margin: 0, borderRadius: 0 }}
+                          customStyle={{
+                            margin: 0,
+                            borderRadius: 0,
+                            fontSize: "14px", // 添加这一行来设置字体大小
+                            lineHeight: "1.5", // 可选，添加行高以提高可读性
+                          }}
                         >
                           {codeContent}
                         </SyntaxHighlighter>
@@ -267,13 +268,18 @@ export function ChatMessage({
                     );
                   }
 
-                  // 内联代码
+                  // 内联代码 - 确保在用户消息和暗色主题下都有良好的对比度
                   const inlineKey = `inline-${message.id}-${String(
                     children
                   ).slice(0, 10)}`;
                   return (
                     <code
-                      className="bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded text-sm"
+                      className={cn(
+                        "px-1 py-0.5 rounded text-sm",
+                        isUserMessage
+                          ? "bg-white/20 text-white" // 用户消息中的内联代码
+                          : "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" // 助手消息中的内联代码
+                      )}
                       key={inlineKey}
                       {...props}
                     >
@@ -281,7 +287,7 @@ export function ChatMessage({
                     </code>
                   );
                 },
-                // 自定义其他 Markdown 元素样式
+                // 自定义其他 Markdown 元素样式，确保在用户消息中有足够的对比度
                 p: ({ children }) => (
                   <p className="mb-2 last:mb-0">{children}</p>
                 ),
@@ -310,7 +316,12 @@ export function ChatMessage({
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className={cn(
+                        "hover:underline",
+                        isUserMessage
+                          ? "text-blue-200" // 用户消息中的链接
+                          : "text-blue-600 dark:text-blue-400" // 助手消息中的链接
+                      )}
                       key={linkKey}
                     >
                       {children}
@@ -318,7 +329,14 @@ export function ChatMessage({
                   );
                 },
                 blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-3 italic my-2">
+                  <blockquote
+                    className={cn(
+                      "pl-3 italic my-2 border-l-4",
+                      isUserMessage
+                        ? "border-white/30" // 用户消息中的引用
+                        : "border-zinc-300 dark:border-zinc-700" // 助手消息中的引用
+                    )}
+                  >
                     {children}
                   </blockquote>
                 ),
@@ -348,7 +366,9 @@ export function ChatMessage({
                 key={`pdf-${message.id}-${index}`}
                 className={cn(
                   "flex items-center gap-2 rounded-md p-2",
-                  messageStyles.attachmentBg
+                  isUserMessage
+                    ? "bg-white/10"
+                    : "bg-background dark:bg-zinc-800"
                 )}
               >
                 <FileText className="h-4 w-4" />
