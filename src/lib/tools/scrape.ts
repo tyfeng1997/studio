@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { ToolDefinition, ToolExecuteResult } from "@/app/types/tools";
 import FirecrawlApp from "@mendable/firecrawl-js";
-import type { DataStreamWriter } from "ai"; // 正确的导入
 
 const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
@@ -16,24 +15,12 @@ export const scrapeTool: ToolDefinition<typeof ScrapeParams> = {
   description:
     "Scrape web pages. Use this to get from a page when you have the url.",
   parameters: ScrapeParams,
-  execute: async (
-    { url },
-    dataStream?: DataStreamWriter
-  ): Promise<ToolExecuteResult> => {
+  execute: async ({ url }): Promise<ToolExecuteResult> => {
     try {
       // Input validation
       if (!url.trim()) {
         throw new Error("URL cannot be empty");
       }
-      dataStream?.writeData({
-        tool: "scrape",
-        content: {
-          params: {
-            urls: url,
-          },
-          timestamp: new Date().toISOString(),
-        },
-      });
 
       const scrapeResult = await app.scrapeUrl(url);
 
@@ -43,13 +30,6 @@ export const scrapeTool: ToolDefinition<typeof ScrapeParams> = {
           error: `Failed to extract data: ${scrapeResult.error}`,
         };
       }
-      dataStream?.writeData({
-        tool: "scrape",
-        content: {
-          result: "scrape done .",
-          timestamp: new Date().toISOString(),
-        },
-      });
 
       return {
         success: true,

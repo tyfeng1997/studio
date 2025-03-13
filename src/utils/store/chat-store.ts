@@ -40,18 +40,28 @@ export async function loadChat(id: string): Promise<Message[]> {
   // Load messages
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
-    .select("id, role, content, created_at")
+    .select("id, role, content, created_at, parts, tool_results, reasoning")
     .eq("chat_id", id)
     .order("created_at", { ascending: true });
 
   if (messagesError) throw messagesError;
 
   // Convert to AI SDK Message format
-  return messages.map((msg) => ({
-    id: msg.id,
-    role: msg.role as any,
-    content: msg.content,
-  }));
+  return messages.map((msg) => {
+    // Base message with required fields
+    const message: any = {
+      id: msg.id,
+      role: msg.role as any,
+      content: msg.content,
+    };
+
+    // Add optional fields if they exist
+    if (msg.parts) message.parts = msg.parts;
+    if (msg.tool_results) message.toolInvocations = msg.tool_results;
+    if (msg.reasoning) message.reasoning = msg.reasoning;
+
+    return message;
+  });
 }
 
 export async function saveChat({
@@ -81,12 +91,31 @@ export async function saveChat({
   // Then insert all messages
   if (messages.length > 0) {
     const { error: insertError } = await supabase.from("messages").insert(
-      messages.map((msg) => ({
-        chat_id: id,
-        id: generateId(), // Generate new UUID for each message
-        role: msg.role,
-        content: msg.content,
-      }))
+      messages.map((msg) => {
+        // Extract tool invocations
+        const toolResults = msg.toolInvocations || null;
+
+        // Extract reasoning parts if available
+        let reasoning = null;
+        if (Array.isArray(msg.parts)) {
+          const reasoningParts = msg.parts.filter(
+            (part) => part.type === "reasoning" || part.type === "thinking"
+          );
+          if (reasoningParts.length > 0) {
+            reasoning = reasoningParts;
+          }
+        }
+
+        return {
+          chat_id: id,
+          id: msg.id || generateId(), // Use existing ID or generate new one
+          role: msg.role,
+          content: msg.content,
+          parts: msg.parts || null,
+          tool_results: toolResults,
+          reasoning: reasoning,
+        };
+      })
     );
 
     if (insertError) throw insertError;

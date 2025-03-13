@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { ToolDefinition, ToolExecuteResult } from "@/app/types/tools";
 import FirecrawlApp from "@mendable/firecrawl-js";
-import type { DataStreamWriter } from "ai"; // 正确的导入
 
 const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
@@ -16,10 +15,7 @@ export const extractTool: ToolDefinition<typeof ExtractParams> = {
   description:
     "Extract structured data from web pages. Use this to get whatever data you need from a URL. Any time someone needs to gather data from something, use this tool.",
   parameters: ExtractParams,
-  execute: async (
-    { urls, prompt },
-    dataStream?: DataStreamWriter
-  ): Promise<ToolExecuteResult> => {
+  execute: async ({ urls, prompt }): Promise<ToolExecuteResult> => {
     try {
       // Input validation
       if (!urls.length) {
@@ -29,17 +25,6 @@ export const extractTool: ToolDefinition<typeof ExtractParams> = {
       if (!prompt.trim()) {
         throw new Error("Extraction prompt cannot be empty");
       }
-
-      dataStream?.writeData({
-        tool: "extract",
-        content: {
-          params: {
-            urls: urls,
-            prompt: prompt,
-          },
-          timestamp: new Date().toISOString(),
-        },
-      });
 
       const scrapeResult = await app.extract(urls, {
         prompt,
@@ -51,16 +36,6 @@ export const extractTool: ToolDefinition<typeof ExtractParams> = {
           error: `Failed to extract data: ${scrapeResult.error}`,
         };
       }
-
-      dataStream?.writeData({
-        tool: "extract",
-        content: {
-          result: {
-            extractedData: scrapeResult.data,
-          },
-          timestamp: new Date().toISOString(),
-        },
-      });
 
       return {
         success: true,

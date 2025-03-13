@@ -1,10 +1,18 @@
 "use client";
 
+import * as React from "react";
 import { useEffect, useState, useRef } from "react";
 import { Message } from "ai";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { FileText, Code, ExternalLink } from "lucide-react";
+import {
+  FileText,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { ToolResultRenderer } from "@/components/tool-result-render";
 import {
   ContentGeneratorIndicator,
@@ -15,34 +23,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
-
-// 新的过滤逻辑：只过滤代码块，不过滤常规 Markdown
-function filterMessageContent(content) {
-  if (!content) return { visibleContent: content, hasSpecialContent: false };
-
-  // 检查是否包含代码块
-  const codeBlockRegex = /```[\s\S]*?```/g;
-  const hasCodeBlock = codeBlockRegex.test(content);
-
-  if (hasCodeBlock) {
-    // 我们现在不替换代码块，而是提取它们用于可能的 Artifact 生成
-    const codeBlockMatches = content.match(codeBlockRegex) || [];
-
-    return {
-      visibleContent: content, // 保留完整内容用于渲染
-      hasCodeBlock: true,
-      codeBlocks: codeBlockMatches,
-      fullContent: content,
-    };
-  }
-
-  // 正常内容直接返回
-  return {
-    visibleContent: content,
-    hasSpecialContent: false,
-    fullContent: content,
-  };
-}
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatMessageProps {
   message: Message;
@@ -58,7 +39,11 @@ interface ChatMessageProps {
     type: "text" | "code" | "image" | "markdown" | "file";
     status: "generating" | "complete";
   }>;
-  artifactIds?: Record<string, string>; // 消息ID到对应的artifactID的映射
+  artifactIds?: Record<string, string>;
+  onReload?: () => void;
+  isLastMessage?: boolean;
+  status?: string;
+  onDelete?: () => void; // New prop for delete functionality
 }
 
 export function ChatMessage({
@@ -67,86 +52,233 @@ export function ChatMessage({
   onShowArtifact,
   pendingArtifacts = [],
   artifactIds = {},
+  onReload,
+  isLastMessage = false,
+  status,
+  onDelete, // Handle delete action
 }: ChatMessageProps) {
-  const [filteredContent, setFilteredContent] = useState(() =>
-    filterMessageContent(message.content)
-  );
+  const [isReasoningVisible, setIsReasoningVisible] = useState(false);
   const [artifactsGenerated, setArtifactsGenerated] = useState(false);
-  // 使用 ref 来跟踪已生成的 artifact 的 ID，避免重复生成
   const generatedArtifactIds = useRef(new Set());
 
-  // 当消息内容更新时重新过滤
+  // 检查消息是否有 parts 属性且包含推理部分
+  const hasParts =
+    !!message.parts && Array.isArray(message.parts) && message.parts.length > 0;
+
+  // 提取文本内容和推理内容
+  const textContent = hasParts
+    ? message.parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("")
+    : message.content || "";
+
+  const reasoningParts = hasParts
+    ? message.parts.filter(
+        (part) => part.type === "reasoning" || part.type === "thinking"
+      )
+    : [];
+
+  const hasReasoningParts = reasoningParts.length > 0;
+
+  // 代码块正则表达式
+  const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+
+  // 处理代码块生成 artifacts
   useEffect(() => {
-    setFilteredContent(filterMessageContent(message.content));
-  }, [message.content]);
+    if (!artifactsGenerated && message.role === "assistant" && textContent) {
+      const codeBlocks = [...textContent.matchAll(codeBlockRegex)];
+      if (codeBlocks.length > 0) {
+        codeBlocks.forEach((match, index) => {
+          const [fullMatch, language, code] = match;
+          const artifactId = `code-${message.id}-${index}`;
 
-  // 仅为代码块创建 Artifacts（不为普通 Markdown 创建）
-  useEffect(() => {
-    if (
-      !artifactsGenerated &&
-      message.role === "assistant" &&
-      filteredContent.hasCodeBlock
-    ) {
-      generateArtifactsFromContent();
-      setArtifactsGenerated(true);
+          // 检查是否已生成
+          if (generatedArtifactIds.current.has(artifactId)) return;
+
+          onShowArtifact?.(artifactId, code, "code", language || "plaintext");
+          generatedArtifactIds.current.add(artifactId);
+        });
+        setArtifactsGenerated(true);
+      }
     }
-  }, [filteredContent, artifactsGenerated, message.role]);
+  }, [
+    textContent,
+    artifactsGenerated,
+    message.role,
+    message.id,
+    onShowArtifact,
+  ]);
 
-  // 生成artifacts的函数 - 仅为代码块生成，并确保不重复生成
-  const generateArtifactsFromContent = () => {
-    if (filteredContent.hasCodeBlock && filteredContent.codeBlocks) {
-      // 为每个代码块生成一个单独的 artifact
-      filteredContent.codeBlocks.forEach((codeBlock, index) => {
-        const artifactId = `code-${message.id}-${index}`;
-
-        // 检查是否已经生成过这个 artifact
-        if (generatedArtifactIds.current.has(artifactId)) {
-          return;
-        }
-
-        const languageMatch = codeBlock.match(/```(\w*)\n/);
-        const language = languageMatch ? languageMatch[1] : "plaintext";
-        const code = codeBlock.replace(/```(\w*)\n/, "").replace(/```$/, "");
-
-        onShowArtifact?.(artifactId, code, "code", language);
-        generatedArtifactIds.current.add(artifactId);
-      });
-    }
-  };
-
-  // 处理"复制代码"按钮点击
+  // 处理代码复制
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code).then(
-      () => console.log("Code copied to clipboard"),
-      (err) => console.error("Could not copy code: ", err)
+      () => console.log("Code copied"),
+      (err) => console.error("Copy failed", err)
     );
   };
 
-  // 处理"在Artifacts中查看"按钮点击
-  const handleViewInArtifacts = (index) => {
-    const artifactId = `code-${message.id}-${index}`;
-    const codeBlock = filteredContent.codeBlocks?.[index];
-    if (codeBlock) {
-      const languageMatch = codeBlock.match(/```(\w*)\n/);
-      const language = languageMatch ? languageMatch[1] : "plaintext";
-      const code = codeBlock.replace(/```(\w*)\n/, "").replace(/```$/, "");
-      onShowArtifact?.(artifactId, code, "code", language);
-    }
+  // 处理在 artifacts 中查看
+  const handleViewInArtifacts = (code, language) => {
+    const artifactId = `code-${message.id}-${Date.now()}`;
+    onShowArtifact?.(artifactId, code, "code", language || "plaintext");
   };
 
-  // Separate attachments by type
+  // 是否是用户消息
+  const isUserMessage = message.role === "user";
+
+  // 是否显示重新生成按钮 - 支持多种可能的状态名称
+  const showReloadButton =
+    !isUserMessage &&
+    isLastMessage &&
+    (status === "ready" ||
+      status === "completed" ||
+      status === "done" ||
+      !isLoading);
+
+  // 附件处理
   const imageAttachments =
-    message?.experimental_attachments?.filter((attachment) =>
-      attachment?.contentType?.startsWith("image/")
+    message?.experimental_attachments?.filter((a) =>
+      a?.contentType?.startsWith("image/")
     ) || [];
 
   const pdfAttachments =
     message?.experimental_attachments?.filter(
-      (attachment) => attachment?.contentType === "application/pdf"
+      (a) => a?.contentType === "application/pdf"
     ) || [];
 
-  // 根据消息角色计算样式
-  const isUserMessage = message.role === "user";
+  // 渲染推理内容
+  const renderReasoningContent = () => {
+    if (!hasReasoningParts || !isReasoningVisible) return null;
+
+    return (
+      <div className="bg-zinc-100 dark:bg-zinc-900 rounded-md p-3 mt-2 text-sm border border-zinc-200 dark:border-zinc-800 overflow-auto max-h-[300px]">
+        {reasoningParts.map((part, index) => {
+          if (part.details && Array.isArray(part.details)) {
+            return (
+              <div key={`reasoning-${index}`}>
+                {part.details.map((detail, detailIndex) => (
+                  <div key={`detail-${detailIndex}`} className="mb-2">
+                    {detail.type === "text" && detail.text && (
+                      <div className="text-zinc-800 dark:text-zinc-300">
+                        {detail.text}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          } else if (part.reasoning) {
+            // 处理不同结构的推理
+            return (
+              <div
+                key={`reasoning-${index}`}
+                className="text-zinc-800 dark:text-zinc-300"
+              >
+                {typeof part.reasoning === "string"
+                  ? part.reasoning
+                  : JSON.stringify(part.reasoning)}
+              </div>
+            );
+          } else {
+            // 最后的备选方案
+            return (
+              <div
+                key={`reasoning-${index}`}
+                className="text-zinc-800 dark:text-zinc-300"
+              >
+                <pre>{JSON.stringify(part, null, 2)}</pre>
+              </div>
+            );
+          }
+        })}
+      </div>
+    );
+  };
+
+  // 渲染工具调用状态的动画
+  const renderToolInvocationState = (part) => {
+    switch (part.toolInvocation.state) {
+      case "partial-call":
+        return (
+          <motion.div
+            initial={{ opacity: 0.7 }}
+            animate={{ opacity: 1 }}
+            className="bg-zinc-100 dark:bg-zinc-800 rounded-md p-3 my-2 border border-zinc-200 dark:border-zinc-700"
+          >
+            <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="font-medium">
+                准备工具: {part.toolInvocation.toolName}
+              </span>
+            </div>
+            <div className="text-sm text-zinc-600 dark:text-zinc-400 overflow-x-auto">
+              {part.toolInvocation.args ? (
+                <pre className="text-xs">
+                  {JSON.stringify(part.toolInvocation.args, null, 2)}
+                </pre>
+              ) : (
+                <span className="italic">收集参数中...</span>
+              )}
+            </div>
+          </motion.div>
+        );
+
+      case "call":
+        return (
+          <motion.div
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900"
+          >
+            <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="font-medium">
+                执行工具: {part.toolInvocation.toolName}
+              </span>
+            </div>
+            {part.toolInvocation.args && (
+              <div className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 overflow-x-auto">
+                <pre className="text-xs">
+                  {JSON.stringify(part.toolInvocation.args, null, 2)}
+                </pre>
+              </div>
+            )}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                工具调用中，请稍候...
+              </span>
+              <div className="flex space-x-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300"></div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case "result":
+        // 使用 ToolResultRenderer 来渲染结果，结合动画效果
+        return (
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="my-2"
+          >
+            <ToolResultRenderer
+              tool={part.toolInvocation.toolName}
+              data={part.toolInvocation.result}
+              error={part.toolInvocation.error}
+            />
+          </motion.div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div
@@ -163,11 +295,11 @@ export function ChatMessage({
             : "bg-muted text-foreground"
         )}
       >
-        {/* 使用 ReactMarkdown 渲染消息内容 */}
-        {filteredContent.visibleContent.trim() ? (
+        {/* 消息内容 */}
+        {textContent.trim() ? (
           <div
             className={cn(
-              "markdown-content", // 自定义类，将在下面实现
+              "markdown-content",
               isUserMessage ? "user-message" : "assistant-message"
             )}
           >
@@ -179,17 +311,9 @@ export function ChatMessage({
                   const codeContent = String(children).replace(/\n$/, "");
 
                   if (!inline && match) {
-                    // 生成一个稳定唯一的键，包含消息ID、代码内容哈希
-                    const codeHash = String(codeContent)
-                      .slice(0, 20)
-                      .replace(/\s+/g, "");
-                    const uniqueKey = `code-${message.id}-${match[1]}-${codeHash}`;
-
+                    // 代码块带语言
                     return (
-                      <div
-                        className="relative my-2 rounded-md overflow-hidden"
-                        key={uniqueKey}
-                      >
+                      <div className="relative my-2 rounded-md overflow-hidden">
                         <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
                           <span>{match[1]}</span>
                           <div className="flex gap-2">
@@ -200,16 +324,9 @@ export function ChatMessage({
                               复制
                             </button>
                             <button
-                              onClick={() => {
-                                // 找到当前代码块在所有代码块中的索引
-                                const index =
-                                  filteredContent.codeBlocks?.findIndex(
-                                    (block) => block.includes(codeContent)
-                                  );
-                                if (index !== undefined && index >= 0) {
-                                  handleViewInArtifacts(index);
-                                }
-                              }}
+                              onClick={() =>
+                                handleViewInArtifacts(codeContent, match[1])
+                              }
                               className="hover:text-white"
                             >
                               在Artifacts中查看
@@ -222,8 +339,8 @@ export function ChatMessage({
                           customStyle={{
                             margin: 0,
                             borderRadius: 0,
-                            fontSize: "14px", // 添加这一行来设置字体大小
-                            lineHeight: "1.5", // 可选，添加行高以提高可读性
+                            fontSize: "14px",
+                            lineHeight: "1.5",
                           }}
                         >
                           {codeContent}
@@ -231,17 +348,9 @@ export function ChatMessage({
                       </div>
                     );
                   } else if (!inline) {
-                    // 无语言标记的代码块
-                    const codeHash = String(codeContent)
-                      .slice(0, 20)
-                      .replace(/\s+/g, "");
-                    const uniqueKey = `code-${message.id}-plain-${codeHash}`;
-
+                    // 无语言代码块
                     return (
-                      <div
-                        className="relative my-2 rounded-md overflow-hidden"
-                        key={uniqueKey}
-                      >
+                      <div className="relative my-2 rounded-md overflow-hidden">
                         <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
                           <span>代码</span>
                           <button
@@ -251,15 +360,14 @@ export function ChatMessage({
                             复制
                           </button>
                         </div>
-                        // 对于无语言的代码块也做相同修改
                         <SyntaxHighlighter
                           language="text"
                           style={oneDark}
                           customStyle={{
                             margin: 0,
                             borderRadius: 0,
-                            fontSize: "14px", // 添加这一行来设置字体大小
-                            lineHeight: "1.5", // 可选，添加行高以提高可读性
+                            fontSize: "14px",
+                            lineHeight: "1.5",
                           }}
                         >
                           {codeContent}
@@ -268,26 +376,22 @@ export function ChatMessage({
                     );
                   }
 
-                  // 内联代码 - 确保在用户消息和暗色主题下都有良好的对比度
-                  const inlineKey = `inline-${message.id}-${String(
-                    children
-                  ).slice(0, 10)}`;
+                  // 内联代码
                   return (
                     <code
                       className={cn(
                         "px-1 py-0.5 rounded text-sm",
                         isUserMessage
-                          ? "bg-white/20 text-white" // 用户消息中的内联代码
-                          : "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" // 助手消息中的内联代码
+                          ? "bg-white/20 text-white"
+                          : "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
                       )}
-                      key={inlineKey}
                       {...props}
                     >
                       {children}
                     </code>
                   );
                 },
-                // 自定义其他 Markdown 元素样式，确保在用户消息中有足够的对比度
+                // 自定义其他 Markdown 元素
                 p: ({ children }) => (
                   <p className="mb-2 last:mb-0">{children}</p>
                 ),
@@ -307,34 +411,13 @@ export function ChatMessage({
                   <ol className="list-decimal pl-6 mb-3">{children}</ol>
                 ),
                 li: ({ children }) => <li className="mb-1">{children}</li>,
-                a: ({ href, children }) => {
-                  const linkKey = `link-${message.id}-${href
-                    ?.toString()
-                    .slice(0, 10)}`;
-                  return (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        "hover:underline",
-                        isUserMessage
-                          ? "text-blue-200" // 用户消息中的链接
-                          : "text-blue-600 dark:text-blue-400" // 助手消息中的链接
-                      )}
-                      key={linkKey}
-                    >
-                      {children}
-                    </a>
-                  );
-                },
                 blockquote: ({ children }) => (
                   <blockquote
                     className={cn(
                       "pl-3 italic my-2 border-l-4",
                       isUserMessage
-                        ? "border-white/30" // 用户消息中的引用
-                        : "border-zinc-300 dark:border-zinc-700" // 助手消息中的引用
+                        ? "border-white/30"
+                        : "border-zinc-300 dark:border-zinc-700"
                     )}
                   >
                     {children}
@@ -342,12 +425,50 @@ export function ChatMessage({
                 ),
               }}
             >
-              {filteredContent.visibleContent}
+              {textContent}
             </ReactMarkdown>
           </div>
         ) : isLoading ? (
           <TypingIndicator />
         ) : null}
+
+        {/* 动态渲染工具调用部分 */}
+        {hasParts &&
+          message.parts.map((part, idx) => {
+            if (part.type === "tool-invocation") {
+              return (
+                <React.Fragment key={`tool-${idx}`}>
+                  {renderToolInvocationState(part)}
+                </React.Fragment>
+              );
+            }
+            return null;
+          })}
+
+        {/* 推理显示按钮 */}
+        {hasReasoningParts && !isUserMessage && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground self-start"
+            onClick={() => setIsReasoningVisible(!isReasoningVisible)}
+          >
+            {isReasoningVisible ? (
+              <>
+                <ChevronUp className="h-3 w-3" />
+                隐藏推理过程
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3" />
+                显示推理过程
+              </>
+            )}
+          </Button>
+        )}
+
+        {/* 推理内容 */}
+        {renderReasoningContent()}
 
         {/* Pending artifact indicators */}
         {pendingArtifacts.map((artifact) => (
@@ -358,7 +479,7 @@ export function ChatMessage({
           />
         ))}
 
-        {/* Display PDF attachments */}
+        {/* PDF 附件 */}
         {pdfAttachments.length > 0 && (
           <div className="flex flex-col gap-2">
             {pdfAttachments.map((attachment, index) => (
@@ -380,7 +501,7 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Display image attachments */}
+        {/* 图片附件 */}
         {imageAttachments.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {imageAttachments.map((attachment, index) => (
@@ -396,15 +517,48 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Display tool results */}
-        {message.toolInvocations?.map((tool) => (
-          <ToolResultRenderer
-            key={`${tool.toolCallId}`}
-            tool={tool.toolName}
-            data={tool.result}
-            error={tool.error}
-          />
-        ))}
+        {/* 工具调用结果 - 只在没有 parts 的情况下使用，避免重复显示 */}
+        {!hasParts &&
+          message.toolInvocations &&
+          message.toolInvocations.map((tool) => (
+            <ToolResultRenderer
+              key={`${tool.toolCallId}`}
+              tool={tool.toolName}
+              data={tool.result}
+              error={tool.error}
+            />
+          ))}
+
+        {/* 消息控制按钮 */}
+        <div className="flex justify-end mt-2 gap-2">
+          {/* 删除按钮 */}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-3 w-3" />
+              删除
+            </Button>
+          )}
+
+          {/* 重新生成按钮 - 仅为非用户消息显示 */}
+          {!isUserMessage && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              onClick={onReload}
+              // 禁用条件：正在加载或不是最后一条消息
+              disabled={isLoading || !isLastMessage}
+            >
+              <RefreshCw className="h-3 w-3" />
+              重新生成
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
