@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { ToolDefinition, ToolExecuteResult } from "@/app/types/tools";
 import FirecrawlApp from "@mendable/firecrawl-js";
-import type { DataStreamWriter } from "ai"; // 正确的导入
 
 const app = new FirecrawlApp({
   apiKey: process.env.FIRECRAWL_API_KEY || "",
@@ -19,22 +18,12 @@ export const searchTool: ToolDefinition<typeof SearchParams> = {
   description:
     "Search for web pages. Normally you should call the extract tool after this one to get a specific data point if search doesn't return the exact data you need.",
   parameters: SearchParams,
-  execute: async (
-    { query, maxResults = 5 },
-    dataStream?: DataStreamWriter
-  ): Promise<ToolExecuteResult> => {
+  execute: async ({ query, maxResults = 5 }): Promise<ToolExecuteResult> => {
     try {
       // Input validation
       if (!query.trim()) {
         throw new Error("Search query cannot be empty");
       }
-      dataStream?.writeData({
-        tool: "search",
-        content: {
-          params: { query: query },
-          timestamp: new Date().toISOString(),
-        },
-      });
 
       const searchResult = await app.search(query);
 
@@ -53,15 +42,6 @@ export const searchTool: ToolDefinition<typeof SearchParams> = {
           ...result,
           favicon,
         };
-      });
-      dataStream?.writeData({
-        tool: "search",
-        content: {
-          result: {
-            resultsWithFavicons,
-          },
-          timestamp: new Date().toISOString(),
-        },
       });
 
       return {

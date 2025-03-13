@@ -41,9 +41,9 @@ export function ToolResultRenderer({
   try {
     switch (tool) {
       case "search":
-        return <SearchResultRenderer data={data} />;
+        return <SearchResultRenderer data={data.data} />;
       case "extract":
-        return <ExtractResultRenderer data={data} />;
+        return <ExtractResultRenderer data={data.data} />;
       // Add more tool renderers as needed
       default:
         // Generic JSON renderer for unknown tools
