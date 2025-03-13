@@ -8,15 +8,7 @@ import { Message, useChat } from "@ai-sdk/react";
 import { createIdGenerator } from "ai";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  RefreshCw,
-  Trash2,
-  X,
-  Maximize2,
-  Minimize2,
-  ArrowRight,
-  Layers,
-} from "lucide-react";
+import { RefreshCw, Layers, Maximize2, Minimize2 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ArtifactManager } from "@/components/artifact-manager";
 import { AnimatePresence, motion } from "framer-motion";
@@ -77,6 +69,7 @@ export function ChatView({
   >({});
   const [isHovering, setIsHovering] = React.useState(false);
   const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   // 检测消息流中的特殊内容模式
   const analyzeMessageChunk = (messageId, chunk, existingContent) => {
     const updatedContent = existingContent + chunk;
@@ -212,6 +205,7 @@ export function ChatView({
     // 从pending中移除
     setPendingArtifacts((prev) => prev.filter((a) => a.id !== artifactId));
   };
+
   const {
     messages,
     setMessages,
@@ -360,6 +354,7 @@ export function ChatView({
       reload();
     }
   };
+
   // 创建或显示 artifact
   const handleShowArtifact = (
     artifactId: string,
@@ -443,6 +438,7 @@ export function ChatView({
     .map((msg, index) => ({ ...msg, index }))
     .filter((msg) => msg.role === "assistant")
     .pop()?.index;
+
   return (
     <TooltipProvider>
       <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
@@ -492,16 +488,8 @@ export function ChatView({
                           onReload={handleReload}
                           isLastMessage={isLastAssistantMessage}
                           status={status}
+                          onDelete={() => handleDeleteMessage(message.id)} // 传递删除函数给消息组件
                         />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleDeleteMessage(message.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                          <span className="sr-only">Delete message</span>
-                        </Button>
                       </div>
                     );
                   })

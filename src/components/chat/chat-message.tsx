@@ -5,7 +5,15 @@ import { useEffect, useState, useRef } from "react";
 import { Message } from "ai";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { FileText, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  FileText,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { ToolResultRenderer } from "@/components/tool-result-render";
 import {
   ContentGeneratorIndicator,
@@ -16,6 +24,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatMessageProps {
   message: Message;
@@ -35,6 +44,7 @@ interface ChatMessageProps {
   onReload?: () => void;
   isLastMessage?: boolean;
   status?: string;
+  onDelete?: () => void; // New prop for delete functionality
 }
 
 export function ChatMessage({
@@ -46,6 +56,7 @@ export function ChatMessage({
   onReload,
   isLastMessage = false,
   status,
+  onDelete, // Handle delete action
 }: ChatMessageProps) {
   const [isReasoningVisible, setIsReasoningVisible] = useState(false);
   const [artifactsGenerated, setArtifactsGenerated] = useState(false);
@@ -126,18 +137,6 @@ export function ChatMessage({
       status === "done" ||
       !isLoading);
 
-  // 调试信息
-  React.useEffect(() => {
-    if (!isUserMessage && isLastMessage) {
-      console.log(`Message ${message.id} conditions:`, {
-        isUserMessage,
-        isLastMessage,
-        status,
-        shouldShowButton: showReloadButton,
-      });
-    }
-  }, [isUserMessage, isLastMessage, status, showReloadButton, message.id]);
-
   // 附件处理
   const imageAttachments =
     message?.experimental_attachments?.filter((a) =>
@@ -196,6 +195,114 @@ export function ChatMessage({
         })}
       </div>
     );
+  };
+
+  // 渲染工具调用状态的动画
+  const renderToolInvocationState = (part) => {
+    switch (part.toolInvocation.state) {
+      case "partial-call":
+        return (
+          <motion.div
+            initial={{ opacity: 0.7 }}
+            animate={{ opacity: 1 }}
+            className="bg-zinc-100 dark:bg-zinc-800 rounded-md p-3 my-2 border border-zinc-200 dark:border-zinc-700"
+          >
+            <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="font-medium">
+                准备工具: {part.toolInvocation.toolName}
+              </span>
+            </div>
+            <div className="text-sm text-zinc-600 dark:text-zinc-400 overflow-x-auto">
+              {part.toolInvocation.args ? (
+                <pre className="text-xs">
+                  {JSON.stringify(part.toolInvocation.args, null, 2)}
+                </pre>
+              ) : (
+                <span className="italic">收集参数中...</span>
+              )}
+            </div>
+          </motion.div>
+        );
+
+      case "call":
+        return (
+          <motion.div
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900"
+          >
+            <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="font-medium">
+                执行工具: {part.toolInvocation.toolName}
+              </span>
+            </div>
+            {part.toolInvocation.args && (
+              <div className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 overflow-x-auto">
+                <pre className="text-xs">
+                  {JSON.stringify(part.toolInvocation.args, null, 2)}
+                </pre>
+              </div>
+            )}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                工具调用中，请稍候...
+              </span>
+              <div className="flex space-x-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300"></div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case "result":
+        return (
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="bg-green-50 dark:bg-green-950/30 rounded-md p-3 my-2 border border-green-200 dark:border-green-900"
+          >
+            <div className="flex items-center gap-2 mb-2 text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="font-medium">
+                工具: {part.toolInvocation.toolName}
+              </span>
+            </div>
+            {part.toolInvocation.args && (
+              <div className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 overflow-x-auto">
+                <details>
+                  <summary className="cursor-pointer text-xs mb-1">
+                    查看参数
+                  </summary>
+                  <pre className="text-xs">
+                    {JSON.stringify(part.toolInvocation.args, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
+            <div className="text-sm bg-white dark:bg-zinc-900 p-2 rounded border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+              {part.toolInvocation.error ? (
+                <div className="flex items-center gap-2 text-red-500">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>错误: {part.toolInvocation.error}</span>
+                </div>
+              ) : (
+                <pre className="text-xs">
+                  {JSON.stringify(part.toolInvocation.result, null, 2)}
+                </pre>
+              )}
+            </div>
+          </motion.div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -350,6 +457,19 @@ export function ChatMessage({
           <TypingIndicator />
         ) : null}
 
+        {/* 动态渲染工具调用部分 */}
+        {hasParts &&
+          message.parts.map((part, idx) => {
+            if (part.type === "tool-invocation") {
+              return (
+                <React.Fragment key={`tool-${idx}`}>
+                  {renderToolInvocationState(part)}
+                </React.Fragment>
+              );
+            }
+            return null;
+          })}
+
         {/* 推理显示按钮 */}
         {hasReasoningParts && !isUserMessage && (
           <Button
@@ -432,9 +552,23 @@ export function ChatMessage({
           />
         ))}
 
-        {/* 重新生成按钮 - 始终为非用户消息显示 */}
-        {!isUserMessage && (
-          <div className="flex justify-end mt-2">
+        {/* 消息控制按钮 */}
+        <div className="flex justify-end mt-2 gap-2">
+          {/* 删除按钮 */}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+              onClick={onDelete}
+            >
+              {/* <Trash2 className="h-3 w-3" /> */}
+              删除
+            </Button>
+          )}
+
+          {/* 重新生成按钮 - 仅为非用户消息显示 */}
+          {!isUserMessage && (
             <Button
               variant="ghost"
               size="sm"
@@ -446,8 +580,8 @@ export function ChatMessage({
               <RefreshCw className="h-3 w-3" />
               重新生成
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

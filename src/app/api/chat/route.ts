@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     model: anthropic("claude-3-7-sonnet-20250219"),
     messages,
     tools: { ...tools, ...toolsConfig },
+    toolCallStreaming: true,
     experimental_generateMessageId: createIdGenerator({
       prefix: "msgs",
       size: 16,
