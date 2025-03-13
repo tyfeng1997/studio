@@ -11,8 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { ToolResultRenderer } from "@/components/tool-result-render";
 import {
@@ -260,43 +259,19 @@ export function ChatMessage({
         );
 
       case "result":
+        // 使用 ToolResultRenderer 来渲染结果，结合动画效果
         return (
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="bg-green-50 dark:bg-green-950/30 rounded-md p-3 my-2 border border-green-200 dark:border-green-900"
+            className="my-2"
           >
-            <div className="flex items-center gap-2 mb-2 text-green-600 dark:text-green-400">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="font-medium">
-                工具: {part.toolInvocation.toolName}
-              </span>
-            </div>
-            {part.toolInvocation.args && (
-              <div className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 overflow-x-auto">
-                <details>
-                  <summary className="cursor-pointer text-xs mb-1">
-                    查看参数
-                  </summary>
-                  <pre className="text-xs">
-                    {JSON.stringify(part.toolInvocation.args, null, 2)}
-                  </pre>
-                </details>
-              </div>
-            )}
-            <div className="text-sm bg-white dark:bg-zinc-900 p-2 rounded border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
-              {part.toolInvocation.error ? (
-                <div className="flex items-center gap-2 text-red-500">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>错误: {part.toolInvocation.error}</span>
-                </div>
-              ) : (
-                <pre className="text-xs">
-                  {JSON.stringify(part.toolInvocation.result, null, 2)}
-                </pre>
-              )}
-            </div>
+            <ToolResultRenderer
+              tool={part.toolInvocation.toolName}
+              data={part.toolInvocation.result}
+              error={part.toolInvocation.error}
+            />
           </motion.div>
         );
 
@@ -542,15 +517,17 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* 工具调用结果 */}
-        {message.toolInvocations?.map((tool) => (
-          <ToolResultRenderer
-            key={`${tool.toolCallId}`}
-            tool={tool.toolName}
-            data={tool.result}
-            error={tool.error}
-          />
-        ))}
+        {/* 工具调用结果 - 只在没有 parts 的情况下使用，避免重复显示 */}
+        {!hasParts &&
+          message.toolInvocations &&
+          message.toolInvocations.map((tool) => (
+            <ToolResultRenderer
+              key={`${tool.toolCallId}`}
+              tool={tool.toolName}
+              data={tool.result}
+              error={tool.error}
+            />
+          ))}
 
         {/* 消息控制按钮 */}
         <div className="flex justify-end mt-2 gap-2">
@@ -562,7 +539,7 @@ export function ChatMessage({
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
               onClick={onDelete}
             >
-              {/* <Trash2 className="h-3 w-3" /> */}
+              <Trash2 className="h-3 w-3" />
               删除
             </Button>
           )}
