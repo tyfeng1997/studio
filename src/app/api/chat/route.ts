@@ -15,7 +15,7 @@ import {
 import { saveChat, loadChat } from "@/utils/store/chat-store";
 export const maxDuration = 30;
 
-let client = await experimental_createMCPClient({
+const client = await experimental_createMCPClient({
   transport: {
     type: "sse",
     url: "http://localhost:3001/sse",
