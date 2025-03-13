@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// 检测是否为长/复杂 Markdown
+// Check if it's long/complex Markdown
 const isComplexMarkdown = (content) => {
   const headingCount = (content.match(/#/g) || []).length;
   return content.length > 800 || headingCount > 2;
@@ -33,7 +33,7 @@ interface Artifact {
   language?: string;
   url?: string;
   createdAt: Date;
-  messageId: string; // 关联到的消息 ID
+  messageId: string; // Associated message ID
 }
 
 // Define pending artifact type
@@ -69,12 +69,13 @@ export function ChatView({
   >({});
   const [isHovering, setIsHovering] = React.useState(false);
   const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // 检测消息流中的特殊内容模式
+  // Analyze message chunk for special content patterns
   const analyzeMessageChunk = (messageId, chunk, existingContent) => {
     const updatedContent = existingContent + chunk;
 
-    // 检测代码块的开始
+    // Detect start of code block
     const codeBlockStartMatch = chunk.match(/```(\w*)\n?/);
     if (
       codeBlockStartMatch &&
@@ -82,7 +83,7 @@ export function ChatView({
         (a) => a.messageId === messageId && a.type === "code"
       )
     ) {
-      // 找到了代码块的开始，创建一个新的代码artifact
+      // Found code block start, create a new code artifact
       const artifactId = `code-${messageId}-${Date.now()}`;
 
       setPendingArtifacts((prev) => [
@@ -100,7 +101,7 @@ export function ChatView({
         [messageId]: artifactId,
       }));
 
-      // 开始追踪代码块
+      // Start tracking code block
       setStreamedChunks((prev) => ({
         ...prev,
         [artifactId]: codeBlockStartMatch[0],
@@ -110,7 +111,7 @@ export function ChatView({
       return artifactId;
     }
 
-    // 检测长文本或复杂markdown
+    // Detect long text or complex markdown
     if (
       isComplexMarkdown(updatedContent) &&
       !pendingArtifacts.some((a) => a.messageId === messageId)
@@ -132,7 +133,7 @@ export function ChatView({
         [messageId]: artifactId,
       }));
 
-      // 开始追踪markdown内容
+      // Start tracking markdown content
       setStreamedChunks((prev) => ({
         ...prev,
         [artifactId]: updatedContent,
@@ -145,7 +146,7 @@ export function ChatView({
     return null;
   };
 
-  // 更新流式内容
+  // Update streamed content
   const updateStreamedContent = (artifactId, chunk) => {
     setStreamedChunks((prev) => ({
       ...prev,
@@ -153,22 +154,22 @@ export function ChatView({
     }));
   };
 
-  // 完成 artifact 生成
+  // Finalize artifact generation
   const finalizeArtifact = (artifactId, messageId, fullContent) => {
-    // 获取待处理的 artifact
+    // Get pending artifact
     const pendingArtifact = pendingArtifacts.find((a) => a.id === artifactId);
     if (!pendingArtifact) return;
 
-    // 创建最终的artifact
+    // Create final artifact
     let title, content, language;
 
     if (pendingArtifact.type === "code") {
-      // 解析代码块
+      // Parse code block
       const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
       const matches = [...fullContent.matchAll(codeBlockRegex)];
 
       if (matches.length > 0) {
-        // 找到第一个代码块
+        // Find first code block
         const [_, lang, code] = matches[0];
         language = lang || "plaintext";
         content = code;
@@ -176,19 +177,19 @@ export function ChatView({
           language.charAt(0).toUpperCase() + language.slice(1)
         } Code`;
       } else {
-        // 没找到完整代码块，使用已追踪的内容
+        // No complete code block found, use tracked content
         const trackedContent = streamedChunks[artifactId] || "";
         content = trackedContent.replace(/```(\w*)\n?/, "");
         language = "plaintext";
         title = "Generated Code";
       }
     } else {
-      // Markdown内容
+      // Markdown content
       content = fullContent;
       title = "Generated Content";
     }
 
-    // 添加到artifacts
+    // Add to artifacts
     setArtifacts((prev) => [
       ...prev,
       {
@@ -202,7 +203,7 @@ export function ChatView({
       },
     ]);
 
-    // 从pending中移除
+    // Remove from pending
     setPendingArtifacts((prev) => prev.filter((a) => a.id !== artifactId));
   };
 
@@ -224,23 +225,23 @@ export function ChatView({
     initialMessages,
     sendExtraMessageFields: true,
     onMessage: (message) => {
-      // 当新消息开始时记录当前的消息 ID
+      // Record current message ID when a new message starts
       setCurrentStreamingMessage(message.id);
     },
     onFinish: (message, { usage, finishReason }) => {
       console.log("Finished streaming message:", message);
 
-      // 检查是否有待完成的artifacts
+      // Check for pending artifacts
       const relatedArtifactIds = pendingArtifacts
         .filter((a) => a.messageId === message.id)
         .map((a) => a.id);
 
-      // 完成所有相关的artifacts
+      // Complete all related artifacts
       relatedArtifactIds.forEach((artifactId) => {
         finalizeArtifact(artifactId, message.id, message.content);
       });
 
-      // 重置当前流式消息
+      // Reset current streaming message
       setCurrentStreamingMessage(null);
     },
     onError: (error) => {
@@ -260,29 +261,29 @@ export function ChatView({
         id,
       };
     },
-    experimental_streamData: true, // 启用数据流
+    experimental_streamData: true, // Enable data streaming
   });
 
-  // 处理消息流，实时检测和创建 artifacts
+  // Process message stream, detect and create artifacts in real-time
   React.useEffect(() => {
     if (!data || !data.length || !currentStreamingMessage) return;
 
     const latestChunk = data[data.length - 1];
     if (typeof latestChunk === "string") {
-      // 获取当前消息的现有内容
+      // Get existing content for current message
       const existingMessage = messages.find(
         (m) => m.id === currentStreamingMessage
       );
       const existingContent = existingMessage?.content || "";
 
-      // 分析新chunk，看是否需要创建artifact
+      // Analyze new chunk to see if we need to create an artifact
       const artifactId = analyzeMessageChunk(
         currentStreamingMessage,
         latestChunk,
         existingContent
       );
 
-      // 如果已经有相关的artifactId，更新内容
+      // If there's already a related artifactId, update content
       if (!artifactId) {
         const existingArtifactId = messageArtifactMap[currentStreamingMessage];
         if (existingArtifactId) {
@@ -293,7 +294,7 @@ export function ChatView({
   }, [data, currentStreamingMessage, messages]);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    // 重置流状态
+    // Reset stream state
     setCurrentStreamingMessage(null);
     setStreamedChunks({});
 
@@ -304,58 +305,58 @@ export function ChatView({
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    // 删除消息相关的 artifacts
+    // Delete message-related artifacts
     setArtifacts((prev) => prev.filter((a) => a.messageId !== messageId));
 
-    // 删除消息
+    // Delete message
     setMessages((prevMessages) =>
       prevMessages.filter((msg) => msg.id !== messageId)
     );
 
-    // 清理相关的映射
+    // Clean up related mappings
     setMessageArtifactMap((prev) => {
       const { [messageId]: _, ...rest } = prev;
       return rest;
     });
 
-    // 清理相关的pending artifacts
+    // Clean up related pending artifacts
     setPendingArtifacts((prev) =>
       prev.filter((p) => p.messageId !== messageId)
     );
   };
 
-  // 处理重新生成最后一条消息
+  // Handle regenerating the last message
   const handleReload = () => {
-    // 调用 reload 函数重新生成最后一条消息
+    // Call reload function to regenerate the last message
     if (status === "ready" || status === "error") {
-      // 重置任何与最后一条消息相关的 artifacts
+      // Reset any artifacts related to the last assistant message
       const lastAssistantMessage = [...messages]
         .reverse()
         .find((m) => m.role === "assistant");
       if (lastAssistantMessage) {
-        // 删除与最后一条助手消息相关的 artifacts
+        // Delete artifacts related to the last assistant message
         setArtifacts((prev) =>
           prev.filter((a) => a.messageId !== lastAssistantMessage.id)
         );
 
-        // 重置 artifact 映射
+        // Reset artifact mapping
         setMessageArtifactMap((prev) => {
           const { [lastAssistantMessage.id]: _, ...rest } = prev;
           return rest;
         });
 
-        // 清理相关的 pending artifacts
+        // Clean up related pending artifacts
         setPendingArtifacts((prev) =>
           prev.filter((p) => p.messageId !== lastAssistantMessage.id)
         );
       }
 
-      // 调用重新生成
+      // Call regeneration
       reload();
     }
   };
 
-  // 创建或显示 artifact
+  // Create or show artifact
   const handleShowArtifact = (
     artifactId: string,
     content?: string,
@@ -364,7 +365,7 @@ export function ChatView({
   ) => {
     setShowArtifacts(true);
 
-    // 如果提供了内容，创建一个新的artifact
+    // If content is provided, create a new artifact
     if (content && type) {
       const existingArtifact = artifacts.find((a) => a.id === artifactId);
 
@@ -384,7 +385,7 @@ export function ChatView({
             content,
             language,
             createdAt: new Date(),
-            messageId: artifactId.split("-")[1], // 从artifactId中提取messageId
+            messageId: artifactId.split("-")[1], // Extract messageId from artifactId
           },
         ]);
       }
@@ -402,14 +403,14 @@ export function ChatView({
     setExpandedView((prev) => !prev);
   };
 
-  // 处理悬浮按钮的鼠标事件
+  // Handle hover button mouse events
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
 
-    // 如果悬浮时未显示Artifacts，则显示它
+    // If hovering and Artifacts not shown, show it
     if (!showArtifacts) {
       setShowArtifacts(true);
     }
@@ -421,19 +422,19 @@ export function ChatView({
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovering(false);
 
-      // 如果是通过悬浮打开的（没有点击固定），则关闭Artifacts
+      // If opened by hover (not clicked to fix), close Artifacts
       if (!showArtifacts) {
         setShowArtifacts(false);
       }
-    }, 300); // 略微延迟，避免过快关闭
+    }, 300); // Short delay to avoid closing too quickly
   };
 
-  // 获取特定消息的 pending artifacts
+  // Get pending artifacts for a specific message
   const getPendingArtifactsForMessage = (messageId: string) => {
     return pendingArtifacts.filter((p) => p.messageId === messageId);
   };
 
-  // 确定最后一条助手消息
+  // Determine the last assistant message
   const lastAssistantMessageIndex = messages
     .map((msg, index) => ({ ...msg, index }))
     .filter((msg) => msg.role === "assistant")
@@ -444,7 +445,7 @@ export function ChatView({
       <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
         <div className="flex-1 flex justify-center overflow-hidden relative">
           {/* Main chat area */}
-          <div className="w-full max-w-5xl mx-auto">
+          <div className="w-full max-w-5xl mx-auto" ref={chatContainerRef}>
             <ScrollArea className="flex-1 px-4 h-full">
               <div className="pt-4 pb-4">
                 {error ? (
@@ -488,21 +489,21 @@ export function ChatView({
                           onReload={handleReload}
                           isLastMessage={isLastAssistantMessage}
                           status={status}
-                          onDelete={() => handleDeleteMessage(message.id)} // 传递删除函数给消息组件
+                          onDelete={() => handleDeleteMessage(message.id)}
                         />
                       </div>
                     );
                   })
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    Start a conversation by sending a message
+                    开始一个对话吧
                   </div>
                 )}
               </div>
             </ScrollArea>
           </div>
 
-          {/* Floating Artifacts Panel - 调整高度更长 */}
+          {/* Floating Artifacts Panel - adjusted height to be longer */}
           <AnimatePresence>
             {showArtifacts && (
               <motion.div
@@ -513,7 +514,7 @@ export function ChatView({
                 style={{
                   position: "absolute",
                   right: "1rem",
-                  top: "0.5rem", // 调高上边距，使面板更长
+                  top: "0.5rem", // Increased top margin to make panel longer
                   bottom: "5rem",
                   width: expandedView ? "45%" : "35%",
                   maxWidth: "600px",
@@ -559,7 +560,7 @@ export function ChatView({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-20 right-10 z-10" // 位置调整为右上方一点
+              className="absolute bottom-20 right-10 z-10" // Position adjusted to be a bit higher on the right
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
@@ -583,7 +584,7 @@ export function ChatView({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  {showArtifacts ? "Hide Artifacts" : "Show Artifacts"}
+                  {showArtifacts ? "隐藏Artifacts" : "显示Artifacts"}
                 </TooltipContent>
               </Tooltip>
             </motion.div>
