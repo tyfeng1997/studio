@@ -26,7 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// 检测是否为长/复杂Markdown
+// 检测是否为长/复杂 Markdown
 const isComplexMarkdown = (content) => {
   const headingCount = (content.match(/#/g) || []).length;
   return content.length > 800 || headingCount > 2;
@@ -41,7 +41,7 @@ interface Artifact {
   language?: string;
   url?: string;
   createdAt: Date;
-  messageId: string; // 关联到的消息ID
+  messageId: string; // 关联到的消息 ID
 }
 
 // Define pending artifact type
@@ -77,7 +77,6 @@ export function ChatView({
   >({});
   const [isHovering, setIsHovering] = React.useState(false);
   const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
   // 检测消息流中的特殊内容模式
   const analyzeMessageChunk = (messageId, chunk, existingContent) => {
     const updatedContent = existingContent + chunk;
@@ -161,9 +160,9 @@ export function ChatView({
     }));
   };
 
-  // 完成artifact生成
+  // 完成 artifact 生成
   const finalizeArtifact = (artifactId, messageId, fullContent) => {
-    // 获取待处理的artifact
+    // 获取待处理的 artifact
     const pendingArtifact = pendingArtifacts.find((a) => a.id === artifactId);
     if (!pendingArtifact) return;
 
@@ -213,7 +212,6 @@ export function ChatView({
     // 从pending中移除
     setPendingArtifacts((prev) => prev.filter((a) => a.id !== artifactId));
   };
-
   const {
     messages,
     setMessages,
@@ -225,13 +223,14 @@ export function ChatView({
     error,
     reload,
     data,
+    status,
   } = useChat({
     maxSteps: 20,
     id,
     initialMessages,
     sendExtraMessageFields: true,
     onMessage: (message) => {
-      // 当新消息开始时记录当前的消息ID
+      // 当新消息开始时记录当前的消息 ID
       setCurrentStreamingMessage(message.id);
     },
     onFinish: (message, { usage, finishReason }) => {
@@ -270,7 +269,7 @@ export function ChatView({
     experimental_streamData: true, // 启用数据流
   });
 
-  // 处理消息流，实时检测和创建artifacts
+  // 处理消息流，实时检测和创建 artifacts
   React.useEffect(() => {
     if (!data || !data.length || !currentStreamingMessage) return;
 
@@ -311,7 +310,7 @@ export function ChatView({
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    // 删除消息相关的artifacts
+    // 删除消息相关的 artifacts
     setArtifacts((prev) => prev.filter((a) => a.messageId !== messageId));
 
     // 删除消息
@@ -331,7 +330,37 @@ export function ChatView({
     );
   };
 
-  // 创建或显示artifact
+  // 处理重新生成最后一条消息
+  const handleReload = () => {
+    // 调用 reload 函数重新生成最后一条消息
+    if (status === "ready" || status === "error") {
+      // 重置任何与最后一条消息相关的 artifacts
+      const lastAssistantMessage = [...messages]
+        .reverse()
+        .find((m) => m.role === "assistant");
+      if (lastAssistantMessage) {
+        // 删除与最后一条助手消息相关的 artifacts
+        setArtifacts((prev) =>
+          prev.filter((a) => a.messageId !== lastAssistantMessage.id)
+        );
+
+        // 重置 artifact 映射
+        setMessageArtifactMap((prev) => {
+          const { [lastAssistantMessage.id]: _, ...rest } = prev;
+          return rest;
+        });
+
+        // 清理相关的 pending artifacts
+        setPendingArtifacts((prev) =>
+          prev.filter((p) => p.messageId !== lastAssistantMessage.id)
+        );
+      }
+
+      // 调用重新生成
+      reload();
+    }
+  };
+  // 创建或显示 artifact
   const handleShowArtifact = (
     artifactId: string,
     content?: string,
@@ -404,11 +433,16 @@ export function ChatView({
     }, 300); // 略微延迟，避免过快关闭
   };
 
-  // 获取特定消息的pending artifacts
+  // 获取特定消息的 pending artifacts
   const getPendingArtifactsForMessage = (messageId: string) => {
     return pendingArtifacts.filter((p) => p.messageId === messageId);
   };
 
+  // 确定最后一条助手消息
+  const lastAssistantMessageIndex = messages
+    .map((msg, index) => ({ ...msg, index }))
+    .filter((msg) => msg.role === "assistant")
+    .pop()?.index;
   return (
     <TooltipProvider>
       <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
@@ -435,31 +469,42 @@ export function ChatView({
                 ) : null}
 
                 {messages.length > 0 ? (
-                  messages.map((message) => (
-                    <div key={message.id} className="group relative">
-                      <ChatMessage
-                        message={message}
-                        isLoading={
-                          isLoading &&
-                          messages[messages.length - 1].id === message.id
-                        }
-                        onShowArtifact={handleShowArtifact}
-                        pendingArtifacts={getPendingArtifactsForMessage(
-                          message.id
-                        )}
-                        artifactIds={messageArtifactMap}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleDeleteMessage(message.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                        <span className="sr-only">Delete message</span>
-                      </Button>
-                    </div>
-                  ))
+                  messages.map((message, index) => {
+                    const isLastAssistantMessage =
+                      message.role === "assistant" &&
+                      messages.findIndex(
+                        (m, idx) => idx > index && m.role === "assistant"
+                      ) === -1;
+
+                    return (
+                      <div key={message.id} className="group relative">
+                        <ChatMessage
+                          message={message}
+                          isLoading={
+                            isLoading &&
+                            messages[messages.length - 1].id === message.id
+                          }
+                          onShowArtifact={handleShowArtifact}
+                          pendingArtifacts={getPendingArtifactsForMessage(
+                            message.id
+                          )}
+                          artifactIds={messageArtifactMap}
+                          onReload={handleReload}
+                          isLastMessage={isLastAssistantMessage}
+                          status={status}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleDeleteMessage(message.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          <span className="sr-only">Delete message</span>
+                        </Button>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Start a conversation by sending a message
