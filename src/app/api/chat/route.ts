@@ -14,7 +14,7 @@ import {
   _wrapLanguageModel as wrapLanguageModel,
 } from "ai";
 
-import { saveChat, loadChat } from "@/utils/store/chat-store";
+import { saveChat, loadChat, updateChatTitle } from "@/utils/store/chat-store";
 export const maxDuration = 30;
 
 // 声明客户端变量并添加错误处理
@@ -40,6 +40,16 @@ export async function POST(req: Request) {
     messages: previousMessages,
     message,
   });
+
+  // If this is the first message in the chat, update the title
+  if (previousMessages.length === 0) {
+    try {
+      await updateChatTitle(id, message.content);
+    } catch (error) {
+      console.warn("Failed to update chat title:", error);
+      // Non-critical error, continue with the chat
+    }
+  }
 
   // 尝试获取工具，但处理可能的失败
   let tools = toolsConfig;

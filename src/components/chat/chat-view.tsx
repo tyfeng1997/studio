@@ -434,12 +434,6 @@ export function ChatView({
     return pendingArtifacts.filter((p) => p.messageId === messageId);
   };
 
-  // Determine the last assistant message
-  const lastAssistantMessageIndex = messages
-    .map((msg, index) => ({ ...msg, index }))
-    .filter((msg) => msg.role === "assistant")
-    .pop()?.index;
-
   return (
     <TooltipProvider>
       <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">

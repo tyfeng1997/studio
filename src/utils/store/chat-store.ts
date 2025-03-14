@@ -27,6 +27,31 @@ export async function createChat(): Promise<string> {
   return data.id;
 }
 
+/**
+ * Generate a chat title from the first user message
+ * Takes the first line of text and truncates it if needed
+ */
+function generateChatTitle(content: string): string {
+  // Get the first line (or full content if no line breaks)
+  const firstLine = content.split("\n")[0].trim();
+
+  // Truncate to a reasonable length (30 characters) and add ellipsis if needed
+  const maxLength = 30;
+  if (firstLine.length <= maxLength) {
+    return firstLine;
+  }
+
+  // Find a good breakpoint (space) near the desired length
+  const breakPoint = firstLine.lastIndexOf(" ", maxLength);
+  if (breakPoint > maxLength / 2) {
+    // If we found a space in the latter half, break there
+    return firstLine.substring(0, breakPoint) + "...";
+  } else {
+    // Otherwise just cut at the max length
+    return firstLine.substring(0, maxLength) + "...";
+  }
+}
+
 export async function loadChat(id: string): Promise<Message[]> {
   const supabase = await createClient();
 
@@ -62,6 +87,31 @@ export async function loadChat(id: string): Promise<Message[]> {
 
     return message;
   });
+}
+
+export async function updateChatTitle(
+  id: string,
+  content: string
+): Promise<void> {
+  const supabase = await createClient();
+
+  // Get the current user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error("Unauthorized");
+
+  // Generate the new title
+  const title = generateChatTitle(content);
+
+  // Update the chat title
+  const { error: updateError } = await supabase
+    .from("chats")
+    .update({ title })
+    .eq("id", id);
+
+  if (updateError) throw updateError;
 }
 
 export async function saveChat({
@@ -120,14 +170,9 @@ export async function saveChat({
 
     if (insertError) throw insertError;
 
-    // Update chat title if it's a new chat
+    // Update chat title if it's a new chat with only a user message
     if (messages.length === 1 && messages[0].role === "user") {
-      const { error: updateError } = await supabase
-        .from("chats")
-        .update({ title: messages[0].content.slice(0, 100) })
-        .eq("id", id);
-
-      if (updateError) throw updateError;
+      await updateChatTitle(id, messages[0].content);
     }
   }
 }
