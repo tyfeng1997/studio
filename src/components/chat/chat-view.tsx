@@ -8,7 +8,7 @@ import { Message, useChat } from "@ai-sdk/react";
 import { createIdGenerator } from "ai";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Layers, Maximize2, Minimize2 } from "lucide-react";
+import { RefreshCw, Layers, Maximize2, Minimize2, X } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ArtifactManager } from "@/components/artifact-manager";
 import { AnimatePresence, motion } from "framer-motion";
@@ -67,8 +67,6 @@ export function ChatView({
   const [streamedChunks, setStreamedChunks] = React.useState<
     Record<string, string>
   >({});
-  const [isHovering, setIsHovering] = React.useState(false);
-  const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Analyze message chunk for special content patterns
@@ -394,39 +392,10 @@ export function ChatView({
 
   const handleToggleArtifacts = () => {
     setShowArtifacts((prev) => !prev);
-    if (!showArtifacts) {
-      setIsHovering(true);
-    }
   };
 
   const handleToggleExpanded = () => {
     setExpandedView((prev) => !prev);
-  };
-
-  // Handle hover button mouse events
-  const handleMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-
-    // If hovering and Artifacts not shown, show it
-    if (!showArtifacts) {
-      setShowArtifacts(true);
-    }
-
-    setIsHovering(true);
-  };
-
-  const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setIsHovering(false);
-
-      // If opened by hover (not clicked to fix), close Artifacts
-      if (!showArtifacts) {
-        setShowArtifacts(false);
-      }
-    }, 300); // Short delay to avoid closing too quickly
   };
 
   // Get pending artifacts for a specific message
@@ -437,9 +406,14 @@ export function ChatView({
   return (
     <TooltipProvider>
       <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
-        <div className="flex-1 flex justify-center overflow-hidden relative">
-          {/* Main chat area */}
-          <div className="w-full max-w-5xl mx-auto" ref={chatContainerRef}>
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Main chat area - resized based on artifacts visibility */}
+          <div
+            className={`transition-all duration-300 ease-in-out ${
+              showArtifacts ? "w-full md:w-[60%] lg:w-[65%]" : "w-full"
+            }`}
+            ref={chatContainerRef}
+          >
             <ScrollArea className="flex-1 px-4 h-full">
               <div className="pt-4 pb-4">
                 {error ? (
@@ -497,32 +471,72 @@ export function ChatView({
             </ScrollArea>
           </div>
 
-          {/* Floating Artifacts Panel - adjusted height to be longer */}
+          {/* Side-by-side Artifacts Panel */}
           <AnimatePresence>
             {showArtifacts && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, x: 20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.95, x: 20 }}
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "40%" }}
+                exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.3 }}
-                style={{
-                  position: "absolute",
-                  right: "1rem",
-                  top: "0.5rem", // Increased top margin to make panel longer
-                  bottom: "5rem",
-                  width: expandedView ? "45%" : "35%",
-                  maxWidth: "600px",
-                  minWidth: "380px",
-                  zIndex: 50,
-                  borderRadius: "0.75rem",
-                  boxShadow:
-                    "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                }}
-                className="bg-background border border-border flex flex-col"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
+                className="hidden md:flex h-full flex-col border-l border-border bg-card overflow-hidden"
               >
                 {/* Panel content */}
+                <div className="flex-1 overflow-hidden">
+                  <div className="flex items-center justify-between p-2 border-b">
+                    <h3 className="font-medium">Artifacts</h3>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleToggleExpanded}
+                      >
+                        {expandedView ? (
+                          <Minimize2 className="h-4 w-4" />
+                        ) : (
+                          <Maximize2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleToggleArtifacts}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <ArtifactManager
+                    artifacts={artifacts}
+                    onClose={() => setShowArtifacts(false)}
+                    onExpand={handleToggleExpanded}
+                    expanded={expandedView}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Mobile Artifacts Panel - full screen on small devices */}
+          <AnimatePresence>
+            {showArtifacts && (
+              <motion.div
+                initial={{ opacity: 0, x: "100%" }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: "100%" }}
+                transition={{ duration: 0.3 }}
+                className="md:hidden fixed inset-0 z-50 bg-background flex flex-col"
+              >
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h3 className="font-medium">Artifacts</h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleToggleArtifacts}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
                 <div className="flex-1 overflow-hidden">
                   <ArtifactManager
                     artifacts={artifacts}
@@ -547,41 +561,10 @@ export function ChatView({
               files={files}
               setFiles={setFiles}
               stop={stop}
+              showArtifacts={showArtifacts}
+              toggleArtifacts={handleToggleArtifacts}
+              artifactsCount={artifacts.length}
             />
-
-            {/* Floating Artifacts Button */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-20 right-10 z-10" // Position adjusted to be a bit higher on the right
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    className={`h-12 w-12 rounded-full shadow-lg ${
-                      showArtifacts
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : "bg-card hover:bg-card/90 text-foreground border border-border"
-                    }`}
-                    onClick={handleToggleArtifacts}
-                  >
-                    <Layers className="h-5 w-5" />
-                    {artifacts.length > 0 && !showArtifacts && (
-                      <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-medium border-2 border-background">
-                        {artifacts.length}
-                      </span>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  {showArtifacts ? "隐藏Artifacts" : "显示Artifacts"}
-                </TooltipContent>
-              </Tooltip>
-            </motion.div>
           </div>
         </div>
       </div>
