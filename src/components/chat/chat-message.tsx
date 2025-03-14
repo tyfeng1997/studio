@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import {
   FileText,
-  RefreshCw,
   ChevronDown,
   ChevronUp,
   Loader2,
@@ -126,15 +125,6 @@ export function ChatMessage({
 
   // 是否是用户消息
   const isUserMessage = message.role === "user";
-
-  // 是否显示重新生成按钮 - 支持多种可能的状态名称
-  const showReloadButton =
-    !isUserMessage &&
-    isLastMessage &&
-    (status === "ready" ||
-      status === "completed" ||
-      status === "done" ||
-      !isLoading);
 
   // 附件处理
   const imageAttachments =
@@ -528,37 +518,6 @@ export function ChatMessage({
               error={tool.error}
             />
           ))}
-
-        {/* 消息控制按钮 */}
-        <div className="flex justify-end mt-2 gap-2">
-          {/* 删除按钮 */}
-          {onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
-              onClick={onDelete}
-            >
-              <Trash2 className="h-3 w-3" />
-              删除
-            </Button>
-          )}
-
-          {/* 重新生成按钮 - 仅为非用户消息显示 */}
-          {!isUserMessage && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-              onClick={onReload}
-              // 禁用条件：正在加载或不是最后一条消息
-              disabled={isLoading || !isLastMessage}
-            >
-              <RefreshCw className="h-3 w-3" />
-              重新生成
-            </Button>
-          )}
-        </div>
       </div>
     </div>
   );

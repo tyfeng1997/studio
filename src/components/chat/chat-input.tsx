@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Paperclip, SendHorizonal, X, Square } from "lucide-react";
+import { Paperclip, SendHorizonal, X, Square, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,6 +18,9 @@ interface ChatInputProps {
   files?: FileList;
   setFiles: (files: FileList | undefined) => void;
   stop: () => void;
+  showArtifacts: boolean;
+  toggleArtifacts: () => void;
+  artifactsCount: number;
 }
 
 export function ChatInput({
@@ -28,6 +31,9 @@ export function ChatInput({
   files,
   setFiles,
   stop,
+  showArtifacts,
+  toggleArtifacts,
+  artifactsCount,
 }: ChatInputProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -94,20 +100,45 @@ export function ChatInput({
                 <TooltipContent>Stop generating</TooltipContent>
               </Tooltip>
             ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    <span className="sr-only">Attach files</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Attach files</TooltipContent>
-              </Tooltip>
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      <span className="sr-only">Attach files</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Attach files</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={showArtifacts ? "default" : "ghost"}
+                      onClick={toggleArtifacts}
+                      className="relative"
+                    >
+                      <Layers className="h-4 w-4" />
+                      {artifactsCount > 0 && !showArtifacts && (
+                        <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-medium">
+                          {artifactsCount}
+                        </span>
+                      )}
+                      <span className="sr-only">Toggle artifacts</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {showArtifacts ? "Hide artifacts" : "Show artifacts"}
+                  </TooltipContent>
+                </Tooltip>
+              </>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
