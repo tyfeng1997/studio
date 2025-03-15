@@ -13,10 +13,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { ToolResultRenderer } from "@/components/tool-result-render";
-import {
-  ContentGeneratorIndicator,
-  TypingIndicator,
-} from "@/components/artifact-manager";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -27,38 +23,21 @@ import { motion, AnimatePresence } from "framer-motion";
 interface ChatMessageProps {
   message: Message;
   isLoading?: boolean;
-  onShowArtifact?: (
-    artifactId: string,
-    content?: string,
-    type?: string,
-    language?: string
-  ) => void;
-  pendingArtifacts?: Array<{
-    id: string;
-    type: "text" | "code" | "image" | "markdown" | "file";
-    status: "generating" | "complete";
-  }>;
-  artifactIds?: Record<string, string>;
   onReload?: () => void;
   isLastMessage?: boolean;
   status?: string;
-  onDelete?: () => void; // New prop for delete functionality
+  onDelete?: () => void;
 }
 
 export function ChatMessage({
   message,
   isLoading,
-  onShowArtifact,
-  pendingArtifacts = [],
-  artifactIds = {},
   onReload,
   isLastMessage = false,
   status,
-  onDelete, // Handle delete action
+  onDelete,
 }: ChatMessageProps) {
   const [isReasoningVisible, setIsReasoningVisible] = useState(false);
-  const [artifactsGenerated, setArtifactsGenerated] = useState(false);
-  const generatedArtifactIds = useRef(new Set());
 
   // 检查消息是否有 parts 属性且包含推理部分
   const hasParts =
@@ -79,49 +58,6 @@ export function ChatMessage({
     : [];
 
   const hasReasoningParts = reasoningParts.length > 0;
-
-  // 代码块正则表达式
-  const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
-
-  // 处理代码块生成 artifacts
-  useEffect(() => {
-    if (!artifactsGenerated && message.role === "assistant" && textContent) {
-      const codeBlocks = [...textContent.matchAll(codeBlockRegex)];
-      if (codeBlocks.length > 0) {
-        codeBlocks.forEach((match, index) => {
-          const [fullMatch, language, code] = match;
-          const artifactId = `code-${message.id}-${index}`;
-
-          // 检查是否已生成
-          if (generatedArtifactIds.current.has(artifactId)) return;
-
-          onShowArtifact?.(artifactId, code, "code", language || "plaintext");
-          generatedArtifactIds.current.add(artifactId);
-        });
-        setArtifactsGenerated(true);
-      }
-    }
-  }, [
-    textContent,
-    artifactsGenerated,
-    message.role,
-    message.id,
-    onShowArtifact,
-  ]);
-
-  // 处理代码复制
-  const handleCopyCode = (code) => {
-    navigator.clipboard.writeText(code).then(
-      () => console.log("Code copied"),
-      (err) => console.error("Copy failed", err)
-    );
-  };
-
-  // 处理在 artifacts 中查看
-  const handleViewInArtifacts = (code, language) => {
-    const artifactId = `code-${message.id}-${Date.now()}`;
-    onShowArtifact?.(artifactId, code, "code", language || "plaintext");
-  };
 
   // 是否是用户消息
   const isUserMessage = message.role === "user";
@@ -270,6 +206,27 @@ export function ChatMessage({
     }
   };
 
+  // Simple typing indicator component
+  const TypingIndicator = () => (
+    <div className="flex items-center gap-1 py-1">
+      <motion.div
+        className="h-1.5 w-1.5 bg-primary rounded-full"
+        animate={{ scale: [1, 1.2, 1] }}
+        transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.2 }}
+      />
+      <motion.div
+        className="h-1.5 w-1.5 bg-primary rounded-full"
+        animate={{ scale: [1, 1.2, 1] }}
+        transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.3 }}
+      />
+      <motion.div
+        className="h-1.5 w-1.5 bg-primary rounded-full"
+        animate={{ scale: [1, 1.2, 1] }}
+        transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.4 }}
+      />
+    </div>
+  );
+
   return (
     <div
       className={cn(
@@ -306,22 +263,6 @@ export function ChatMessage({
                       <div className="relative my-2 rounded-md overflow-hidden">
                         <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
                           <span>{match[1]}</span>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleCopyCode(codeContent)}
-                              className="hover:text-white"
-                            >
-                              复制
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleViewInArtifacts(codeContent, match[1])
-                              }
-                              className="hover:text-white"
-                            >
-                              在Artifacts中查看
-                            </button>
-                          </div>
                         </div>
                         <SyntaxHighlighter
                           language={match[1]}
@@ -341,15 +282,6 @@ export function ChatMessage({
                     // 无语言代码块
                     return (
                       <div className="relative my-2 rounded-md overflow-hidden">
-                        <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
-                          <span>代码</span>
-                          <button
-                            onClick={() => handleCopyCode(codeContent)}
-                            className="hover:text-white"
-                          >
-                            复制
-                          </button>
-                        </div>
                         <SyntaxHighlighter
                           language="text"
                           style={oneDark}
@@ -459,15 +391,6 @@ export function ChatMessage({
 
         {/* 推理内容 */}
         {renderReasoningContent()}
-
-        {/* Pending artifact indicators */}
-        {pendingArtifacts.map((artifact) => (
-          <ContentGeneratorIndicator
-            key={artifact.id}
-            type={artifact.type}
-            onClick={() => onShowArtifact?.(artifact.id)}
-          />
-        ))}
 
         {/* PDF 附件 */}
         {pdfAttachments.length > 0 && (

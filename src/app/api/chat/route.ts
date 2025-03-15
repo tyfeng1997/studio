@@ -1,7 +1,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { getToolsConfig } from "@/lib/tools";
 // 不使用的导入使用下划线前缀
-import { _deepseek as deepseek } from "@ai-sdk/deepseek";
+import { deepseek } from "@ai-sdk/deepseek";
 
 import {
   streamText,
@@ -9,9 +9,8 @@ import {
   createIdGenerator,
   appendResponseMessages,
   experimental_createMCPClient,
-  // 不使用的导入使用下划线前缀
-  _extractReasoningMiddleware as extractReasoningMiddleware,
-  _wrapLanguageModel as wrapLanguageModel,
+  extractReasoningMiddleware,
+  wrapLanguageModel,
 } from "ai";
 
 import { saveChat, loadChat, updateChatTitle } from "@/utils/store/chat-store";
@@ -66,10 +65,10 @@ export async function POST(req: Request) {
   }
 
   const result = streamText({
-    model: anthropic("claude-3-7-sonnet-20250219"),
-    // model: deepseek("deepseek-reasoner"),
+    // model: anthropic("claude-3-7-sonnet-20250219"),
+    model: deepseek("deepseek-reasoner"),
     messages,
-    tools: tools,
+    // tools: tools,
     toolCallStreaming: true,
     experimental_generateMessageId: createIdGenerator({
       prefix: "msgs",
