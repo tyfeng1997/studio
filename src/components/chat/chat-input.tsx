@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Paperclip, SendHorizonal, X, Square } from "lucide-react";
+import { Paperclip, SendHorizonal, X, Square, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface ChatInputProps {
   input: string;
@@ -18,6 +19,9 @@ interface ChatInputProps {
   files?: FileList;
   setFiles: (files: FileList | undefined) => void;
   stop: () => void;
+  showReport: boolean;
+  setShowReport: (show: boolean) => void;
+  reportCount: number;
 }
 
 export function ChatInput({
@@ -28,6 +32,9 @@ export function ChatInput({
   files,
   setFiles,
   stop,
+  showReport,
+  setShowReport,
+  reportCount,
 }: ChatInputProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -71,55 +78,88 @@ export function ChatInput({
             multiple
             ref={fileInputRef}
           />
-          <Textarea
-            value={input}
-            onChange={handleInputChange}
-            placeholder={"Send a message..."}
-            className="min-h-[60px] w-full resize-none rounded-lg pr-24 bg-background border-input"
-          />
-          <div className="absolute bottom-2 right-2 flex gap-2">
-            {isLoading ? (
+
+          <div className="flex items-center">
+            <div className="flex items-center mr-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
                     size="icon"
-                    variant="ghost"
-                    onClick={() => stop()}
+                    variant={showReport ? "default" : "outline"}
+                    onClick={() => setShowReport(!showReport)}
+                    className="relative"
                   >
-                    <Square className="h-4 w-4" />
-                    <span className="sr-only">Stop generating</span>
+                    <FileText className="h-4 w-4" />
+                    {reportCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                      >
+                        {reportCount}
+                      </Badge>
+                    )}
+                    <span className="sr-only">
+                      {showReport ? "Hide reports" : "Show reports"}
+                    </span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Stop generating</TooltipContent>
+                <TooltipContent>
+                  {showReport ? "Hide reports" : "Show reports"}
+                </TooltipContent>
               </Tooltip>
-            ) : (
-              <>
+            </div>
+
+            <Textarea
+              value={input}
+              onChange={handleInputChange}
+              placeholder={"Send a message..."}
+              className="min-h-[60px] w-full resize-none rounded-lg pr-24 bg-background border-input"
+            />
+            <div className="absolute bottom-2 right-2 flex gap-2">
+              {isLoading ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => stop()}
                     >
-                      <Paperclip className="h-4 w-4" />
-                      <span className="sr-only">Attach files</span>
+                      <Square className="h-4 w-4" />
+                      <span className="sr-only">Stop generating</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Attach files</TooltipContent>
+                  <TooltipContent>Stop generating</TooltipContent>
                 </Tooltip>
-              </>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button type="submit" size="icon" disabled={isLoading}>
-                  <SendHorizonal className="h-4 w-4" />
-                  <span className="sr-only">Send message</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Send message</TooltipContent>
-            </Tooltip>
+              ) : (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Paperclip className="h-4 w-4" />
+                        <span className="sr-only">Attach files</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Attach files</TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="submit" size="icon" disabled={isLoading}>
+                    <SendHorizonal className="h-4 w-4" />
+                    <span className="sr-only">Send message</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Send message</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </form>
       </div>
