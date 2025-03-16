@@ -65,10 +65,10 @@ export async function POST(req: Request) {
   }
 
   const result = streamText({
-    // model: anthropic("claude-3-7-sonnet-20250219"),
-    model: deepseek("deepseek-reasoner"),
+    model: anthropic("claude-3-7-sonnet-20250219"),
+    // model: deepseek("deepseek-reasoner"),
     messages,
-    // tools: tools,
+    tools: tools,
     toolCallStreaming: true,
     experimental_generateMessageId: createIdGenerator({
       prefix: "msgs",
