@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Report } from "./chat-report";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Helper function to extract report content from message
 function extractReports(messages: Message[]) {
@@ -115,17 +116,42 @@ export function ChatView({
 
   return (
     <TooltipProvider>
-      <div className="flex h-[calc(100vh-3.5rem)]">
-        {/* Report Panel */}
-        {showReport && (
-          <div className="w-1/3 border-r flex flex-col h-full">
-            <Report reports={reports} onClose={() => setShowReport(false)} />
-          </div>
-        )}
+      <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+        {/* Report Panel with Animation */}
+        <AnimatePresence initial={false}>
+          {showReport && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{
+                width: "33.333333%",
+                opacity: 1,
+                transition: {
+                  width: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2, delay: 0.1 },
+                },
+              }}
+              exit={{
+                width: 0,
+                opacity: 0,
+                transition: {
+                  width: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                },
+              }}
+              className="border-r flex flex-col h-full overflow-hidden"
+            >
+              <Report reports={reports} onClose={() => setShowReport(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Chat Panel */}
-        <div
-          className={`${showReport ? "w-2/3" : "w-full"} flex flex-col h-full`}
+        {/* Chat Panel with Animation */}
+        <motion.div
+          animate={{
+            width: showReport ? "66.666667%" : "100%",
+            transition: { type: "spring", stiffness: 300, damping: 30 },
+          }}
+          className="flex flex-col h-full"
         >
           {/* Chat messages area */}
           <div className="flex-1 overflow-hidden">
@@ -198,7 +224,7 @@ export function ChatView({
               />
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </TooltipProvider>
   );
