@@ -231,12 +231,16 @@ export function ChatMessage({
     <div
       className={cn(
         "group relative mb-4 flex items-start md:mb-6",
-        isUserMessage ? "justify-end" : "justify-start"
+        isUserMessage ? "justify-end" : "justify-start",
+        // Add new container width class to ensure messages don't overflow
+        "w-full"
       )}
     >
       <div
         className={cn(
-          "flex max-w-[85%] flex-col gap-4 rounded-lg px-4 py-3 shadow-md",
+          "flex flex-col gap-4 rounded-lg px-4 py-3 shadow-md",
+          // Improved max-width handling for different screen sizes
+          "max-w-[95%] sm:max-w-[85%] md:max-w-[75%]",
           isUserMessage
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-foreground"
@@ -246,7 +250,7 @@ export function ChatMessage({
         {textContent.trim() ? (
           <div
             className={cn(
-              "markdown-content",
+              "markdown-content break-words",
               isUserMessage ? "user-message" : "assistant-message"
             )}
           >

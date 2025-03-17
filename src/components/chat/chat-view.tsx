@@ -13,6 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Report } from "./chat-report";
 import { motion, AnimatePresence } from "framer-motion";
 import { WelcomeView } from "@/components/chat/chat-welcome";
+
 // Helper function to extract report content from message
 function extractReports(messages: Message[]) {
   const reports: { id: string; content: string }[] = [];
@@ -44,6 +45,7 @@ export function ChatView({
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
   const [showReport, setShowReport] = React.useState(false);
+  const [customPrompt, setCustomPrompt] = React.useState(""); // 新增状态管理预设 prompt
 
   const {
     messages,
@@ -87,11 +89,31 @@ export function ChatView({
     experimental_streamData: true, // Enable data streaming
   });
 
+  // 监听 customPrompt 的变化，当它变化时更新输入框的值
+  React.useEffect(() => {
+    if (customPrompt) {
+      // 使用 handleInputChange 手动更新输入值
+      const event = {
+        target: { value: customPrompt },
+      } as React.ChangeEvent<HTMLTextAreaElement>;
+      handleInputChange(event);
+    }
+  }, [customPrompt, handleInputChange]);
+
+  // 页面加载时自动聚焦到输入框
+  React.useEffect(() => {
+    const inputElement = document.querySelector("textarea");
+    if (inputElement && messages.length > 0) {
+      inputElement.focus();
+    }
+  }, [messages.length]);
+
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     handleSubmit(e, {
       experimental_attachments: files,
     });
     setFiles(undefined);
+    setCustomPrompt(""); // 发送后清空自定义 prompt
   };
 
   const handleDeleteMessage = (messageId: string) => {
@@ -112,6 +134,18 @@ export function ChatView({
 
   // Extract reports from messages
   const reports = extractReports(messages);
+
+  // 启动聊天并聚焦到输入框
+  const startChat = () => {
+    // 如果没有消息，添加一个默认消息
+    if (messages.length === 0) {
+      // 可以添加一个欢迎消息，或者什么都不做只聚焦输入框
+      const inputElement = document.querySelector("textarea");
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }
+  };
 
   return (
     <TooltipProvider>
@@ -155,7 +189,8 @@ export function ChatView({
           {/* Chat messages area */}
           <div className="flex-1 overflow-hidden">
             <ScrollArea className="h-full">
-              <div className="px-4 py-4">
+              {/* Added container with controlled width to ensure proper message layout */}
+              <div className="px-4 py-4 mx-auto w-full max-w-[100%] md:max-w-[90%]">
                 {error ? (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription className="flex items-center justify-between">
@@ -199,15 +234,8 @@ export function ChatView({
                   })
                 ) : (
                   <WelcomeView
-                    onStartChat={() => {
-                      // 可以在这里模拟用户发送一条初始消息
-                      // 例如自动在输入框中填写一些文本并触发提交
-                      // 或者简单地聚焦到输入框
-                      const inputElement = document.querySelector("textarea");
-                      if (inputElement) {
-                        inputElement.focus();
-                      }
-                    }}
+                    onStartChat={startChat}
+                    setPrompt={setCustomPrompt}
                   />
                 )}
               </div>
