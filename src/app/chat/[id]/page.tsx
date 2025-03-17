@@ -2,7 +2,6 @@ import { loadChat } from "@/utils/store/chat-store";
 import { ChatView } from "@/components/chat/chat-view";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();

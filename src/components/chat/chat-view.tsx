@@ -10,6 +10,31 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Report } from "./chat-report";
+import { motion, AnimatePresence } from "framer-motion";
+import { WelcomeView } from "@/components/chat/chat-welcome";
+
+// Helper function to extract report content from message
+function extractReports(messages: Message[]) {
+  const reports: { id: string; content: string }[] = [];
+
+  messages.forEach((message) => {
+    if (message.role === "assistant" && typeof message.content === "string") {
+      const content = message.content;
+      const reportRegex = /<report>([\s\S]*?)<\/report>/g;
+      let match;
+
+      while ((match = reportRegex.exec(content)) !== null) {
+        reports.push({
+          id: `${message.id}-${reports.length}`,
+          content: match[1].trim(),
+        });
+      }
+    }
+  });
+
+  return reports;
+}
 
 export function ChatView({
   id,
@@ -19,7 +44,8 @@ export function ChatView({
   initialMessages?: Message[];
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
-  const chatContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showReport, setShowReport] = React.useState(false);
+  const [customPrompt, setCustomPrompt] = React.useState(""); // 状态管理预设 prompt
 
   const {
     messages,
@@ -63,11 +89,31 @@ export function ChatView({
     experimental_streamData: true, // Enable data streaming
   });
 
+  // 监听 customPrompt 的变化，当它变化时更新输入框的值
+  React.useEffect(() => {
+    if (customPrompt) {
+      // 使用 handleInputChange 手动更新输入值
+      const event = {
+        target: { value: customPrompt },
+      } as React.ChangeEvent<HTMLTextAreaElement>;
+      handleInputChange(event);
+    }
+  }, [customPrompt, handleInputChange]);
+
+  // 页面加载时自动聚焦到输入框
+  React.useEffect(() => {
+    const inputElement = document.querySelector("textarea");
+    if (inputElement) {
+      inputElement.focus();
+    }
+  }, []);
+
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     handleSubmit(e, {
       experimental_attachments: files,
     });
     setFiles(undefined);
+    setCustomPrompt(""); // 发送后清空自定义 prompt
   };
 
   const handleDeleteMessage = (messageId: string) => {
@@ -86,14 +132,53 @@ export function ChatView({
     }
   };
 
+  // Extract reports from messages
+  const reports = extractReports(messages);
+
   return (
     <TooltipProvider>
-      <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
-        <div className="flex-1 flex overflow-hidden relative">
-          {/* Main chat area */}
-          <div className="w-full" ref={chatContainerRef}>
-            <ScrollArea className="flex-1 px-4 h-full">
-              <div className="pt-4 pb-4">
+      <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+        {/* Report Panel with Animation */}
+        <AnimatePresence initial={false}>
+          {showReport && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{
+                width: "33.333333%",
+                opacity: 1,
+                transition: {
+                  width: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2, delay: 0.1 },
+                },
+              }}
+              exit={{
+                width: 0,
+                opacity: 0,
+                transition: {
+                  width: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                },
+              }}
+              className="border-r flex flex-col h-full overflow-hidden"
+            >
+              <Report reports={reports} onClose={() => setShowReport(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Chat Panel with Animation */}
+        <motion.div
+          animate={{
+            width: showReport ? "66.666667%" : "100%",
+            transition: { type: "spring", stiffness: 300, damping: 30 },
+          }}
+          className="flex flex-col h-full"
+        >
+          {/* Chat messages area */}
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full">
+              {/* Added container with controlled width to ensure proper message layout */}
+              <div className="px-4 py-4 mx-auto w-full max-w-[100%] md:max-w-[90%]">
                 {error ? (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription className="flex items-center justify-between">
@@ -136,35 +221,31 @@ export function ChatView({
                     );
                   })
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    开始一个对话吧
-                  </div>
+                  <WelcomeView setPrompt={setCustomPrompt} />
                 )}
               </div>
             </ScrollArea>
           </div>
-        </div>
 
-        {/* Bottom input area */}
-        <div className="border-t bg-background p-4 mt-auto">
-          <div className="mx-auto max-w-5xl relative">
-            <ChatInput
-              input={input}
-              handleInputChange={handleInputChange}
-              handleSubmit={handleFormSubmit}
-              isLoading={isLoading}
-              files={files}
-              setFiles={setFiles}
-              stop={stop}
-            />
+          {/* Chat input area */}
+          <div className="border-t bg-background p-4">
+            <div className="mx-auto max-w-5xl relative">
+              <ChatInput
+                input={input}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleFormSubmit}
+                isLoading={isLoading}
+                files={files}
+                setFiles={setFiles}
+                stop={stop}
+                showReport={showReport}
+                setShowReport={setShowReport}
+                reportCount={reports.length}
+              />
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </TooltipProvider>
   );
-}
-
-// Helper function for conditional class names
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
 }

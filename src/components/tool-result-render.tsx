@@ -5,6 +5,7 @@ import { XCircle, InfoIcon } from "lucide-react";
 import { ToolCard } from "@/components/tool-card";
 import { ExtractResultRenderer } from "@/components/tools/extract-tool-render";
 import { SearchResultRenderer } from "@/components/tools/search-tool-render";
+import { DeepSearchResultRenderer } from "@/components/tools/deepresearch-tool-render";
 
 interface ToolResultRendererProps {
   tool: string;
@@ -20,10 +21,10 @@ export function ToolResultRenderer({
   // Handle error state
   if (error) {
     return (
-      <Alert variant="destructive" className="mb-2 mt-2">
+      <Alert variant="destructive" className="mb-2 mt-2 w-full">
         <XCircle className="h-4 w-4" />
         <AlertTitle>Tool Execution Failed</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription className="break-words">{error}</AlertDescription>
       </Alert>
     );
   }
@@ -31,7 +32,7 @@ export function ToolResultRenderer({
   // Handle empty data state
   if (!data) {
     return (
-      <Alert className="mb-2 mt-2">
+      <Alert className="mb-2 mt-2 w-full">
         <InfoIcon className="h-4 w-4" />
         <AlertDescription>No data available for tool: {tool}</AlertDescription>
       </Alert>
@@ -44,14 +45,17 @@ export function ToolResultRenderer({
         return <SearchResultRenderer data={data.data} />;
       case "extract":
         return <ExtractResultRenderer data={data.data} />;
+      case "deepresearch":
+        return <DeepSearchResultRenderer data={data.data} />;
       // Add more tool renderers as needed
       default:
         // Generic JSON renderer for unknown tools
         return (
           <ToolCard
             title={`${tool.charAt(0).toUpperCase() + tool.slice(1)} Result`}
+            className="w-full"
           >
-            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto whitespace-pre-wrap">
+            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto whitespace-pre-wrap break-words">
               {JSON.stringify(data, null, 2)}
             </pre>
           </ToolCard>
@@ -60,7 +64,7 @@ export function ToolResultRenderer({
   } catch (error) {
     console.error(`Error rendering tool result for ${tool}:`, error);
     return (
-      <Alert variant="destructive" className="mb-2 mt-2">
+      <Alert variant="destructive" className="mb-2 mt-2 w-full">
         <XCircle className="h-4 w-4" />
         <AlertTitle>Rendering Error</AlertTitle>
         <AlertDescription>Failed to display tool result</AlertDescription>

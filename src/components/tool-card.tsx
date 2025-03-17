@@ -11,11 +11,11 @@ interface ToolCardProps {
 
 export function ToolCard({ title, children, className }: ToolCardProps) {
   return (
-    <Card className={cn("w-full", className)}>
-      <CardHeader>
+    <Card className={cn("w-full overflow-hidden", className)}>
+      <CardHeader className="py-3">
         <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="overflow-x-auto">{children}</CardContent>
     </Card>
   );
 }
