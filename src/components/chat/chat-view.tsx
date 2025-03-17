@@ -12,7 +12,7 @@ import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Report } from "./chat-report";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { WelcomeView } from "@/components/chat/chat-welcome";
 // Helper function to extract report content from message
 function extractReports(messages: Message[]) {
   const reports: { id: string; content: string }[] = [];
@@ -44,7 +44,6 @@ export function ChatView({
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
   const [showReport, setShowReport] = React.useState(false);
-  const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -199,9 +198,17 @@ export function ChatView({
                     );
                   })
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    开始一个对话吧
-                  </div>
+                  <WelcomeView
+                    onStartChat={() => {
+                      // 可以在这里模拟用户发送一条初始消息
+                      // 例如自动在输入框中填写一些文本并触发提交
+                      // 或者简单地聚焦到输入框
+                      const inputElement = document.querySelector("textarea");
+                      if (inputElement) {
+                        inputElement.focus();
+                      }
+                    }}
+                  />
                 )}
               </div>
             </ScrollArea>

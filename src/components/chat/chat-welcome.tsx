@@ -10,7 +10,6 @@ import {
   FileText,
   ChevronRight,
 } from "lucide-react";
-import { motion } from "framer-motion";
 
 type Feature = {
   icon: React.ReactNode;
@@ -42,30 +41,43 @@ export function WelcomeView({ onStartChat }: { onStartChat: () => void }) {
     },
   ];
 
+  // 使用useEffect确保只在客户端渲染
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 如果不是客户端，返回简单的骨架屏
+  if (!mounted) {
+    return (
+      <div className="w-full py-8" suppressHydrationWarning>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">
+            智能公司分析助手
+          </h1>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center h-full px-4 py-8 bg-background">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center mb-10"
-      >
+    <div
+      className="flex flex-col items-center justify-center py-8 w-full"
+      suppressHydrationWarning
+    >
+      <div className="text-center mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">
           智能公司分析助手
         </h1>
         <p className="text-muted-foreground max-w-md mx-auto">
           专注于上市公司数据收集与分析，为您提供专业的投资决策支持
         </p>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl w-full mb-8">
         {features.map((feature, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 * index }}
-          >
+          <div key={index}>
             <Card className="border-border hover:border-primary/20 transition-all duration-300 h-full bg-card">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
@@ -83,16 +95,11 @@ export function WelcomeView({ onStartChat }: { onStartChat: () => void }) {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="w-full max-w-md"
-      >
+      <div className="w-full max-w-md">
         <Button
           onClick={onStartChat}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg transition-all duration-300 flex items-center justify-center group"
@@ -101,7 +108,7 @@ export function WelcomeView({ onStartChat }: { onStartChat: () => void }) {
           <span className="mr-2">开始分析对话</span>
           <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
         </Button>
-      </motion.div>
+      </div>
     </div>
   );
 }
