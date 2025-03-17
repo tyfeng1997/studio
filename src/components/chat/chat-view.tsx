@@ -45,7 +45,7 @@ export function ChatView({
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
   const [showReport, setShowReport] = React.useState(false);
-  const [customPrompt, setCustomPrompt] = React.useState(""); // 新增状态管理预设 prompt
+  const [customPrompt, setCustomPrompt] = React.useState(""); // 状态管理预设 prompt
 
   const {
     messages,
@@ -103,10 +103,10 @@ export function ChatView({
   // 页面加载时自动聚焦到输入框
   React.useEffect(() => {
     const inputElement = document.querySelector("textarea");
-    if (inputElement && messages.length > 0) {
+    if (inputElement) {
       inputElement.focus();
     }
-  }, [messages.length]);
+  }, []);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     handleSubmit(e, {
@@ -134,18 +134,6 @@ export function ChatView({
 
   // Extract reports from messages
   const reports = extractReports(messages);
-
-  // 启动聊天并聚焦到输入框
-  const startChat = () => {
-    // 如果没有消息，添加一个默认消息
-    if (messages.length === 0) {
-      // 可以添加一个欢迎消息，或者什么都不做只聚焦输入框
-      const inputElement = document.querySelector("textarea");
-      if (inputElement) {
-        inputElement.focus();
-      }
-    }
-  };
 
   return (
     <TooltipProvider>
@@ -233,10 +221,7 @@ export function ChatView({
                     );
                   })
                 ) : (
-                  <WelcomeView
-                    onStartChat={startChat}
-                    setPrompt={setCustomPrompt}
-                  />
+                  <WelcomeView setPrompt={setCustomPrompt} />
                 )}
               </div>
             </ScrollArea>
