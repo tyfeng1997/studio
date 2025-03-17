@@ -33,11 +33,11 @@ export function ChatMessage({
 }: ChatMessageProps) {
   const [isReasoningVisible, setIsReasoningVisible] = useState(false);
 
-  // 检查消息是否有 parts 属性且包含推理部分
+  // 是否有 parts
   const hasParts =
     !!message.parts && Array.isArray(message.parts) && message.parts.length > 0;
 
-  // 提取文本内容和推理内容
+  // 主文本内容
   const textContent = hasParts
     ? message.parts
         .filter((part) => part.type === "text")
@@ -45,32 +45,30 @@ export function ChatMessage({
         .join("")
     : message.content || "";
 
+  // 推理
   const reasoningParts = hasParts
     ? message.parts.filter(
         (part) => part.type === "reasoning" || part.type === "thinking"
       )
     : [];
-
   const hasReasoningParts = reasoningParts.length > 0;
 
   // 是否是用户消息
   const isUserMessage = message.role === "user";
 
-  // 附件处理
+  // 附件
   const imageAttachments =
     message?.experimental_attachments?.filter((a) =>
       a?.contentType?.startsWith("image/")
     ) || [];
-
   const pdfAttachments =
     message?.experimental_attachments?.filter(
       (a) => a?.contentType === "application/pdf"
     ) || [];
 
-  // 渲染推理内容（可选，可按需保留在主区域或侧边显示）
+  // 渲染推理内容
   const renderReasoningContent = () => {
     if (!hasReasoningParts || !isReasoningVisible) return null;
-
     return (
       <div className="bg-zinc-100 dark:bg-zinc-900 rounded-md p-3 mt-2 text-sm border border-zinc-200 dark:border-zinc-800 overflow-auto max-h-[300px]">
         {reasoningParts.map((part, index) => {
@@ -114,7 +112,7 @@ export function ChatMessage({
     );
   };
 
-  // 渲染工具调用状态的动画
+  // 渲染工具调用状态
   const renderToolInvocationState = (part) => {
     switch (part.toolInvocation.state) {
       case "partial-call":
@@ -122,7 +120,7 @@ export function ChatMessage({
           <motion.div
             initial={{ opacity: 0.7 }}
             animate={{ opacity: 1 }}
-            className="bg-zinc-100 dark:bg-zinc-800 rounded-md p-3 my-2 border border-zinc-200 dark:border-zinc-700"
+            className="bg-zinc-100 dark:bg-zinc-800 rounded-md p-3 my-2 border border-zinc-200 dark:border-zinc-700 break-words whitespace-pre-wrap"
           >
             <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -148,7 +146,7 @@ export function ChatMessage({
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900"
+            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900 break-words whitespace-pre-wrap"
           >
             <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -182,7 +180,7 @@ export function ChatMessage({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="my-2"
+            className="my-2 break-words whitespace-pre-wrap"
           >
             <ToolResultRenderer
               tool={part.toolInvocation.toolName}
@@ -197,7 +195,7 @@ export function ChatMessage({
     }
   };
 
-  // Simple typing indicator component
+  // 打字机动画
   const TypingIndicator = () => (
     <div className="flex items-center gap-1 py-1">
       <motion.div
@@ -221,12 +219,13 @@ export function ChatMessage({
   return (
     <div
       className={cn(
-        "group relative mb-4 flex items-start md:mb-6 w-full",
+        "group relative mb-4 flex w-full items-start",
         isUserMessage ? "justify-end" : "justify-start"
       )}
     >
+      {/* 这层容器不限制高度，让文本部分完全展开 */}
       <div className="flex w-full flex-col md:flex-row gap-4">
-        {/* 主消息文本区域 */}
+        {/* 左侧：主消息文本区域（不滚动） */}
         <div className="flex-1">
           <div
             className={cn(
@@ -249,7 +248,9 @@ export function ChatMessage({
                     code({ node, inline, className, children, ...props }) {
                       const match = /language-(\w+)/.exec(className || "");
                       const codeContent = String(children).replace(/\n$/, "");
+
                       if (!inline && match) {
+                        // 代码块(带语言)
                         return (
                           <div className="relative my-2 rounded-md overflow-hidden">
                             <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
@@ -270,6 +271,7 @@ export function ChatMessage({
                           </div>
                         );
                       } else if (!inline) {
+                        // 代码块(无语言)
                         return (
                           <div className="relative my-2 rounded-md overflow-hidden">
                             <SyntaxHighlighter
@@ -287,6 +289,7 @@ export function ChatMessage({
                           </div>
                         );
                       }
+                      // 行内代码
                       return (
                         <code
                           className={cn(
@@ -301,37 +304,6 @@ export function ChatMessage({
                         </code>
                       );
                     },
-                    p: ({ children }) => (
-                      <p className="mb-2 last:mb-0">{children}</p>
-                    ),
-                    h1: ({ children }) => (
-                      <h1 className="text-2xl font-bold my-4">{children}</h1>
-                    ),
-                    h2: ({ children }) => (
-                      <h2 className="text-xl font-bold my-3">{children}</h2>
-                    ),
-                    h3: ({ children }) => (
-                      <h3 className="text-lg font-bold my-2">{children}</h3>
-                    ),
-                    ul: ({ children }) => (
-                      <ul className="list-disc pl-6 mb-3">{children}</ul>
-                    ),
-                    ol: ({ children }) => (
-                      <ol className="list-decimal pl-6 mb-3">{children}</ol>
-                    ),
-                    li: ({ children }) => <li className="mb-1">{children}</li>,
-                    blockquote: ({ children }) => (
-                      <blockquote
-                        className={cn(
-                          "pl-3 italic my-2 border-l-4",
-                          isUserMessage
-                            ? "border-white/30"
-                            : "border-zinc-300 dark:border-zinc-700"
-                        )}
-                      >
-                        {children}
-                      </blockquote>
-                    ),
                   }}
                 >
                   {textContent}
@@ -379,7 +351,7 @@ export function ChatMessage({
               </div>
             )}
 
-            {/* 推理显示按钮（可根据需要选择是否放入主区域） */}
+            {/* 推理显示按钮 */}
             {hasReasoningParts && !isUserMessage && (
               <Button
                 variant="ghost"
@@ -406,8 +378,22 @@ export function ChatMessage({
           </div>
         </div>
 
-        {/* 侧边栏：专门用于展示工具调用过程和结果 */}
-        <div className="md:w-72 flex flex-col gap-4">
+        {/* 右侧：工具结果区域（可滚动） */}
+        <div
+          className="
+            md:w-72 
+            flex-shrink-0 
+            flex 
+            flex-col 
+            gap-4 
+            overflow-y-auto   /* 只让右侧滚动 */
+            max-h-[400px]     /* 限制高度，超过后滚动 */
+            border-l 
+            border-zinc-200 
+            dark:border-zinc-700
+            p-2
+          "
+        >
           {hasParts &&
             message.parts.map((part, idx) => {
               if (part.type === "tool-invocation") {
@@ -419,7 +405,7 @@ export function ChatMessage({
               }
               return null;
             })}
-          {/* 如果 message.parts 不存在时，回退到旧的 toolInvocations 方式 */}
+          {/* 回退到旧的 toolInvocations */}
           {!hasParts &&
             message.toolInvocations &&
             message.toolInvocations.map((tool) => (
