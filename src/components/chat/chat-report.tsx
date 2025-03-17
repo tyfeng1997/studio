@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Copy, Download, Check, X } from "lucide-react";
 import {
   Tooltip,
@@ -62,7 +61,7 @@ export function Report({ reports, onClose }: ReportProps) {
   }
 
   return (
-    <div className="flex flex-col h-full border-r">
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="font-medium">Reports</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
@@ -73,7 +72,7 @@ export function Report({ reports, onClose }: ReportProps) {
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="flex-1 flex flex-col"
+        className="flex-1 flex flex-col h-full"
       >
         <TabsList
           className="grid mx-4 mt-2"
@@ -88,51 +87,57 @@ export function Report({ reports, onClose }: ReportProps) {
           ))}
         </TabsList>
 
-        {reports.map((report, index) => (
-          <TabsContent
-            key={report.id}
-            value={report.id}
-            className="flex-1 flex flex-col"
-          >
-            <div className="flex justify-end gap-2 p-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(report.content)}
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 mr-1" />
-                    ) : (
-                      <Copy className="h-4 w-4 mr-1" />
-                    )}
-                    {copied ? "Copied" : "Copy"}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Copy to clipboard</TooltipContent>
-              </Tooltip>
+        <div className="flex-1 overflow-hidden">
+          {reports.map((report, index) => (
+            <TabsContent
+              key={report.id}
+              value={report.id}
+              className="h-full flex flex-col"
+              style={{ display: activeTab === report.id ? "flex" : "none" }}
+            >
+              <div className="flex justify-end gap-2 p-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(report.content)}
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Copy className="h-4 w-4 mr-1" />
+                      )}
+                      {copied ? "Copied" : "Copy"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy to clipboard</TooltipContent>
+                </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => downloadReport(report.content, index)}
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    Save
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Download report</TooltipContent>
-              </Tooltip>
-            </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadReport(report.content, index)}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Download report</TooltipContent>
+                </Tooltip>
+              </div>
 
-            <ScrollArea className="flex-1 p-4">
-              <div className="whitespace-pre-wrap">{report.content}</div>
-            </ScrollArea>
-          </TabsContent>
-        ))}
+              <div
+                className="flex-1 overflow-y-auto p-4"
+                style={{ height: "calc(100% - 60px)" }}
+              >
+                <pre className="whitespace-pre-wrap">{report.content}</pre>
+              </div>
+            </TabsContent>
+          ))}
+        </div>
       </Tabs>
     </div>
   );

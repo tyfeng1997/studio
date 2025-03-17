@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Report } from "./chat-report";
-import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 // Helper function to extract report content from message
 function extractReports(messages: Message[]) {
@@ -116,99 +115,91 @@ export function ChatView({
 
   return (
     <TooltipProvider>
-      <div className="relative flex flex-col h-[calc(100vh-3.5rem)]">
-        <div className="flex-1 flex overflow-hidden relative">
-          <ResizablePanelGroup direction="horizontal">
-            {showReport && (
-              <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
-                <Report
-                  reports={reports}
-                  onClose={() => setShowReport(false)}
-                />
-              </ResizablePanel>
-            )}
+      <div className="flex h-[calc(100vh-3.5rem)]">
+        {/* Report Panel */}
+        {showReport && (
+          <div className="w-1/3 border-r flex flex-col h-full">
+            <Report reports={reports} onClose={() => setShowReport(false)} />
+          </div>
+        )}
 
-            <ResizablePanel defaultSize={showReport ? 70 : 100}>
-              {/* Main chat area */}
-              <div className="w-full h-full" ref={chatContainerRef}>
-                <ScrollArea className="flex-1 px-4 h-full">
-                  <div className="pt-4 pb-4">
-                    {error ? (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertDescription className="flex items-center justify-between">
-                          <span>Error: {error.message}</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => reload()}
-                            className="h-7 px-3"
-                          >
-                            <RefreshCw className="h-4 w-4 mr-1" />
-                            Retry
-                          </Button>
-                        </AlertDescription>
-                      </Alert>
-                    ) : null}
+        {/* Chat Panel */}
+        <div
+          className={`${showReport ? "w-2/3" : "w-full"} flex flex-col h-full`}
+        >
+          {/* Chat messages area */}
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="px-4 py-4">
+                {error ? (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertDescription className="flex items-center justify-between">
+                      <span>Error: {error.message}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => reload()}
+                        className="h-7 px-3"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
 
-                    {messages.length > 0 ? (
-                      messages.map((message, index) => {
-                        const isLastAssistantMessage =
-                          message.role === "assistant" &&
-                          messages.findIndex(
-                            (m, idx) => idx > index && m.role === "assistant"
-                          ) === -1;
+                {messages.length > 0 ? (
+                  messages.map((message, index) => {
+                    const isLastAssistantMessage =
+                      message.role === "assistant" &&
+                      messages.findIndex(
+                        (m, idx) => idx > index && m.role === "assistant"
+                      ) === -1;
 
-                        return (
-                          <div key={message.id} className="group relative">
-                            <ChatMessage
-                              message={message}
-                              isLoading={
-                                isLoading &&
-                                messages[messages.length - 1].id === message.id
-                              }
-                              onReload={handleReload}
-                              isLastMessage={isLastAssistantMessage}
-                              status={status}
-                              onDelete={() => handleDeleteMessage(message.id)}
-                            />
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        开始一个对话吧
+                    return (
+                      <div key={message.id} className="group relative">
+                        <ChatMessage
+                          message={message}
+                          isLoading={
+                            isLoading &&
+                            messages[messages.length - 1].id === message.id
+                          }
+                          onReload={handleReload}
+                          isLastMessage={isLastAssistantMessage}
+                          status={status}
+                          onDelete={() => handleDeleteMessage(message.id)}
+                        />
                       </div>
-                    )}
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    开始一个对话吧
                   </div>
-                </ScrollArea>
+                )}
               </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </div>
+            </ScrollArea>
+          </div>
 
-        {/* Bottom input area */}
-        <div className="border-t bg-background p-4 mt-auto">
-          <div className="mx-auto max-w-5xl relative">
-            <ChatInput
-              input={input}
-              handleInputChange={handleInputChange}
-              handleSubmit={handleFormSubmit}
-              isLoading={isLoading}
-              files={files}
-              setFiles={setFiles}
-              stop={stop}
-              showReport={showReport}
-              setShowReport={setShowReport}
-              reportCount={reports.length}
-            />
+          {/* Chat input area */}
+          <div className="border-t bg-background p-4">
+            <div className="mx-auto max-w-5xl relative">
+              <ChatInput
+                input={input}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleFormSubmit}
+                isLoading={isLoading}
+                files={files}
+                setFiles={setFiles}
+                stop={stop}
+                showReport={showReport}
+                setShowReport={setShowReport}
+                reportCount={reports.length}
+              />
+            </div>
           </div>
         </div>
       </div>
     </TooltipProvider>
   );
-}
-
-// Helper function for conditional class names
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
 }
