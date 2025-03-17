@@ -1,23 +1,32 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { ChatView } from "./chat-view";
+import { WelcomeView } from "@/components/welcome";
+import { Message } from "@ai-sdk/react";
 
-interface ChatContainerProps {
-  children: React.ReactNode;
-  className?: string;
-}
+export function ChatContainer({
+  id,
+  initialMessages,
+}: {
+  id?: string | undefined;
+  initialMessages?: Message[];
+} = {}) {
+  const [showWelcome, setShowWelcome] = React.useState(
+    initialMessages?.length === 0 || initialMessages === undefined
+  );
 
-export function ChatContainer({ children, className }: ChatContainerProps) {
+  const handleStartChat = () => {
+    setShowWelcome(false);
+  };
+
   return (
-    <div
-      className={cn(
-        "relative mx-auto max-w-4xl h-[calc(100vh-10rem)]",
-        "flex flex-col gap-4",
-        className
+    <div className="h-[calc(100vh-3.5rem)]">
+      {showWelcome ? (
+        <WelcomeView onStartChat={handleStartChat} />
+      ) : (
+        <ChatView id={id} initialMessages={initialMessages} />
       )}
-    >
-      <div className="flex-1 overflow-y-auto">{children}</div>
     </div>
   );
 }
