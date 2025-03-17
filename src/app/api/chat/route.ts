@@ -109,6 +109,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: anthropic("claude-3-7-sonnet-20250219"),
     system: REPORT_SYSTEM_PROMPT,
+    maxTokens: 8192,
     // model: deepseek("deepseek-reasoner"),
     messages,
     tools: tools,
