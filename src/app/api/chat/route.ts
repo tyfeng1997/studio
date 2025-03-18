@@ -75,6 +75,8 @@ try {
 
 export async function POST(req: Request) {
   const { message, id } = await req.json();
+  console.log("message", message);
+  console.log("id", id);
   const previousMessages = await loadChat(id);
   const toolsConfig = getToolsConfig();
   const messages = appendClientMessage({
