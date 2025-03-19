@@ -1,4 +1,4 @@
-// app/reports/page.tsx (集成版)
+// app/reports/page.tsx (improved version)
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -59,7 +59,7 @@ function extractStreamingReport(messages: Message[]): string {
   return content;
 }
 
-export default function IntegratedReportsPage() {
+export default function ImprovedReportsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"history" | "create">("history");
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -288,8 +288,8 @@ export default function IntegratedReportsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950">
-      {/* Header */}
-      <header className="border-b border-zinc-800 p-4">
+      {/* Header - Fixed at the top */}
+      <header className="border-b border-zinc-800 p-4 bg-zinc-950 sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-purple-500" />
@@ -302,20 +302,21 @@ export default function IntegratedReportsPage() {
             onClick={() => router.push("/chat")}
             className="text-zinc-400 hover:text-white"
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Chat
           </Button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 container mx-auto p-4">
+      {/* Main Content - Takes the rest of the screen height */}
+      <main className="flex-1 container mx-auto p-4 overflow-hidden">
         {/* Tabs for different sections */}
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as "history" | "create")}
-          className="mb-6"
+          className="h-full flex flex-col"
         >
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 sticky top-0 z-10">
             <TabsList className="grid grid-cols-2 w-[400px]">
               <TabsTrigger
                 value="history"
@@ -351,8 +352,8 @@ export default function IntegratedReportsPage() {
             )}
           </div>
 
-          {/* Report History Tab */}
-          <TabsContent value="history" className="mt-0">
+          {/* Report History Tab - Scrollable content */}
+          <TabsContent value="history" className="mt-0 flex-1 overflow-auto">
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
@@ -453,8 +454,8 @@ export default function IntegratedReportsPage() {
             )}
           </TabsContent>
 
-          {/* Create Report Tab */}
-          <TabsContent value="create" className="mt-0">
+          {/* Create Report Tab - Fixed height with internal scrolling */}
+          <TabsContent value="create" className="mt-0 flex-1 overflow-hidden">
             {!isCreatingNew ? (
               <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
                 <h2 className="text-lg font-medium text-zinc-300 mb-4">
@@ -474,9 +475,9 @@ export default function IntegratedReportsPage() {
                 </Button>
               </div>
             ) : (
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* 左侧面板：查询输入与工具执行过程 */}
-                <div className="w-full lg:w-1/3 flex flex-col gap-6">
+              <div className="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
+                {/* 左侧面板：查询输入与工具执行过程 - Scrollable */}
+                <div className="w-full lg:w-1/3 flex flex-col gap-6 overflow-auto pb-4">
                   {/* 查询输入区域 */}
                   <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
                     <h2 className="text-lg font-medium mb-4 text-white">
@@ -556,35 +557,40 @@ export default function IntegratedReportsPage() {
                       <h3 className="text-sm font-medium text-zinc-300 mb-3">
                         Research Process
                       </h3>
-                      <div className="space-y-2 max-h-64 overflow-y-auto p-2">
-                        {messages.map(
-                          (message) =>
-                            message.role === "assistant" &&
-                            message.parts?.map((part, idx) => {
-                              if (part.type === "tool-invocation") {
-                                return (
-                                  <div key={`tool-${idx}`} className="text-sm">
-                                    <ToolResultRenderer
-                                      tool={part.toolInvocation.toolName}
-                                      data={part.toolInvocation.result}
-                                      error={part.toolInvocation.error}
-                                      state={part.toolInvocation.state}
-                                    />
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })
-                        )}
-                      </div>
+                      <ScrollArea className="h-64">
+                        <div className="space-y-2 p-2">
+                          {messages.map(
+                            (message) =>
+                              message.role === "assistant" &&
+                              message.parts?.map((part, idx) => {
+                                if (part.type === "tool-invocation") {
+                                  return (
+                                    <div
+                                      key={`tool-${idx}`}
+                                      className="text-sm"
+                                    >
+                                      <ToolResultRenderer
+                                        tool={part.toolInvocation.toolName}
+                                        data={part.toolInvocation.result}
+                                        error={part.toolInvocation.error}
+                                        state={part.toolInvocation.state}
+                                      />
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })
+                          )}
+                        </div>
+                      </ScrollArea>
                     </div>
                   )}
                 </div>
 
-                {/* 右侧面板：报告输出 */}
-                <div className="w-full lg:w-2/3 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
-                  <div className="border-b border-zinc-200 p-4">
-                    <h2 className="text-xl font-semibold text-zinc-800">
+                {/* 右侧面板：报告输出 - Fixed height with internal scrolling */}
+                <div className="w-full lg:w-2/3 bg-zinc-900 rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
+                  <div className="border-b border-zinc-800 bg-zinc-800 p-4 sticky top-0">
+                    <h2 className="text-xl font-semibold text-zinc-100">
                       {isLoading ? (
                         <div className="flex items-center">
                           <Loader2 className="mr-2 h-5 w-5 animate-spin text-purple-600" />
@@ -594,91 +600,93 @@ export default function IntegratedReportsPage() {
                         "Company Analysis Report"
                       )}
                     </h2>
-                    <p className="text-sm text-zinc-500">
+                    <p className="text-sm text-zinc-400">
                       {activeMode === "quick"
                         ? "Quick Summary Report"
                         : "Detailed Analysis Report"}
                     </p>
                   </div>
-                  <ScrollArea className="flex-1 p-6">
-                    <div className="max-w-none prose prose-zinc">
-                      {reportContent ? (
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            code({
-                              node,
-                              inline,
-                              className,
-                              children,
-                              ...props
-                            }) {
-                              const match = /language-(\w+)/.exec(
-                                className || ""
-                              );
-                              const codeContent = String(children).replace(
-                                /\n$/,
-                                ""
-                              );
-                              if (!inline && match) {
-                                return (
-                                  <div className="relative my-2 rounded-md overflow-hidden">
-                                    <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
-                                      <span>{match[1]}</span>
+                  <ScrollArea className="flex-1">
+                    <div className="p-6">
+                      <div className="prose prose-invert prose-zinc max-w-none">
+                        {reportContent ? (
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              code({
+                                node,
+                                inline,
+                                className,
+                                children,
+                                ...props
+                              }) {
+                                const match = /language-(\w+)/.exec(
+                                  className || ""
+                                );
+                                const codeContent = String(children).replace(
+                                  /\n$/,
+                                  ""
+                                );
+                                if (!inline && match) {
+                                  return (
+                                    <div className="relative my-2 rounded-md overflow-hidden">
+                                      <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
+                                        <span>{match[1]}</span>
+                                      </div>
+                                      <SyntaxHighlighter
+                                        language={match[1]}
+                                        style={oneDark}
+                                        customStyle={{
+                                          margin: 0,
+                                          borderRadius: 0,
+                                          fontSize: "14px",
+                                          lineHeight: "1.5",
+                                        }}
+                                      >
+                                        {codeContent}
+                                      </SyntaxHighlighter>
                                     </div>
-                                    <SyntaxHighlighter
-                                      language={match[1]}
-                                      style={oneDark}
-                                      customStyle={{
-                                        margin: 0,
-                                        borderRadius: 0,
-                                        fontSize: "14px",
-                                        lineHeight: "1.5",
-                                      }}
-                                    >
-                                      {codeContent}
-                                    </SyntaxHighlighter>
-                                  </div>
-                                );
-                              } else if (!inline) {
+                                  );
+                                } else if (!inline) {
+                                  return (
+                                    <div className="relative my-2 rounded-md overflow-hidden">
+                                      <SyntaxHighlighter
+                                        language="text"
+                                        style={oneDark}
+                                        customStyle={{
+                                          margin: 0,
+                                          borderRadius: 0,
+                                          fontSize: "14px",
+                                          lineHeight: "1.5",
+                                        }}
+                                      >
+                                        {codeContent}
+                                      </SyntaxHighlighter>
+                                    </div>
+                                  );
+                                }
                                 return (
-                                  <div className="relative my-2 rounded-md overflow-hidden">
-                                    <SyntaxHighlighter
-                                      language="text"
-                                      style={oneDark}
-                                      customStyle={{
-                                        margin: 0,
-                                        borderRadius: 0,
-                                        fontSize: "14px",
-                                        lineHeight: "1.5",
-                                      }}
-                                    >
-                                      {codeContent}
-                                    </SyntaxHighlighter>
-                                  </div>
+                                  <code
+                                    className="px-1 py-0.5 rounded text-sm bg-zinc-700 text-zinc-200"
+                                    {...props}
+                                  >
+                                    {children}
+                                  </code>
                                 );
-                              }
-                              return (
-                                <code
-                                  className="px-1 py-0.5 rounded text-sm bg-zinc-200 text-zinc-900"
-                                  {...props}
-                                >
-                                  {children}
-                                </code>
-                              );
-                            },
-                          }}
-                        >
-                          {reportContent}
-                        </ReactMarkdown>
-                      ) : (
-                        <div className="animate-pulse space-y-4">
-                          <div className="h-7 bg-zinc-200 rounded w-3/4"></div>
-                          <div className="h-4 bg-zinc-200 rounded w-full"></div>
-                          <div className="h-4 bg-zinc-200 rounded w-full"></div>
-                          <div className="h-4 bg-zinc-200 rounded w-5/6"></div>
-                        </div>
-                      )}
+                              },
+                            }}
+                          >
+                            {reportContent}
+                          </ReactMarkdown>
+                        ) : (
+                          <div className="animate-pulse space-y-4">
+                            <div className="h-7 bg-zinc-800 rounded w-3/4"></div>
+                            <div className="h-4 bg-zinc-800 rounded w-full"></div>
+                            <div className="h-4 bg-zinc-800 rounded w-full"></div>
+                            <div className="h-4 bg-zinc-800 rounded w-5/6"></div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </ScrollArea>
                 </div>
