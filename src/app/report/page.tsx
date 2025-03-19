@@ -92,9 +92,14 @@ export default function SimplifiedReportsPage() {
 
   // 处理报告内容的流式传输
   const [reportContent, setReportContent] = useState("");
+  const [showLoader, setShowLoader] = useState(false);
+
   useEffect(() => {
     const content = extractStreamingReport(messages);
     setReportContent(content);
+
+    // 只在有内容且正在加载时显示加载指示器
+    setShowLoader(isLoading && content.length > 0);
 
     if (!isLoading && content && content.length > 50 && isGenerating) {
       setIsGenerating(false);
@@ -291,100 +296,86 @@ export default function SimplifiedReportsPage() {
           <div className="flex-1 overflow-hidden flex flex-col">
             {reportContent || isLoading ? (
               <>
-                {/* Report Header */}
-                <div className="border-b border-zinc-800 bg-zinc-900 p-4 sticky top-0">
-                  <div className="max-w-4xl mx-auto">
-                    <h2 className="text-xl font-semibold text-zinc-100">
-                      {isLoading ? (
-                        <div className="flex items-center">
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin text-purple-500" />
-                          Generating Report...
-                        </div>
-                      ) : (
-                        input
-                      )}
-                    </h2>
-                    <p className="text-sm text-zinc-400">
-                      {activeMode === "quick"
-                        ? "Quick Summary Report"
-                        : "Detailed Analysis Report"}
-                    </p>
-                  </div>
-                </div>
-
                 {/* Report Content */}
                 <ScrollArea className="flex-1">
                   <div className="max-w-4xl mx-auto p-6">
                     <div className="prose prose-invert prose-zinc max-w-none">
                       {reportContent ? (
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            code({
-                              node,
-                              inline,
-                              className,
-                              children,
-                              ...props
-                            }) {
-                              const match = /language-(\w+)/.exec(
-                                className || ""
-                              );
-                              const codeContent = String(children).replace(
-                                /\n$/,
-                                ""
-                              );
-                              if (!inline && match) {
-                                return (
-                                  <div className="relative my-2 rounded-md overflow-hidden">
-                                    <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
-                                      <span>{match[1]}</span>
+                        <div className="relative">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              code({
+                                node,
+                                inline,
+                                className,
+                                children,
+                                ...props
+                              }) {
+                                const match = /language-(\w+)/.exec(
+                                  className || ""
+                                );
+                                const codeContent = String(children).replace(
+                                  /\n$/,
+                                  ""
+                                );
+                                if (!inline && match) {
+                                  return (
+                                    <div className="relative my-2 rounded-md overflow-hidden">
+                                      <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
+                                        <span>{match[1]}</span>
+                                      </div>
+                                      <SyntaxHighlighter
+                                        language={match[1]}
+                                        style={oneDark}
+                                        customStyle={{
+                                          margin: 0,
+                                          borderRadius: 0,
+                                          fontSize: "14px",
+                                          lineHeight: "1.5",
+                                        }}
+                                      >
+                                        {codeContent}
+                                      </SyntaxHighlighter>
                                     </div>
-                                    <SyntaxHighlighter
-                                      language={match[1]}
-                                      style={oneDark}
-                                      customStyle={{
-                                        margin: 0,
-                                        borderRadius: 0,
-                                        fontSize: "14px",
-                                        lineHeight: "1.5",
-                                      }}
-                                    >
-                                      {codeContent}
-                                    </SyntaxHighlighter>
-                                  </div>
-                                );
-                              } else if (!inline) {
+                                  );
+                                } else if (!inline) {
+                                  return (
+                                    <div className="relative my-2 rounded-md overflow-hidden">
+                                      <SyntaxHighlighter
+                                        language="text"
+                                        style={oneDark}
+                                        customStyle={{
+                                          margin: 0,
+                                          borderRadius: 0,
+                                          fontSize: "14px",
+                                          lineHeight: "1.5",
+                                        }}
+                                      >
+                                        {codeContent}
+                                      </SyntaxHighlighter>
+                                    </div>
+                                  );
+                                }
                                 return (
-                                  <div className="relative my-2 rounded-md overflow-hidden">
-                                    <SyntaxHighlighter
-                                      language="text"
-                                      style={oneDark}
-                                      customStyle={{
-                                        margin: 0,
-                                        borderRadius: 0,
-                                        fontSize: "14px",
-                                        lineHeight: "1.5",
-                                      }}
-                                    >
-                                      {codeContent}
-                                    </SyntaxHighlighter>
-                                  </div>
+                                  <code
+                                    className="px-1 py-0.5 rounded text-sm bg-zinc-700 text-zinc-200"
+                                    {...props}
+                                  >
+                                    {children}
+                                  </code>
                                 );
-                              }
-                              return (
-                                <code
-                                  className="px-1 py-0.5 rounded text-sm bg-zinc-700 text-zinc-200"
-                                  {...props}
-                                >
-                                  {children}
-                                </code>
-                              );
-                            },
-                          }}
-                        >
-                          {reportContent}
-                        </ReactMarkdown>
+                              },
+                            }}
+                          >
+                            {reportContent}
+                          </ReactMarkdown>
+                          {showLoader && (
+                            <span className="inline-flex ml-2">
+                              <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <div className="animate-pulse space-y-4">
                           <div className="h-7 bg-zinc-800 rounded w-3/4"></div>

@@ -138,9 +138,37 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Chat list */}
+        {/* Chat list and New Chat button moved inside ScrollArea */}
         <ScrollArea className="flex-1">
           <div className="px-2 py-4">
+            {/* New Chat button moved here, above Recent Chats */}
+            <div className="mb-4 px-2">
+              {collapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleNewChat}
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-md mx-auto"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">New Chat</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  onClick={handleNewChat}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Chat
+                </Button>
+              )}
+            </div>
+
             {!collapsed && (
               <h3 className="px-4 text-sm font-medium text-muted-foreground">
                 Recent Chats
@@ -197,34 +225,6 @@ export function Sidebar() {
             </div>
           </div>
         </ScrollArea>
-
-        {/* New Chat button at bottom */}
-        <div className="border-t p-4">
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleNewChat}
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 rounded-md"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">New Chat</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Button
-              onClick={handleNewChat}
-              variant="outline"
-              className="w-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Chat
-            </Button>
-          )}
-        </div>
 
         {/* User section at bottom */}
         <div className="mt-auto border-t p-4">

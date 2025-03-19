@@ -1,4 +1,3 @@
-// app/report/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -81,7 +80,7 @@ export default function ReportDetailPage() {
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="border-b border-zinc-800 p-4">
+      <header className="border-b border-zinc-800 p-4 bg-zinc-900">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             {report.mode === "quick" ? (
@@ -114,67 +113,69 @@ export default function ReportDetailPage() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 container mx-auto p-4">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <ScrollArea className="h-full p-6">
-            <div className="max-w-none prose prose-zinc">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  code({ node, inline, className, children, ...props }) {
-                    const match = /language-(\w+)/.exec(className || "");
-                    const codeContent = String(children).replace(/\n$/, "");
-                    if (!inline && match) {
-                      return (
-                        <div className="relative my-2 rounded-md overflow-hidden">
-                          <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
-                            <span>{match[1]}</span>
+      <main className="flex-1 container mx-auto p-4 flex justify-center">
+        <div className="bg-zinc-900 rounded-lg shadow-lg overflow-hidden max-w-4xl w-full">
+          <ScrollArea className="h-[calc(100vh-160px)]">
+            <div className="p-6">
+              <div className="prose prose-invert prose-zinc max-w-none">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code({ node, inline, className, children, ...props }) {
+                      const match = /language-(\w+)/.exec(className || "");
+                      const codeContent = String(children).replace(/\n$/, "");
+                      if (!inline && match) {
+                        return (
+                          <div className="relative my-2 rounded-md overflow-hidden">
+                            <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
+                              <span>{match[1]}</span>
+                            </div>
+                            <SyntaxHighlighter
+                              language={match[1]}
+                              style={oneDark}
+                              customStyle={{
+                                margin: 0,
+                                borderRadius: 0,
+                                fontSize: "14px",
+                                lineHeight: "1.5",
+                              }}
+                            >
+                              {codeContent}
+                            </SyntaxHighlighter>
                           </div>
-                          <SyntaxHighlighter
-                            language={match[1]}
-                            style={oneDark}
-                            customStyle={{
-                              margin: 0,
-                              borderRadius: 0,
-                              fontSize: "14px",
-                              lineHeight: "1.5",
-                            }}
-                          >
-                            {codeContent}
-                          </SyntaxHighlighter>
-                        </div>
-                      );
-                    } else if (!inline) {
+                        );
+                      } else if (!inline) {
+                        return (
+                          <div className="relative my-2 rounded-md overflow-hidden">
+                            <SyntaxHighlighter
+                              language="text"
+                              style={oneDark}
+                              customStyle={{
+                                margin: 0,
+                                borderRadius: 0,
+                                fontSize: "14px",
+                                lineHeight: "1.5",
+                              }}
+                            >
+                              {codeContent}
+                            </SyntaxHighlighter>
+                          </div>
+                        );
+                      }
                       return (
-                        <div className="relative my-2 rounded-md overflow-hidden">
-                          <SyntaxHighlighter
-                            language="text"
-                            style={oneDark}
-                            customStyle={{
-                              margin: 0,
-                              borderRadius: 0,
-                              fontSize: "14px",
-                              lineHeight: "1.5",
-                            }}
-                          >
-                            {codeContent}
-                          </SyntaxHighlighter>
-                        </div>
+                        <code
+                          className="px-1 py-0.5 rounded text-sm bg-zinc-700 text-zinc-200"
+                          {...props}
+                        >
+                          {children}
+                        </code>
                       );
-                    }
-                    return (
-                      <code
-                        className="px-1 py-0.5 rounded text-sm bg-zinc-200 text-zinc-900"
-                        {...props}
-                      >
-                        {children}
-                      </code>
-                    );
-                  },
-                }}
-              >
-                {report.content}
-              </ReactMarkdown>
+                    },
+                  }}
+                >
+                  {report.content}
+                </ReactMarkdown>
+              </div>
             </div>
           </ScrollArea>
         </div>
