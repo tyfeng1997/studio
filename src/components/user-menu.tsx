@@ -12,7 +12,7 @@ import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function UserMenu() {
+export function UserMenu({ minimal = false }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [email, setEmail] = React.useState<string | null>(null);
@@ -82,12 +82,14 @@ export function UserMenu() {
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <div className="p-2">
-          <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
-            {email}
-          </p>
-        </div>
-        <DropdownMenuSeparator />
+        {!minimal && (
+          <div className="p-2">
+            <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+              {email}
+            </p>
+          </div>
+        )}
+        {!minimal && <DropdownMenuSeparator />}
         <DropdownMenuItem
           className="text-red-600 dark:text-red-400 cursor-pointer"
           disabled={isLoading}

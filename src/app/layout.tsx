@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import {
   Inter as FontDefault,
@@ -5,9 +6,6 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-
-import { Navbar } from "@/components/layout/navbar";
-import { MainLayout } from "@/components/layout/main-layout";
 
 const defaultFont = FontDefault({
   subsets: ["latin"],
@@ -40,8 +38,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          <MainLayout>{children}</MainLayout>
+          {children}
         </ThemeProvider>
       </body>
     </html>
