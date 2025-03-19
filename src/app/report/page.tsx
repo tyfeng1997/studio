@@ -1,7 +1,7 @@
 // app/report/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useChat, Message } from "@ai-sdk/react";
 import { createIdGenerator } from "ai";
@@ -9,18 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Zap, FileText, Loader2 } from "lucide-react";
+import { Zap, FileText, Loader2, History } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { ToolResultRenderer } from "@/components/tool-result-render";
 import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
+
 const generateUUID = () => uuidv4();
 
 /**
- * 从最后一个 assistant 消息中提取报告内容（移除包装的 <report> 标签）
- * 这样可以支持流式展示，即使报告尚未结束也能实时更新。
+ * Extract the report content from streaming messages
  */
 function extractStreamingReport(messages: Message[]): string {
   const lastMsg = messages
@@ -44,6 +45,8 @@ export default function ReportPage() {
   const [activeMode, setActiveMode] = useState<"quick" | "detailed">("quick");
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportId] = useState(generateUUID()); // 页面加载时生成一次 UUID
+  const [isSaving, setIsSaving] = useState(false);
+  const [reportSaved, setReportSaved] = useState(false);
 
   const {
     messages,
@@ -76,6 +79,7 @@ export default function ReportPage() {
   const startResearch = () => {
     if (!query.trim()) return;
     setIsGenerating(true);
+    setReportSaved(false);
     const modePrompt =
       activeMode === "quick"
         ? "Generate a quick summary report about this company: "
@@ -87,11 +91,120 @@ export default function ReportPage() {
     handleSubmit({ preventDefault: () => {} });
   };
 
+  // 保存报告到数据库 - 用 useCallback 包装以确保稳定的引用
+  const saveReport = useCallback(
+    async (reportContent: string) => {
+      if (!reportContent || reportSaved) return;
+
+      try {
+        setIsSaving(true);
+
+        // 确保 title 不为空
+        const title = query.trim()
+          ? query.length > 30
+            ? query.substring(0, 30) + "..."
+            : query
+          : "Untitled Report";
+
+        console.log("Saving report:", {
+          id: reportId,
+          titleLength: title.length,
+          contentLength: reportContent.length,
+          mode: activeMode,
+        });
+
+        const response = await fetch("/api/reports", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: reportId,
+            title: title,
+            content: reportContent,
+            mode: activeMode,
+          }),
+        });
+
+        // 尝试解析响应JSON
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          console.error("Failed to parse response JSON:", e);
+          data = { error: "Invalid server response" };
+        }
+
+        if (!response.ok) {
+          console.error("Server response:", data);
+          throw new Error(data.error || "Failed to save report");
+        }
+
+        setReportSaved(true);
+        toast.success("Report saved successfully");
+      } catch (error) {
+        console.error("Error saving report:", error);
+        toast.error(
+          `Failed to save report: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [reportId, query, activeMode, reportSaved, setIsSaving, setReportSaved]
+  );
+
   // 由于流式传输，我们动态提取最新的报告内容
   const [reportContent, setReportContent] = useState("");
   useEffect(() => {
-    setReportContent(extractStreamingReport(messages));
-  }, [messages]);
+    // 提取报告内容
+    const content = extractStreamingReport(messages);
+    setReportContent(content);
+
+    // 仅在满足以下条件时保存报告:
+    // 1. 报告生成已完成 (isLoading === false)
+    // 2. 有内容可保存 (content 长度 > 50 个字符)
+    // 3. 当前正在生成报告 (isGenerating === true)
+    // 4. 报告尚未保存 (reportSaved === false)
+    if (
+      !isLoading &&
+      content &&
+      content.length > 50 &&
+      isGenerating &&
+      !reportSaved
+    ) {
+      console.log("Conditions met for saving report:", {
+        loadingDone: !isLoading,
+        hasContent: !!content,
+        contentLength: content.length,
+        isGenerating,
+        notSavedYet: !reportSaved,
+      });
+
+      // 延迟一点保存，确保所有内容都已经流式传输完成
+      const timer = setTimeout(() => {
+        saveReport(content);
+        setIsGenerating(false);
+      }, 1000);
+
+      // 清理 setTimeout
+      return () => clearTimeout(timer);
+    }
+  }, [
+    messages,
+    isLoading,
+    isGenerating,
+    reportSaved,
+    saveReport,
+    setIsGenerating,
+  ]);
+
+  // Navigate to report history
+  const goToReportHistory = () => {
+    router.push("/reports");
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950">
@@ -104,13 +217,23 @@ export default function ReportPage() {
               Company Analysis Report
             </h1>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => router.push("/chat")}
-            className="text-zinc-400 hover:text-white"
-          >
-            Back to Chat
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={goToReportHistory}
+              className="text-zinc-400 hover:text-white flex items-center gap-1"
+            >
+              <History className="h-4 w-4" />
+              Report History
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/chat")}
+              className="text-zinc-400 hover:text-white"
+            >
+              Back to Chat
+            </Button>
+          </div>
         </div>
       </header>
 

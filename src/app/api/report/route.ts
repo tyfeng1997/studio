@@ -1,14 +1,7 @@
 // app/api/report/route.ts
 import { anthropic } from "@ai-sdk/anthropic";
 import { getToolsConfig } from "@/lib/tools";
-import {
-  streamText,
-  appendClientMessage,
-  createIdGenerator,
-  appendResponseMessages,
-  extractReasoningMiddleware,
-} from "ai";
-import { saveChat, loadChat } from "@/utils/store/chat-store";
+import { streamText, appendClientMessage, createIdGenerator } from "ai";
 
 // System prompts for different report modes
 const QUICK_REPORT_SYSTEM_PROMPT = `
@@ -117,10 +110,9 @@ export async function POST(req: Request) {
   console.log("message", message);
   console.log("id", id);
   console.log("mode", mode);
-  const previousMessages = await loadChat(id);
   const toolsConfig = getToolsConfig();
   const messages = appendClientMessage({
-    messages: previousMessages,
+    messages: [],
     message,
   });
 
@@ -148,23 +140,7 @@ export async function POST(req: Request) {
         thinking: { type: "enabled", budgetTokens: 12000 },
       },
     },
-    async onFinish({ response }) {
-      try {
-        // Save the complete messages with all parts, reasoning, and tool results
-        const updatedMessages = appendResponseMessages({
-          messages,
-          responseMessages: response.messages,
-        });
 
-        // Save chat with all information preserved
-        await saveChat({
-          id,
-          messages: updatedMessages,
-        });
-      } catch (error) {
-        console.error("Error saving report:", error);
-      }
-    },
     onError: (error) => {
       console.log(error);
     },
