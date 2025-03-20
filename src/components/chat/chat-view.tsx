@@ -12,6 +12,7 @@ import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 import { WelcomeView } from "@/components/chat/chat-welcome";
+import { v4 as uuidv4 } from "uuid";
 
 export function ChatView({
   id,
@@ -52,10 +53,7 @@ export function ChatView({
     onResponse: (response) => {
       console.log("Received HTTP response from server:", response);
     },
-    generateId: createIdGenerator({
-      prefix: "msgc",
-      size: 16,
-    }),
+    generateId: uuidv4,
     experimental_prepareRequestBody({ messages, id }) {
       return {
         message: messages[messages.length - 1],

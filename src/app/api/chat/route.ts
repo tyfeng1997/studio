@@ -13,6 +13,7 @@ import {
   wrapLanguageModel,
 } from "ai";
 import { saveChat, loadChat, updateChatTitle } from "@/utils/store/chat-store";
+import { v4 as uuidv4 } from "uuid";
 
 // 添加报告生成的系统提示
 const REPORT_SYSTEM_PROMPT = `
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
   const { message, id } = await req.json();
   console.log("message", message);
   console.log("id", id);
+
   const previousMessages = await loadChat(id);
   const toolsConfig = getToolsConfig();
   const messages = appendClientMessage({
@@ -116,10 +118,7 @@ export async function POST(req: Request) {
     messages,
     tools: tools,
     toolCallStreaming: true,
-    experimental_generateMessageId: createIdGenerator({
-      prefix: "msgs",
-      size: 16,
-    }),
+    experimental_generateMessageId: uuidv4,
     maxSteps: 20,
     // Add reasoning configuration
     providerOptions: {

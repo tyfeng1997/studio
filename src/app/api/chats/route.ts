@@ -36,32 +36,3 @@ export async function GET() {
     );
   }
 }
-
-export async function POST(request: Request) {
-  const supabase = await createClient();
-
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Create a new chat
-    const id = await createChat();
-
-    return NextResponse.json({
-      success: true,
-      message: "Chat created successfully",
-      id,
-    });
-  } catch (error) {
-    console.error("Create chat error:", error);
-    return NextResponse.json(
-      { error: "Failed to create chat" },
-      { status: 500 }
-    );
-  }
-}

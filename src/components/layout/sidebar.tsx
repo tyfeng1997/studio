@@ -58,25 +58,7 @@ export function Sidebar() {
 
   // Handle new chat creation
   const handleNewChat = async () => {
-    try {
-      const response = await fetch("/api/chats", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create new chat");
-      }
-
-      const data = await response.json();
-      router.push(`/chat/${data.id}`);
-      await fetchChats();
-    } catch (error) {
-      console.error("Error creating new chat:", error);
-      toast.error("创建新对话失败");
-    }
+    router.push(`/chat`);
   };
 
   // Handle chat deletion
