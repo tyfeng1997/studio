@@ -19,9 +19,6 @@ interface ChatInputProps {
   files?: FileList;
   setFiles: (files: FileList | undefined) => void;
   stop: () => void;
-  showReport: boolean;
-  setShowReport: (show: boolean) => void;
-  reportCount: number;
 }
 
 export function ChatInput({
@@ -32,9 +29,6 @@ export function ChatInput({
   files,
   setFiles,
   stop,
-  showReport,
-  setShowReport,
-  reportCount,
 }: ChatInputProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -80,36 +74,6 @@ export function ChatInput({
           />
 
           <div className="flex items-center">
-            <div className="flex items-center mr-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant={showReport ? "default" : "outline"}
-                    onClick={() => setShowReport(!showReport)}
-                    className="relative"
-                  >
-                    <FileText className="h-4 w-4" />
-                    {reportCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                      >
-                        {reportCount}
-                      </Badge>
-                    )}
-                    <span className="sr-only">
-                      {showReport ? "Hide reports" : "Show reports"}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {showReport ? "Hide reports" : "Show reports"}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
             <Textarea
               value={input}
               onChange={handleInputChange}

@@ -10,31 +10,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Report } from "./chat-report";
 import { motion, AnimatePresence } from "framer-motion";
 import { WelcomeView } from "@/components/chat/chat-welcome";
-
-// Helper function to extract report content from message
-function extractReports(messages: Message[]) {
-  const reports: { id: string; content: string }[] = [];
-
-  messages.forEach((message) => {
-    if (message.role === "assistant" && typeof message.content === "string") {
-      const content = message.content;
-      const reportRegex = /<report>([\s\S]*?)<\/report>/g;
-      let match;
-
-      while ((match = reportRegex.exec(content)) !== null) {
-        reports.push({
-          id: `${message.id}-${reports.length}`,
-          content: match[1].trim(),
-        });
-      }
-    }
-  });
-
-  return reports;
-}
 
 export function ChatView({
   id,
@@ -44,7 +21,6 @@ export function ChatView({
   initialMessages?: Message[];
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
-  const [showReport, setShowReport] = React.useState(false);
   const [customPrompt, setCustomPrompt] = React.useState(""); // 状态管理预设 prompt
 
   const {
@@ -132,44 +108,13 @@ export function ChatView({
     }
   };
 
-  // Extract reports from messages
-  const reports = extractReports(messages);
-
   return (
     <TooltipProvider>
       <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
-        {/* Report Panel with Animation */}
-        <AnimatePresence initial={false}>
-          {showReport && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{
-                width: "33.333333%",
-                opacity: 1,
-                transition: {
-                  width: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2, delay: 0.1 },
-                },
-              }}
-              exit={{
-                width: 0,
-                opacity: 0,
-                transition: {
-                  width: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 },
-                },
-              }}
-              className="border-r flex flex-col h-full overflow-hidden"
-            >
-              <Report reports={reports} onClose={() => setShowReport(false)} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Chat Panel with Animation */}
         <motion.div
           animate={{
-            width: showReport ? "66.666667%" : "100%",
+            width: "100%",
             transition: { type: "spring", stiffness: 300, damping: 30 },
           }}
           className="flex flex-col h-full"
@@ -238,9 +183,6 @@ export function ChatView({
                 files={files}
                 setFiles={setFiles}
                 stop={stop}
-                showReport={showReport}
-                setShowReport={setShowReport}
-                reportCount={reports.length}
               />
             </div>
           </div>
