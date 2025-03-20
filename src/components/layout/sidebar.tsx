@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  LineChart,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -91,11 +93,25 @@ export function Sidebar() {
     }
   };
 
+  // Get a random icon for each chat based on chat ID
+  const getChatIcon = (chatId) => {
+    // Use the sum of character codes of the ID to determine icon
+    const sum = chatId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const icons = [
+      <MessageSquare className="h-4 w-4 text-blue-500 dark:text-blue-400" />,
+      <LineChart className="h-4 w-4 text-green-500 dark:text-green-400" />,
+      <FileText className="h-4 w-4 text-purple-500 dark:text-purple-400" />,
+    ];
+    return icons[sum % icons.length];
+  };
+
   return (
     <TooltipProvider>
       <div
         className={cn(
-          "group relative flex h-full flex-col overflow-hidden border-r bg-background transition-all duration-300",
+          "group relative flex h-full flex-col overflow-hidden border-r border-blue-100 dark:border-blue-900/30 bg-white dark:bg-zinc-900 transition-all duration-300",
           collapsed ? "w-[60px]" : "w-[280px]"
         )}
       >
@@ -103,7 +119,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-3 z-10 h-7 w-7 rounded-md"
+          className="absolute right-2 top-3 z-10 h-7 w-7 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
           onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? (
@@ -114,9 +130,21 @@ export function Sidebar() {
         </Button>
 
         {/* Header section */}
-        <div className="flex h-14 items-center px-4 border-b">
+        <div className="flex h-14 items-center px-4 border-b border-blue-100 dark:border-blue-900/30 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/20 dark:to-zinc-900">
           {!collapsed && (
-            <h2 className="mr-auto font-display font-semibold">-Logs-</h2>
+            <div className="flex items-center">
+              <div className="h-6 w-6 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center mr-2">
+                <MessageSquare className="h-3 w-3 text-white" />
+              </div>
+              <h2 className="mr-auto font-display font-semibold text-blue-900 dark:text-blue-100">
+                金融洞察
+              </h2>
+            </div>
+          )}
+          {collapsed && (
+            <div className="mx-auto h-6 w-6 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+              <MessageSquare className="h-3 w-3 text-white" />
+            </div>
           )}
         </div>
 
@@ -130,31 +158,34 @@ export function Sidebar() {
                   <TooltipTrigger asChild>
                     <Button
                       onClick={handleNewChat}
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-md mx-auto"
+                      className="h-9 w-9 rounded-md mx-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">New Chat</TooltipContent>
+                  <TooltipContent side="right">新对话</TooltipContent>
                 </Tooltip>
               ) : (
                 <Button
                   onClick={handleNewChat}
-                  variant="outline"
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  New Chat
+                  新对话
                 </Button>
               )}
             </div>
 
             {!collapsed && (
-              <h3 className="px-4 text-sm font-medium text-muted-foreground">
-                Recent Chats
-              </h3>
+              <div className="px-4 mb-2">
+                <div className="flex items-center">
+                  <div className="h-1 flex-1 bg-gradient-to-r from-blue-500/20 to-transparent"></div>
+                  <h3 className="px-2 text-sm font-medium text-blue-700 dark:text-blue-400">
+                    最近对话
+                  </h3>
+                  <div className="h-1 flex-1 bg-gradient-to-l from-blue-500/20 to-transparent"></div>
+                </div>
+              </div>
             )}
             <div className="mt-2 space-y-1">
               {chats.map((chat) => (
@@ -162,18 +193,18 @@ export function Sidebar() {
                   key={chat.id}
                   href={`/chat/${chat.id}`}
                   className={cn(
-                    "group flex items-center gap-2 rounded-md px-4 py-2 transition-colors",
+                    "group flex items-center gap-2 rounded-md px-4 py-2 transition-all duration-200",
                     pathname?.includes(chat.id)
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-accent/50 hover:text-accent-foreground",
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-l-2 border-blue-500"
+                      : "hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-blue-300",
                     collapsed && "px-2 justify-center"
                   )}
                 >
-                  <MessageSquare className="h-4 w-4 shrink-0" />
+                  {getChatIcon(chat.id)}
                   {!collapsed && (
                     <div className="flex-1 truncate text-sm">
                       <div className="truncate font-medium">
-                        {chat.title || "New Conversation"}
+                        {chat.title || "新对话"}
                       </div>
                       <p className="truncate text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(chat.updated_at), {
@@ -186,22 +217,26 @@ export function Sidebar() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="ml-auto h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
+                      className="ml-auto h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                       onClick={(e) => handleDeleteChat(chat.id, e)}
                     >
-                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
                 </Link>
               ))}
               {loading && !collapsed && (
-                <div className="px-4 py-3 text-sm text-muted-foreground">
-                  Loading...
+                <div className="px-4 py-3 text-sm text-blue-600 dark:text-blue-400 animate-pulse">
+                  加载中...
                 </div>
               )}
               {!loading && chats.length === 0 && !collapsed && (
-                <div className="px-4 py-3 text-sm text-muted-foreground">
-                  No conversations yet
+                <div className="px-4 py-6 text-sm text-center text-muted-foreground">
+                  <div className="mb-2 opacity-70">
+                    <MessageSquare className="h-6 w-6 mx-auto mb-2" />
+                    暂无对话
+                  </div>
+                  <p className="text-xs opacity-70">点击"新对话"按钮开始</p>
                 </div>
               )}
             </div>
@@ -209,7 +244,7 @@ export function Sidebar() {
         </ScrollArea>
 
         {/* User section at bottom */}
-        <div className="mt-auto border-t p-4">
+        <div className="mt-auto border-t border-blue-100 dark:border-blue-900/30 p-4 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/20 dark:to-zinc-900">
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -217,7 +252,7 @@ export function Sidebar() {
                   <UserMenu minimal={true} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right">User Settings</TooltipContent>
+              <TooltipContent side="right">用户设置</TooltipContent>
             </Tooltip>
           ) : (
             <UserMenu />

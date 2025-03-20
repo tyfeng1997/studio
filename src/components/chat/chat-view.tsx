@@ -108,7 +108,7 @@ export function ChatView({
 
   return (
     <TooltipProvider>
-      <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+      <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden bg-gray-50 dark:bg-zinc-900">
         {/* Chat Panel with Animation */}
         <motion.div
           animate={{
@@ -125,7 +125,7 @@ export function ChatView({
                 {error ? (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription className="flex items-center justify-between">
-                      <span>Error: {error.message}</span>
+                      <span>错误: {error.message}</span>
                       <Button
                         size="sm"
                         variant="outline"
@@ -133,7 +133,7 @@ export function ChatView({
                         className="h-7 px-3"
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />
-                        Retry
+                        重试
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -171,7 +171,7 @@ export function ChatView({
           </div>
 
           {/* Chat input area */}
-          <div className="border-t bg-background p-4">
+          <div className="border-t border-blue-100 dark:border-blue-900/30 bg-white dark:bg-zinc-800 p-4 shadow-md">
             <div className="mx-auto max-w-5xl relative">
               <ChatInput
                 input={input}

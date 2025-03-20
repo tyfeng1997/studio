@@ -70,7 +70,7 @@ export function ChatMessage({
   const renderReasoningContent = () => {
     if (!hasReasoningParts || !isReasoningVisible) return null;
     return (
-      <div className="bg-zinc-100 dark:bg-zinc-900 rounded-md p-3 mt-2 text-sm border border-zinc-200 dark:border-zinc-800 overflow-auto max-h-[300px]">
+      <div className="bg-blue-50 dark:bg-blue-950/20 rounded-md p-3 mt-2 text-sm border border-blue-200 dark:border-blue-900/50 overflow-auto max-h-[300px]">
         {reasoningParts.map((part, index) => {
           if (part.details && Array.isArray(part.details)) {
             return (
@@ -78,7 +78,7 @@ export function ChatMessage({
                 {part.details.map((detail, detailIndex) => (
                   <div key={`detail-${detailIndex}`} className="mb-2">
                     {detail.type === "text" && detail.text && (
-                      <div className="text-zinc-800 dark:text-zinc-300">
+                      <div className="text-blue-800 dark:text-blue-300">
                         {detail.text}
                       </div>
                     )}
@@ -90,7 +90,7 @@ export function ChatMessage({
             return (
               <div
                 key={`reasoning-${index}`}
-                className="text-zinc-800 dark:text-zinc-300"
+                className="text-blue-800 dark:text-blue-300"
               >
                 {typeof part.reasoning === "string"
                   ? part.reasoning
@@ -101,7 +101,7 @@ export function ChatMessage({
             return (
               <div
                 key={`reasoning-${index}`}
-                className="text-zinc-800 dark:text-zinc-300"
+                className="text-blue-800 dark:text-blue-300"
               >
                 <pre>{JSON.stringify(part, null, 2)}</pre>
               </div>
@@ -120,7 +120,7 @@ export function ChatMessage({
           <motion.div
             initial={{ opacity: 0.7 }}
             animate={{ opacity: 1 }}
-            className="bg-zinc-100 dark:bg-zinc-800 rounded-md p-3 my-2 border border-zinc-200 dark:border-zinc-700 break-words whitespace-pre-wrap"
+            className="bg-amber-50 dark:bg-amber-950/30 rounded-md p-3 my-2 border border-amber-200 dark:border-amber-800/50 break-words whitespace-pre-wrap"
           >
             <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -128,7 +128,7 @@ export function ChatMessage({
                 准备工具: {part.toolInvocation.toolName}
               </span>
             </div>
-            <div className="text-sm text-zinc-600 dark:text-zinc-400 overflow-x-auto">
+            <div className="text-sm text-amber-700 dark:text-amber-300 overflow-x-auto">
               {part.toolInvocation.args ? (
                 <pre className="text-xs">
                   {JSON.stringify(part.toolInvocation.args, null, 2)}
@@ -146,7 +146,7 @@ export function ChatMessage({
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900 break-words whitespace-pre-wrap"
+            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900/50 break-words whitespace-pre-wrap"
           >
             <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -155,14 +155,14 @@ export function ChatMessage({
               </span>
             </div>
             {part.toolInvocation.args && (
-              <div className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 overflow-x-auto">
+              <div className="text-sm text-blue-700 dark:text-blue-300 mb-2 overflow-x-auto">
                 <pre className="text-xs">
                   {JSON.stringify(part.toolInvocation.args, null, 2)}
                 </pre>
               </div>
             )}
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="text-xs text-blue-500 dark:text-blue-400">
                 工具调用中，请稍候...
               </span>
               <div className="flex space-x-1">
@@ -199,17 +199,17 @@ export function ChatMessage({
   const TypingIndicator = () => (
     <div className="flex items-center gap-1 py-1">
       <motion.div
-        className="h-1.5 w-1.5 bg-primary rounded-full"
+        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.2 }}
       />
       <motion.div
-        className="h-1.5 w-1.5 bg-primary rounded-full"
+        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.3 }}
       />
       <motion.div
-        className="h-1.5 w-1.5 bg-primary rounded-full"
+        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.4 }}
       />
@@ -231,8 +231,8 @@ export function ChatMessage({
             className={cn(
               "flex flex-col gap-4 rounded-lg px-4 py-3 shadow-md",
               isUserMessage
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                : "bg-white dark:bg-zinc-800 text-foreground border border-gray-100 dark:border-zinc-700"
             )}
           >
             {textContent.trim() ? (
@@ -296,7 +296,7 @@ export function ChatMessage({
                             "px-1 py-0.5 rounded text-sm",
                             isUserMessage
                               ? "bg-white/20 text-white"
-                              : "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                              : "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
                           )}
                           {...props}
                         >
@@ -323,7 +323,7 @@ export function ChatMessage({
                       "flex items-center gap-2 rounded-md p-2",
                       isUserMessage
                         ? "bg-white/10"
-                        : "bg-background dark:bg-zinc-800"
+                        : "bg-blue-50 dark:bg-blue-900/20"
                     )}
                   >
                     <FileText className="h-4 w-4" />
@@ -356,7 +356,7 @@ export function ChatMessage({
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground self-start"
+                className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 self-start"
                 onClick={() => setIsReasoningVisible(!isReasoningVisible)}
               >
                 {isReasoningVisible ? (
@@ -389,7 +389,7 @@ export function ChatMessage({
             overflow-y-auto   /* 只让右侧滚动 */
             max-h-[400px]     /* 限制高度，超过后滚动 */
             border-l 
-            border-zinc-200 
+            border-gray-200 
             dark:border-zinc-700
             p-2
           "
