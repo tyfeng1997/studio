@@ -95,14 +95,22 @@ export function Sidebar() {
 
   // Get a random icon for each chat based on chat ID
   const getChatIcon = (chatId) => {
-    // Use the sum of character codes of the ID to determine icon
     const sum = chatId
       .split("")
       .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const icons = [
-      <MessageSquare className="h-4 w-4 text-blue-500 dark:text-blue-400" />,
-      <LineChart className="h-4 w-4 text-green-500 dark:text-green-400" />,
-      <FileText className="h-4 w-4 text-purple-500 dark:text-purple-400" />,
+      <MessageSquare
+        key="message"
+        className="h-4 w-4 text-blue-500 dark:text-blue-400"
+      />,
+      <LineChart
+        key="chart"
+        className="h-4 w-4 text-green-500 dark:text-green-400"
+      />,
+      <FileText
+        key="file"
+        className="h-4 w-4 text-purple-500 dark:text-purple-400"
+      />,
     ];
     return icons[sum % icons.length];
   };
