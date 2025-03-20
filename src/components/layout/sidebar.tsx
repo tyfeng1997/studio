@@ -25,6 +25,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useSidebar } from "./sidebar-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { BarChart3 } from "lucide-react";
 
 export function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
@@ -136,7 +137,6 @@ export function Sidebar() {
             <ChevronLeft className="h-4 w-4" />
           )}
         </Button>
-
         {/* Header section */}
         <div className="flex h-14 items-center px-4 border-b border-blue-100 dark:border-blue-900/30 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/20 dark:to-zinc-900">
           {!collapsed && (
@@ -155,7 +155,6 @@ export function Sidebar() {
             </div>
           )}
         </div>
-
         {/* Chat list and New Chat button moved inside ScrollArea */}
         <ScrollArea className="flex-1">
           <div className="px-2 py-4">
@@ -250,7 +249,32 @@ export function Sidebar() {
             </div>
           </div>
         </ScrollArea>
-
+        <div className="mt-auto border-t border-blue-100 dark:border-blue-900/30 p-4">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => router.push("/report")}
+                  className="mx-auto h-9 w-9 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
+                  <BarChart3 className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">公司研究</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              onClick={() => router.push("/report")}
+            >
+              <BarChart3 className="h-5 w-5 mr-2" />
+              公司研究报告
+            </Button>
+          )}
+        </div>
         {/* User section at bottom */}
         <div className="mt-auto border-t border-blue-100 dark:border-blue-900/30 p-4 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/20 dark:to-zinc-900">
           {collapsed ? (

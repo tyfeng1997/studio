@@ -7,7 +7,7 @@ import { createIdGenerator } from "ai";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, FileText, Loader2, ArrowLeft, X } from "lucide-react";
+import { Zap, FileText, Loader2, ArrowLeft, X, Search } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
 // 从流式消息中提取报告内容
 function extractStreamingReport(messages: Message[]): string {
@@ -37,6 +38,7 @@ function extractStreamingReport(messages: Message[]): string {
 
 export default function SimplifiedReportsPage() {
   const router = useRouter();
+  const { theme } = useTheme();
 
   // 创建报告相关状态
   const [input, setInput] = useState("");
@@ -114,15 +116,15 @@ export default function SimplifiedReportsPage() {
           <motion.div
             initial={{ opacity: 0.7 }}
             animate={{ opacity: 1 }}
-            className="bg-zinc-800 rounded-md p-3 my-2 border border-zinc-700 break-words whitespace-pre-wrap"
+            className="bg-amber-50 dark:bg-amber-950/30 rounded-md p-3 my-2 border border-amber-200 dark:border-amber-800/50 break-words whitespace-pre-wrap"
           >
-            <div className="flex items-center gap-2 mb-2 text-amber-400">
+            <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="font-medium">
                 准备工具: {part.toolInvocation.toolName}
               </span>
             </div>
-            <div className="text-sm text-zinc-400 overflow-x-auto">
+            <div className="text-sm text-amber-700 dark:text-amber-300 overflow-x-auto">
               {part.toolInvocation.args ? (
                 <pre className="text-xs">
                   {JSON.stringify(part.toolInvocation.args, null, 2)}
@@ -140,29 +142,29 @@ export default function SimplifiedReportsPage() {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="bg-blue-950/30 rounded-md p-3 my-2 border border-blue-900 break-words whitespace-pre-wrap"
+            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900/50 break-words whitespace-pre-wrap"
           >
-            <div className="flex items-center gap-2 mb-2 text-blue-400">
+            <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="font-medium">
                 执行工具: {part.toolInvocation.toolName}
               </span>
             </div>
             {part.toolInvocation.args && (
-              <div className="text-sm text-zinc-300 mb-2 overflow-x-auto">
+              <div className="text-sm text-blue-700 dark:text-blue-300 mb-2 overflow-x-auto">
                 <pre className="text-xs">
                   {JSON.stringify(part.toolInvocation.args, null, 2)}
                 </pre>
               </div>
             )}
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-zinc-400">
+              <span className="text-xs text-blue-500 dark:text-blue-400">
                 工具调用中，请稍候...
               </span>
               <div className="flex space-x-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse delay-150"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse delay-300"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300"></div>
               </div>
             </div>
           </motion.div>
@@ -193,17 +195,17 @@ export default function SimplifiedReportsPage() {
   const TypingIndicator = () => (
     <div className="flex items-center gap-1 py-2 px-4">
       <motion.div
-        className="h-1.5 w-1.5 bg-purple-500 rounded-full"
+        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.2 }}
       />
       <motion.div
-        className="h-1.5 w-1.5 bg-purple-500 rounded-full"
+        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.3 }}
       />
       <motion.div
-        className="h-1.5 w-1.5 bg-purple-500 rounded-full"
+        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.4 }}
       />
@@ -211,23 +213,25 @@ export default function SimplifiedReportsPage() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950">
+    <div className="flex flex-col h-screen bg-white dark:bg-zinc-950">
       {/* Header - Fixed at the top */}
-      <header className="border-b border-zinc-800 p-4 bg-zinc-950 sticky top-0 z-10">
+      <header className="border-b border-gray-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-950 sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-purple-500" />
-            <h1 className="text-xl font-semibold text-white">
-              Company Reports
+            <div className="h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              公司研究报告
             </h1>
           </div>
           <Button
             variant="outline"
             onClick={() => router.push("/chat")}
-            className="text-zinc-400 hover:text-white"
+            className="text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white border-gray-200 dark:border-zinc-800"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Chat
+            返回对话
           </Button>
         </div>
       </header>
@@ -247,12 +251,13 @@ export default function SimplifiedReportsPage() {
               type="text"
               value={input}
               onChange={handleQueryChange}
-              placeholder="Enter company name or research topic..."
-              className="w-full h-12 px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-full text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="输入公司名称或研究主题..."
+              className="w-full h-12 px-4 py-2 pl-10 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent"
               disabled={isLoading}
             />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-              <div className="flex border-r border-zinc-700 pr-2">
+              <div className="flex border-r border-gray-200 dark:border-zinc-700 pr-2">
                 <Button
                   type="button"
                   variant={activeMode === "quick" ? "secondary" : "ghost"}
@@ -260,8 +265,8 @@ export default function SimplifiedReportsPage() {
                   className="rounded-full"
                   onClick={() => setActiveMode("quick")}
                 >
-                  <Zap className="h-4 w-4 mr-1" />
-                  Quick
+                  <Zap className="h-4 w-4 mr-1 text-amber-500 dark:text-amber-400" />
+                  <span className="text-gray-700 dark:text-gray-300">快速</span>
                 </Button>
                 <Button
                   type="button"
@@ -270,20 +275,20 @@ export default function SimplifiedReportsPage() {
                   className="rounded-full"
                   onClick={() => setActiveMode("detailed")}
                 >
-                  <FileText className="h-4 w-4 mr-1" />
-                  Detailed
+                  <FileText className="h-4 w-4 mr-1 text-blue-500 dark:text-blue-400" />
+                  <span className="text-gray-700 dark:text-gray-300">详细</span>
                 </Button>
               </div>
               <Button
                 type="submit"
                 disabled={isLoading || !input.trim()}
-                className="rounded-full bg-purple-600 hover:bg-purple-700 h-8"
+                className="rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white h-8"
                 size="sm"
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Research"
+                  "研究"
                 )}
               </Button>
             </div>
@@ -299,7 +304,7 @@ export default function SimplifiedReportsPage() {
                 {/* Report Content */}
                 <ScrollArea className="flex-1">
                   <div className="max-w-4xl mx-auto p-6">
-                    <div className="prose prose-invert prose-zinc max-w-none">
+                    <div className="prose prose-blue dark:prose-invert max-w-none">
                       {reportContent ? (
                         <div className="relative">
                           <ReactMarkdown
@@ -322,7 +327,7 @@ export default function SimplifiedReportsPage() {
                                 if (!inline && match) {
                                   return (
                                     <div className="relative my-2 rounded-md overflow-hidden">
-                                      <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
+                                      <div className="flex justify-between items-center py-1 px-3 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 text-xs">
                                         <span>{match[1]}</span>
                                       </div>
                                       <SyntaxHighlighter
@@ -359,7 +364,7 @@ export default function SimplifiedReportsPage() {
                                 }
                                 return (
                                   <code
-                                    className="px-1 py-0.5 rounded text-sm bg-zinc-700 text-zinc-200"
+                                    className="px-1 py-0.5 rounded text-sm bg-gray-100 dark:bg-zinc-800 text-blue-700 dark:text-blue-300"
                                     {...props}
                                   >
                                     {children}
@@ -372,16 +377,16 @@ export default function SimplifiedReportsPage() {
                           </ReactMarkdown>
                           {showLoader && (
                             <span className="inline-flex ml-2">
-                              <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                              <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
                             </span>
                           )}
                         </div>
                       ) : (
                         <div className="animate-pulse space-y-4">
-                          <div className="h-7 bg-zinc-800 rounded w-3/4"></div>
-                          <div className="h-4 bg-zinc-800 rounded w-full"></div>
-                          <div className="h-4 bg-zinc-800 rounded w-full"></div>
-                          <div className="h-4 bg-zinc-800 rounded w-5/6"></div>
+                          <div className="h-7 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-5/6"></div>
                         </div>
                       )}
                     </div>
@@ -390,14 +395,16 @@ export default function SimplifiedReportsPage() {
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center">
-                <Card className="w-full max-w-xl bg-zinc-900 border-zinc-800">
+                <Card className="w-full max-w-xl bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
                   <CardHeader className="text-center pb-6">
-                    <CardTitle className="text-2xl text-white">
-                      Research Any Company
+                    <div className="mx-auto w-16 h-16 mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                      <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <CardTitle className="text-2xl text-gray-900 dark:text-white">
+                      研究任意公司
                     </CardTitle>
-                    <p className="text-zinc-400 mt-2">
-                      Enter a company name or topic above to generate a
-                      comprehensive analysis report powered by AI.
+                    <p className="text-gray-500 dark:text-zinc-400 mt-2">
+                      在上方输入公司名称或主题，生成由AI驱动的全面分析报告。
                     </p>
                   </CardHeader>
                 </Card>
@@ -407,14 +414,14 @@ export default function SimplifiedReportsPage() {
 
           {/* Tool results sidebar */}
           {messages.length > 0 && (
-            <div className="w-72 border-l border-zinc-800 bg-zinc-900 overflow-y-auto">
+            <div className="w-72 border-l border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 overflow-y-auto">
               <div className="p-4">
-                <h3 className="text-sm font-medium text-zinc-300 mb-3 flex items-center justify-between">
-                  <span>Research Process</span>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-3 flex items-center justify-between">
+                  <span>研究过程</span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0"
+                    className="h-6 w-6 p-0 text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
                     onClick={() => router.refresh()}
                   >
                     <X className="h-4 w-4" />
