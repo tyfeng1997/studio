@@ -249,7 +249,6 @@ export function Sidebar() {
             </div>
           </div>
         </ScrollArea>
-        // 在UserMenu前添加公司研究按钮
         <div className="mt-auto border-t border-blue-100 dark:border-blue-900/30 p-4">
           {collapsed ? (
             <Tooltip>
