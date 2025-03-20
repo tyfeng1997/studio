@@ -1,14 +1,18 @@
+// app/chat/page.tsx
 import { redirect } from "next/navigation";
-import { createChat } from "@/utils/store/chat-store";
 import { createClient } from "@/utils/supabase/server";
+import { ChatView } from "@/components/chat/chat-view";
 
-export default async function Page() {
+export default async function ChatPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {
     redirect("/login");
   }
 
-  const id = await createChat(); // create a new chat
-  redirect(`/chat/${id}`); // redirect to chat page, see below
+  return (
+    <div className="flex-1">
+      <ChatView />
+    </div>
+  );
 }

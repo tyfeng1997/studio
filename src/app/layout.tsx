@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import {
   Inter as FontDefault,
@@ -5,9 +6,6 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-
-import { Navbar } from "@/components/layout/navbar";
-import { MainLayout } from "@/components/layout/main-layout";
 
 const defaultFont = FontDefault({
   subsets: ["latin"],
@@ -20,8 +18,12 @@ const displayFont = FontDisplay({
 });
 
 export const metadata: Metadata = {
-  title: "LLM Chat App",
-  description: "A chat application with LLM and tools support",
+  title: "FinanceInsight.app | AI-Powered Financial Analysis",
+  description:
+    "Get instant insights on companies, markets, and financial news with our advanced AI toolkit. Research reports, sentiment analysis, and market positioning in seconds.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -40,8 +42,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          <MainLayout>{children}</MainLayout>
+          {children}
         </ThemeProvider>
       </body>
     </html>

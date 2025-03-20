@@ -62,7 +62,28 @@ export async function loadChat(id: string): Promise<Message[]> {
   } = await supabase.auth.getUser();
   if (userError || !user) throw new Error("Unauthorized");
 
-  // Load messages
+  // Check if the chat exists
+  const { data: chatData, error: chatError } = await supabase
+    .from("chats")
+    .select("id")
+    .eq("id", id)
+    .single();
+
+  // If chat doesn't exist, create it with the given ID
+  if (!chatData) {
+    const { error: createError } = await supabase.from("chats").insert({
+      id: id,
+      user_id: user.id,
+      title: "New Chat",
+    });
+
+    if (createError) throw createError;
+
+    // Return empty messages array for the new chat
+    return [];
+  }
+
+  // If chat exists, load messages
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
     .select("id, role, content, created_at, parts, tool_results, reasoning")

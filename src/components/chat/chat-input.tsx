@@ -19,9 +19,6 @@ interface ChatInputProps {
   files?: FileList;
   setFiles: (files: FileList | undefined) => void;
   stop: () => void;
-  showReport: boolean;
-  setShowReport: (show: boolean) => void;
-  reportCount: number;
 }
 
 export function ChatInput({
@@ -32,9 +29,6 @@ export function ChatInput({
   files,
   setFiles,
   stop,
-  showReport,
-  setShowReport,
-  reportCount,
 }: ChatInputProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -56,13 +50,13 @@ export function ChatInput({
       <div className="space-y-2">
         {/* File attachments preview */}
         {files && files.length > 0 && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
             <Paperclip className="h-4 w-4" />
-            <span>{files.length} file(s) selected</span>
+            <span>{files.length} 个文件已选择</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-4 w-4 p-0"
+              className="h-4 w-4 p-0 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               onClick={clearFiles}
             >
               <X className="h-3 w-3" />
@@ -80,41 +74,11 @@ export function ChatInput({
           />
 
           <div className="flex items-center">
-            <div className="flex items-center mr-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant={showReport ? "default" : "outline"}
-                    onClick={() => setShowReport(!showReport)}
-                    className="relative"
-                  >
-                    <FileText className="h-4 w-4" />
-                    {reportCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                      >
-                        {reportCount}
-                      </Badge>
-                    )}
-                    <span className="sr-only">
-                      {showReport ? "Hide reports" : "Show reports"}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {showReport ? "Hide reports" : "Show reports"}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
             <Textarea
               value={input}
               onChange={handleInputChange}
-              placeholder={"Send a message..."}
-              className="min-h-[60px] w-full resize-none rounded-lg pr-24 bg-background border-input"
+              placeholder={"发送消息..."}
+              className="min-h-[60px] w-full resize-none rounded-lg pr-24 bg-white dark:bg-zinc-800 border-blue-100 dark:border-blue-900/30 focus:border-blue-300 dark:focus:border-blue-700 shadow-sm"
             />
             <div className="absolute bottom-2 right-2 flex gap-2">
               {isLoading ? (
@@ -125,12 +89,13 @@ export function ChatInput({
                       size="icon"
                       variant="ghost"
                       onClick={() => stop()}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       <Square className="h-4 w-4" />
-                      <span className="sr-only">Stop generating</span>
+                      <span className="sr-only">停止生成</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Stop generating</TooltipContent>
+                  <TooltipContent>停止生成</TooltipContent>
                 </Tooltip>
               ) : (
                 <>
@@ -141,23 +106,29 @@ export function ChatInput({
                         size="icon"
                         variant="ghost"
                         onClick={() => fileInputRef.current?.click()}
+                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                       >
                         <Paperclip className="h-4 w-4" />
-                        <span className="sr-only">Attach files</span>
+                        <span className="sr-only">附加文件</span>
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Attach files</TooltipContent>
+                    <TooltipContent>附加文件</TooltipContent>
                   </Tooltip>
                 </>
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button type="submit" size="icon" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={isLoading}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                  >
                     <SendHorizonal className="h-4 w-4" />
-                    <span className="sr-only">Send message</span>
+                    <span className="sr-only">发送消息</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Send message</TooltipContent>
+                <TooltipContent>发送消息</TooltipContent>
               </Tooltip>
             </div>
           </div>

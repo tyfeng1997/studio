@@ -10,31 +10,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Report } from "./chat-report";
 import { motion, AnimatePresence } from "framer-motion";
 import { WelcomeView } from "@/components/chat/chat-welcome";
-
-// Helper function to extract report content from message
-function extractReports(messages: Message[]) {
-  const reports: { id: string; content: string }[] = [];
-
-  messages.forEach((message) => {
-    if (message.role === "assistant" && typeof message.content === "string") {
-      const content = message.content;
-      const reportRegex = /<report>([\s\S]*?)<\/report>/g;
-      let match;
-
-      while ((match = reportRegex.exec(content)) !== null) {
-        reports.push({
-          id: `${message.id}-${reports.length}`,
-          content: match[1].trim(),
-        });
-      }
-    }
-  });
-
-  return reports;
-}
+import { v4 as uuidv4 } from "uuid";
 
 export function ChatView({
   id,
@@ -44,7 +22,6 @@ export function ChatView({
   initialMessages?: Message[];
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
-  const [showReport, setShowReport] = React.useState(false);
   const [customPrompt, setCustomPrompt] = React.useState(""); // 状态管理预设 prompt
 
   const {
@@ -76,10 +53,7 @@ export function ChatView({
     onResponse: (response) => {
       console.log("Received HTTP response from server:", response);
     },
-    generateId: createIdGenerator({
-      prefix: "msgc",
-      size: 16,
-    }),
+    generateId: uuidv4,
     experimental_prepareRequestBody({ messages, id }) {
       return {
         message: messages[messages.length - 1],
@@ -132,44 +106,13 @@ export function ChatView({
     }
   };
 
-  // Extract reports from messages
-  const reports = extractReports(messages);
-
   return (
     <TooltipProvider>
-      <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
-        {/* Report Panel with Animation */}
-        <AnimatePresence initial={false}>
-          {showReport && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{
-                width: "33.333333%",
-                opacity: 1,
-                transition: {
-                  width: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2, delay: 0.1 },
-                },
-              }}
-              exit={{
-                width: 0,
-                opacity: 0,
-                transition: {
-                  width: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 },
-                },
-              }}
-              className="border-r flex flex-col h-full overflow-hidden"
-            >
-              <Report reports={reports} onClose={() => setShowReport(false)} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+      <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden bg-gray-50 dark:bg-zinc-900">
         {/* Chat Panel with Animation */}
         <motion.div
           animate={{
-            width: showReport ? "66.666667%" : "100%",
+            width: "100%",
             transition: { type: "spring", stiffness: 300, damping: 30 },
           }}
           className="flex flex-col h-full"
@@ -182,7 +125,7 @@ export function ChatView({
                 {error ? (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription className="flex items-center justify-between">
-                      <span>Error: {error.message}</span>
+                      <span>错误: {error.message}</span>
                       <Button
                         size="sm"
                         variant="outline"
@@ -190,7 +133,7 @@ export function ChatView({
                         className="h-7 px-3"
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />
-                        Retry
+                        重试
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -228,7 +171,7 @@ export function ChatView({
           </div>
 
           {/* Chat input area */}
-          <div className="border-t bg-background p-4">
+          <div className="border-t border-blue-100 dark:border-blue-900/30 bg-white dark:bg-zinc-800 p-4 shadow-md">
             <div className="mx-auto max-w-5xl relative">
               <ChatInput
                 input={input}
@@ -238,9 +181,6 @@ export function ChatView({
                 files={files}
                 setFiles={setFiles}
                 stop={stop}
-                showReport={showReport}
-                setShowReport={setShowReport}
-                reportCount={reports.length}
               />
             </div>
           </div>
