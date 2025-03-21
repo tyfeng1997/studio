@@ -5,12 +5,11 @@ import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Message, useChat } from "@ai-sdk/react";
-import { createIdGenerator } from "ai";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { WelcomeView } from "@/components/chat/chat-welcome";
 import { v4 as uuidv4 } from "uuid";
 
@@ -22,7 +21,7 @@ export function ChatView({
   initialMessages?: Message[];
 } = {}) {
   const [files, setFiles] = React.useState<FileList | undefined>(undefined);
-  const [customPrompt, setCustomPrompt] = React.useState(""); // 状态管理预设 prompt
+  const [customPrompt, setCustomPrompt] = React.useState(""); // State for preset prompts
 
   const {
     messages,
@@ -63,10 +62,10 @@ export function ChatView({
     experimental_streamData: true, // Enable data streaming
   });
 
-  // 监听 customPrompt 的变化，当它变化时更新输入框的值
+  // Monitor customPrompt changes and update input value
   React.useEffect(() => {
     if (customPrompt) {
-      // 使用 handleInputChange 手动更新输入值
+      // Manually update input value using handleInputChange
       const event = {
         target: { value: customPrompt },
       } as React.ChangeEvent<HTMLTextAreaElement>;
@@ -74,7 +73,7 @@ export function ChatView({
     }
   }, [customPrompt, handleInputChange]);
 
-  // 页面加载时自动聚焦到输入框
+  // Auto-focus input on page load
   React.useEffect(() => {
     const inputElement = document.querySelector("textarea");
     if (inputElement) {
@@ -87,7 +86,7 @@ export function ChatView({
       experimental_attachments: files,
     });
     setFiles(undefined);
-    setCustomPrompt(""); // 发送后清空自定义 prompt
+    setCustomPrompt(""); // Clear custom prompt after sending
   };
 
   const handleDeleteMessage = (messageId: string) => {
@@ -125,7 +124,7 @@ export function ChatView({
                 {error ? (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription className="flex items-center justify-between">
-                      <span>错误: {error.message}</span>
+                      <span>Error: {error.message}</span>
                       <Button
                         size="sm"
                         variant="outline"
@@ -133,7 +132,7 @@ export function ChatView({
                         className="h-7 px-3"
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />
-                        重试
+                        Retry
                       </Button>
                     </AlertDescription>
                   </Alert>
