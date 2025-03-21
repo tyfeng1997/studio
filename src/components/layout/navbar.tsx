@@ -1,6 +1,6 @@
 "use client";
 
-import { Github, BarChart3, LineChart, ExternalLink } from "lucide-react";
+import { Github, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -16,32 +16,13 @@ export function Navbar() {
             </div>
             <div className="flex flex-col">
               <span className="font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600">
-                FinanceInsight
+                Financial Insights
               </span>
               <span className="text-xs text-muted-foreground">
-                金融洞察·数据驱动
+                Powered by AI
               </span>
             </div>
           </Link>
-        </div>
-
-        <div className="hidden md:flex space-x-1 mx-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-sm text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400"
-          >
-            <LineChart className="h-4 w-4 mr-1" />
-            产品特性
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-sm text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400"
-          >
-            <ExternalLink className="h-4 w-4 mr-1" />
-            帮助文档
-          </Button>
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
@@ -50,7 +31,7 @@ export function Navbar() {
             size="sm"
             className="hidden md:inline-flex text-sm border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
           >
-            联系我们
+            Contact Us
           </Button>
 
           <nav className="flex items-center space-x-2">
