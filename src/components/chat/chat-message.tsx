@@ -45,7 +45,7 @@ export function ChatMessage({
         .join("")
     : message.content || "";
 
-  // 推理
+  // 推理部分
   const reasoningParts = hasParts
     ? message.parts.filter(
         (part) => part.type === "reasoning" || part.type === "thinking"
@@ -65,6 +65,14 @@ export function ChatMessage({
     message?.experimental_attachments?.filter(
       (a) => a?.contentType === "application/pdf"
     ) || [];
+
+  // 骨架屏组件（用于加载中显示）
+  const SkeletonMessage = () => (
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
+    </div>
+  );
 
   // 渲染推理内容
   const renderReasoningContent = () => {
@@ -195,7 +203,7 @@ export function ChatMessage({
     }
   };
 
-  // 打字机动画
+  // 骨架屏打字机动画（可作为加载提示）
   const TypingIndicator = () => (
     <div className="flex items-center gap-1 py-1">
       <motion.div
@@ -223,9 +231,9 @@ export function ChatMessage({
         isUserMessage ? "justify-end" : "justify-start"
       )}
     >
-      {/* 这层容器不限制高度，让文本部分完全展开 */}
+      {/* 整体容器 */}
       <div className="flex w-full flex-col md:flex-row gap-4">
-        {/* 左侧：主消息文本区域（不滚动） */}
+        {/* 左侧：主消息文本区域 */}
         <div className="flex-1">
           <div
             className={cn(
@@ -310,7 +318,8 @@ export function ChatMessage({
                 </ReactMarkdown>
               </div>
             ) : isLoading ? (
-              <TypingIndicator />
+              // 如果处于加载中，显示骨架屏（可替换为 TypingIndicator）
+              <SkeletonMessage />
             ) : null}
 
             {/* PDF 附件 */}
@@ -378,18 +387,18 @@ export function ChatMessage({
           </div>
         </div>
 
-        {/* 右侧：工具结果区域（可滚动） */}
+        {/* 右侧：工具结果区域 */}
         <div
           className="
-            md:w-72 
-            flex-shrink-0 
-            flex 
-            flex-col 
-            gap-4 
-            overflow-y-auto   /* 只让右侧滚动 */
-            max-h-[400px]     /* 限制高度，超过后滚动 */
-            border-l 
-            border-gray-200 
+            md:w-72
+            flex-shrink-0
+            flex
+            flex-col
+            gap-4
+            overflow-y-auto
+            max-h-[400px]
+            border-l
+            border-gray-200
             dark:border-zinc-700
             p-2
           "
@@ -405,7 +414,7 @@ export function ChatMessage({
               }
               return null;
             })}
-          {/* 回退到旧的 toolInvocations */}
+          {/* 旧版 toolInvocations */}
           {!hasParts &&
             message.toolInvocations &&
             message.toolInvocations.map((tool) => (
