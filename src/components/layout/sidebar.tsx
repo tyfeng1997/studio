@@ -64,10 +64,14 @@ export function Sidebar() {
     router.push(`/chat`);
   };
 
-  // Handle chat deletion
+  // Handle chat deletion with confirmation prompt
   const handleDeleteChat = async (chatId, e) => {
     e.preventDefault(); // Prevent navigating to the chat
     e.stopPropagation(); // Prevent event bubbling to parent elements
+
+    // 添加确认提示，防止误删
+    const confirmed = window.confirm("确定要删除该对话吗？此操作无法撤销。");
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/chats/${chatId}`, {

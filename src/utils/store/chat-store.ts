@@ -36,7 +36,7 @@ function generateChatTitle(content: string): string {
   const firstLine = content.split("\n")[0].trim();
 
   // Truncate to a reasonable length (30 characters) and add ellipsis if needed
-  const maxLength = 30;
+  const maxLength = 10;
   if (firstLine.length <= maxLength) {
     return firstLine;
   }
