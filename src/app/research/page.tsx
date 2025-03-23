@@ -269,29 +269,29 @@ export default function SimplifiedReportsPage() {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="bg-blue-50 dark:bg-blue-950/30 rounded-md p-3 my-2 border border-blue-200 dark:border-blue-900/50 break-words whitespace-pre-wrap"
+            className="bg-purple-50 dark:bg-purple-950/30 rounded-md p-3 my-2 border border-purple-200 dark:border-purple-800/50 break-words whitespace-pre-wrap"
           >
-            <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
+            <div className="flex items-center gap-2 mb-2 text-purple-600 dark:text-purple-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="font-medium">
                 Executing tool: {part.toolInvocation.toolName}
               </span>
             </div>
             {part.toolInvocation.args && (
-              <div className="text-sm text-blue-700 dark:text-blue-300 mb-2 overflow-x-auto">
+              <div className="text-sm text-purple-700 dark:text-purple-300 mb-2 overflow-x-auto">
                 <pre className="text-xs">
                   {JSON.stringify(part.toolInvocation.args, null, 2)}
                 </pre>
               </div>
             )}
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-blue-500 dark:text-blue-400">
+              <span className="text-xs text-purple-500 dark:text-purple-400">
                 Tool is being called, please wait...
               </span>
               <div className="flex space-x-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse delay-150"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse delay-300"></div>
               </div>
             </div>
           </motion.div>
@@ -322,17 +322,17 @@ export default function SimplifiedReportsPage() {
   const TypingIndicator = () => (
     <div className="flex items-center gap-1 py-2 px-4">
       <motion.div
-        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
+        className="h-1.5 w-1.5 bg-purple-500 dark:bg-purple-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.2 }}
       />
       <motion.div
-        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
+        className="h-1.5 w-1.5 bg-purple-500 dark:bg-purple-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.3 }}
       />
       <motion.div
-        className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
+        className="h-1.5 w-1.5 bg-purple-500 dark:bg-purple-400 rounded-full"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 0.4 }}
       />
@@ -345,8 +345,8 @@ export default function SimplifiedReportsPage() {
       <header className="border-b border-gray-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-950 sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="h-8 w-8 rounded-md bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-purple-500 dark:text-purple-400" />
             </div>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
               Company Research
@@ -386,7 +386,7 @@ export default function SimplifiedReportsPage() {
                     ? "Enter content for extended research..."
                     : "Enter structured information to extract..."
                 }
-                className="w-full h-12 px-4 py-2 pl-10 pr-24 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent"
+                className="w-full h-12 px-4 py-2 pl-10 pr-24 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600 focus:border-transparent"
                 disabled={isLoading}
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
@@ -454,7 +454,7 @@ export default function SimplifiedReportsPage() {
                         activeMode === "extraction") &&
                       (!selectedFile || !pdfContent)
                     )
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      ? "bg-purple-500 text-white hover:bg-purple-600"
                       : "text-gray-400"
                   }`}
                 >
@@ -492,7 +492,7 @@ export default function SimplifiedReportsPage() {
                   setPdfContent("");
                 }}
               >
-                <FileText className="h-4 w-4 mr-1 text-blue-500 dark:text-blue-400" />
+                <FileText className="h-4 w-4 mr-1 text-purple-500 dark:text-purple-400" />
                 <span className="text-gray-700 dark:text-gray-300">
                   Deep Research
                 </span>
@@ -529,13 +529,13 @@ export default function SimplifiedReportsPage() {
             {selectedFile && (
               <div className="mt-2 p-2 rounded-md bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-sm text-gray-600 dark:text-gray-300 flex items-center justify-between">
                 <div className="flex items-center">
-                  <FileText className="h-4 w-4 mr-2 text-blue-500 dark:text-blue-400" />
+                  <FileText className="h-4 w-4 mr-2 text-purple-500 dark:text-purple-400" />
                   <span className="truncate max-w-[200px] sm:max-w-xs">
                     {selectedFile.name}
                   </span>
                 </div>
                 {isPdfProcessing ? (
-                  <div className="flex items-center text-xs text-blue-500 dark:text-blue-400">
+                  <div className="flex items-center text-xs text-purple-500 dark:text-purple-400">
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                     <span>{Math.round(processingProgress)}%</span>
                   </div>
@@ -548,7 +548,7 @@ export default function SimplifiedReportsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 py-0 text-xs rounded-full text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                    className="h-6 px-2 py-0 text-xs rounded-full text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                     onClick={processPdf}
                   >
                     Process
@@ -628,7 +628,7 @@ export default function SimplifiedReportsPage() {
                                 }
                                 return (
                                   <code
-                                    className="px-1 py-0.5 rounded text-sm bg-gray-100 dark:bg-zinc-800 text-blue-700 dark:text-blue-300"
+                                    className="px-1 py-0.5 rounded text-sm bg-gray-100 dark:bg-zinc-800 text-purple-700 dark:text-purple-300"
                                     {...props}
                                   >
                                     {children}
@@ -641,7 +641,7 @@ export default function SimplifiedReportsPage() {
                           </ReactMarkdown>
                           {showLoader && (
                             <span className="inline-flex ml-2">
-                              <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
+                              <Loader2 className="h-5 w-5 animate-spin text-purple-500 dark:text-purple-400" />
                             </span>
                           )}
                         </div>
@@ -661,8 +661,8 @@ export default function SimplifiedReportsPage() {
               <div className="flex-1 flex items-center justify-center">
                 <Card className="w-full max-w-xl bg-white dark:bg-zinc-900 shadow-lg p-6">
                   <div className="text-center">
-                    <div className="mx-auto w-16 h-16 mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                      <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                    <div className="mx-auto w-16 h-16 mb-4 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                      <FileText className="h-8 w-8 text-purple-500 dark:text-purple-400" />
                     </div>
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
                       Intelligent Research Assistant
@@ -672,8 +672,8 @@ export default function SimplifiedReportsPage() {
                     </p>
                     <ul className="text-left mt-4 space-y-2">
                       <li className="flex items-start">
-                        <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2">
-                          <span className="text-blue-600 dark:text-blue-400 text-xs">
+                        <div className="h-5 w-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-2">
+                          <span className="text-purple-500 dark:text-purple-400 text-xs">
                             1
                           </span>
                         </div>
@@ -684,8 +684,8 @@ export default function SimplifiedReportsPage() {
                         </span>
                       </li>
                       <li className="flex items-start">
-                        <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2">
-                          <span className="text-blue-600 dark:text-blue-400 text-xs">
+                        <div className="h-5 w-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-2">
+                          <span className="text-purple-500 dark:text-purple-400 text-xs">
                             2
                           </span>
                         </div>
@@ -696,8 +696,8 @@ export default function SimplifiedReportsPage() {
                         </span>
                       </li>
                       <li className="flex items-start">
-                        <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2">
-                          <span className="text-blue-600 dark:text-blue-400 text-xs">
+                        <div className="h-5 w-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-2">
+                          <span className="text-purple-500 dark:text-purple-400 text-xs">
                             3
                           </span>
                         </div>

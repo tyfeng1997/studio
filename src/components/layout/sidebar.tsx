@@ -11,6 +11,7 @@ import {
   Trash2,
   LineChart,
   FileText,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ import { formatDistanceToNow } from "date-fns";
 import { useSidebar } from "./sidebar-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { BarChart3 } from "lucide-react";
 
 export function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
@@ -257,7 +257,8 @@ export function Sidebar() {
             </div>
           </div>
         </ScrollArea>
-        <div className="mt-auto border-t border-blue-100 dark:border-blue-900/30 p-4">
+        {/* 修改后的 /research 入口标签：使用紫色调 */}
+        <div className="mt-auto border-t border-purple-100 dark:border-purple-900/30 p-4">
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -265,7 +266,7 @@ export function Sidebar() {
                   variant="ghost"
                   size="icon"
                   onClick={() => router.push("/research")}
-                  className="mx-auto h-9 w-9 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  className="mx-auto h-9 w-9 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 >
                   <BarChart3 className="h-5 w-5" />
                 </Button>
@@ -275,7 +276,7 @@ export function Sidebar() {
           ) : (
             <Button
               variant="ghost"
-              className="w-full justify-start text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              className="w-full justify-start text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               onClick={() => router.push("/research")}
             >
               <BarChart3 className="h-5 w-5 mr-2" />
