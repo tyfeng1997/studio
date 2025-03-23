@@ -21,7 +21,7 @@ export default function Home() {
               <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-center mr-2">
                 <BarChart3 className="h-5 w-5" />
               </div>
-              <span className="text-xl font-bold">FinanceInsight</span>
+              <span className="text-xl font-bold">FinancialInsights</span>
             </div>
             <div className="flex items-center space-x-6">
               <Link
@@ -70,12 +70,12 @@ export default function Home() {
               </h1>
               <p className="text-lg md:text-xl opacity-90 max-w-lg">
                 Unlock deep insights on public companies, market sentiment, and
-                real-time news with FinanceInsight's AI-powered analysis for
+                real-time news with FinancialInsights's AI-powered analysis for
                 smarter investment decisions.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <a
-                  href="mailto:bofeng1997@gmail.com?subject=FinanceInsight%20MVP%20Access%20Request"
+                  href="mailto:bofeng1997@gmail.com?subject=FinancialInsights%20MVP%20Access%20Request"
                   className="px-6 py-3 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all inline-flex items-center justify-center"
                 >
                   Request Test Access <MoveRight className="ml-2 h-4 w-4" />
@@ -104,7 +104,7 @@ export default function Home() {
                     <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
                     <div className="h-3 w-3 rounded-full bg-green-500"></div>
                     <div className="ml-2 text-sm text-gray-400">
-                      financeinsight.app
+                      financialinsights.app
                     </div>
                   </div>
                   <div className="space-y-3 font-mono text-sm">
@@ -307,12 +307,12 @@ export default function Home() {
           </h2>
           <p className="text-lg max-w-2xl mx-auto mb-8 opacity-90">
             We're recruiting test users to experience and help improve
-            FinanceInsight. Get early access to this powerful financial analysis
-            tool and shape its future development.
+            FinancialInsights. Get early access to this powerful financial
+            analysis tool and shape its future development.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="mailto:bofeng1997@gmail.com?subject=FinanceInsight%20MVP%20Access%20Request"
+              href="mailto:bofeng1997@gmail.com?subject=FinancialInsights%20MVP%20Access%20Request"
               className="px-8 py-4 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all inline-flex items-center justify-center text-lg"
             >
               Request Test Access <MoveRight className="ml-2 h-5 w-5" />
@@ -341,7 +341,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
               <div className="text-2xl font-display font-bold text-blue-600 dark:text-blue-400">
-                FinanceInsight.app
+                FinancialInsights.app
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                 AI-Powered Financial & Company Analysis Platform
@@ -374,7 +374,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              © 2025 FinanceInsight. All rights reserved.
+              © 2025 FinancialInsights. All rights reserved.
             </div>
           </div>
         </div>

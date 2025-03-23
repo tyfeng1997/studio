@@ -18,7 +18,7 @@ const displayFont = FontDisplay({
 });
 
 export const metadata: Metadata = {
-  title: "FinanceInsight.app | AI-Powered Financial Analysis",
+  title: "FinancialInsights.app | AI-Powered Financial Analysis",
   description:
     "Get instant insights on companies, markets, and financial news with our advanced AI toolkit. Research reports, sentiment analysis, and market positioning in seconds.",
   icons: {

@@ -10,32 +10,53 @@ import { useTheme } from "next-themes";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Zap, FileText, Loader2, X, Search } from "lucide-react";
+import { Zap, FileText, Loader2, X, Search, Save } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { ToolResultRenderer } from "@/components/tool-result-render";
+import { toast } from "@/components/ui/use-toast";
 
 // Import the components we created
 import ResearchHeader from "@/components/research/research-header";
 import ResearchInput from "@/components/research/research-input";
 
+// Function to extract content between <report> tags
+function extractReportContent(content) {
+  if (!content) return "";
+
+  const reportRegex = /<report>([\s\S]*?)<\/report>/;
+  const match = content.match(reportRegex);
+
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  return "";
+}
+
+// Function to get title from report content
+function getReportTitle(reportContent) {
+  if (!reportContent) return "Untitled Report";
+
+  // Get the first line
+  const firstLine = reportContent.split("\n")[0];
+
+  // Take up to 10 characters
+  return firstLine.substring(0, 10) + (firstLine.length > 10 ? "..." : "");
+}
+
 // Extract report content from streaming messages
-function extractStreamingReport(messages: Message[]): string {
+function extractStreamingReport(messages) {
   const lastMsg = messages
     .slice()
     .reverse()
     .find((msg) => msg.role === "assistant" && typeof msg.content === "string");
+
   if (!lastMsg) return "";
-  let content = lastMsg.content;
-  if (content.startsWith("<report>")) {
-    content = content.substring(8);
-  }
-  if (content.endsWith("</report>")) {
-    content = content.substring(0, content.length - 9);
-  }
-  return content;
+
+  return extractReportContent(lastMsg.content);
 }
 
 export default function ResearchPage() {
@@ -44,9 +65,7 @@ export default function ResearchPage() {
 
   // Report-related state
   const [input, setInput] = useState("");
-  const [activeMode, setActiveMode] = useState<
-    "deepResearch" | "extendedResearch" | "extraction"
-  >("deepResearch");
+  const [activeMode, setActiveMode] = useState("deepResearch");
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportId] = useState(uuidv4());
   const [reportSaved, setReportSaved] = useState(false);
@@ -123,8 +142,48 @@ export default function ResearchPage() {
     }
   }, [messages, isLoading, isGenerating]);
 
+  // Save report to database
+  const saveReport = async () => {
+    if (!reportContent || reportSaved) return;
+
+    try {
+      const title = getReportTitle(reportContent);
+
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: reportId,
+          title: title,
+          content: reportContent,
+          mode: activeMode,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save report");
+      }
+
+      setReportSaved(true);
+      toast({
+        title: "Report saved",
+        description: "Your report has been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving report:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save report",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Render tool invocation status
-  const renderToolInvocation = (part: any) => {
+  const renderToolInvocation = (part) => {
     switch (part.toolInvocation.state) {
       case "partial-call":
         return (
@@ -251,6 +310,17 @@ export default function ResearchPage() {
             {reportContent || isLoading ? (
               <>
                 {/* Report Content */}
+                <div className="flex justify-end px-6 py-2">
+                  <Button
+                    onClick={saveReport}
+                    disabled={!reportContent || reportSaved || isLoading}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    size="sm"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {reportSaved ? "Saved" : "Save Report"}
+                  </Button>
+                </div>
                 <ScrollArea className="flex-1">
                   <div className="max-w-4xl mx-auto p-6">
                     <div className="prose prose-blue dark:prose-invert max-w-none">
