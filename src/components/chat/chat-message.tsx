@@ -33,11 +33,11 @@ export function ChatMessage({
 }: ChatMessageProps) {
   const [isReasoningVisible, setIsReasoningVisible] = useState(false);
 
-  // 是否有 parts
+  // Whether there are parts
   const hasParts =
     !!message.parts && Array.isArray(message.parts) && message.parts.length > 0;
 
-  // 主文本内容
+  // Main text content
   const textContent = hasParts
     ? message.parts
         .filter((part) => part.type === "text")
@@ -45,7 +45,7 @@ export function ChatMessage({
         .join("")
     : message.content || "";
 
-  // 推理
+  // Reasoning parts
   const reasoningParts = hasParts
     ? message.parts.filter(
         (part) => part.type === "reasoning" || part.type === "thinking"
@@ -53,10 +53,10 @@ export function ChatMessage({
     : [];
   const hasReasoningParts = reasoningParts.length > 0;
 
-  // 是否是用户消息
+  // Whether it is a user message
   const isUserMessage = message.role === "user";
 
-  // 附件
+  // Attachments
   const imageAttachments =
     message?.experimental_attachments?.filter((a) =>
       a?.contentType?.startsWith("image/")
@@ -66,7 +66,15 @@ export function ChatMessage({
       (a) => a?.contentType === "application/pdf"
     ) || [];
 
-  // 渲染推理内容
+  // Skeleton component (for loading display)
+  const SkeletonMessage = () => (
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
+    </div>
+  );
+
+  // Render reasoning content
   const renderReasoningContent = () => {
     if (!hasReasoningParts || !isReasoningVisible) return null;
     return (
@@ -112,7 +120,7 @@ export function ChatMessage({
     );
   };
 
-  // 渲染工具调用状态
+  // Render tool invocation state
   const renderToolInvocationState = (part) => {
     switch (part.toolInvocation.state) {
       case "partial-call":
@@ -125,7 +133,7 @@ export function ChatMessage({
             <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="font-medium">
-                准备工具: {part.toolInvocation.toolName}
+                Preparing tool: {part.toolInvocation.toolName}
               </span>
             </div>
             <div className="text-sm text-amber-700 dark:text-amber-300 overflow-x-auto">
@@ -134,7 +142,7 @@ export function ChatMessage({
                   {JSON.stringify(part.toolInvocation.args, null, 2)}
                 </pre>
               ) : (
-                <span className="italic">收集参数中...</span>
+                <span className="italic">Collecting parameters...</span>
               )}
             </div>
           </motion.div>
@@ -151,7 +159,7 @@ export function ChatMessage({
             <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="font-medium">
-                执行工具: {part.toolInvocation.toolName}
+                Executing tool: {part.toolInvocation.toolName}
               </span>
             </div>
             {part.toolInvocation.args && (
@@ -163,7 +171,7 @@ export function ChatMessage({
             )}
             <div className="mt-2 flex items-center gap-2">
               <span className="text-xs text-blue-500 dark:text-blue-400">
-                工具调用中，请稍候...
+                Tool invocation in progress, please wait...
               </span>
               <div className="flex space-x-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
@@ -195,7 +203,7 @@ export function ChatMessage({
     }
   };
 
-  // 打字机动画
+  // Skeleton typing indicator (can be used as a loading indicator)
   const TypingIndicator = () => (
     <div className="flex items-center gap-1 py-1">
       <motion.div
@@ -223,9 +231,9 @@ export function ChatMessage({
         isUserMessage ? "justify-end" : "justify-start"
       )}
     >
-      {/* 这层容器不限制高度，让文本部分完全展开 */}
+      {/* Container */}
       <div className="flex w-full flex-col md:flex-row gap-4">
-        {/* 左侧：主消息文本区域（不滚动） */}
+        {/* Left side: Main message text area */}
         <div className="flex-1">
           <div
             className={cn(
@@ -250,7 +258,7 @@ export function ChatMessage({
                       const codeContent = String(children).replace(/\n$/, "");
 
                       if (!inline && match) {
-                        // 代码块(带语言)
+                        // Code block with language
                         return (
                           <div className="relative my-2 rounded-md overflow-hidden">
                             <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
@@ -271,7 +279,7 @@ export function ChatMessage({
                           </div>
                         );
                       } else if (!inline) {
-                        // 代码块(无语言)
+                        // Code block without language
                         return (
                           <div className="relative my-2 rounded-md overflow-hidden">
                             <SyntaxHighlighter
@@ -289,7 +297,7 @@ export function ChatMessage({
                           </div>
                         );
                       }
-                      // 行内代码
+                      // Inline code
                       return (
                         <code
                           className={cn(
@@ -310,10 +318,11 @@ export function ChatMessage({
                 </ReactMarkdown>
               </div>
             ) : isLoading ? (
-              <TypingIndicator />
+              // Display skeleton component when loading (can be replaced with TypingIndicator)
+              <SkeletonMessage />
             ) : null}
 
-            {/* PDF 附件 */}
+            {/* PDF attachments */}
             {pdfAttachments.length > 0 && (
               <div className="flex flex-col gap-2">
                 {pdfAttachments.map((attachment, index) => (
@@ -335,7 +344,7 @@ export function ChatMessage({
               </div>
             )}
 
-            {/* 图片附件 */}
+            {/* Image attachments */}
             {imageAttachments.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {imageAttachments.map((attachment, index) => (
@@ -351,7 +360,7 @@ export function ChatMessage({
               </div>
             )}
 
-            {/* 推理显示按钮 */}
+            {/* Reasoning toggle button */}
             {hasReasoningParts && !isUserMessage && (
               <Button
                 variant="ghost"
@@ -362,34 +371,34 @@ export function ChatMessage({
                 {isReasoningVisible ? (
                   <>
                     <ChevronUp className="h-3 w-3" />
-                    隐藏推理过程
+                    Hide reasoning
                   </>
                 ) : (
                   <>
                     <ChevronDown className="h-3 w-3" />
-                    显示推理过程
+                    Show reasoning
                   </>
                 )}
               </Button>
             )}
 
-            {/* 推理内容 */}
+            {/* Reasoning content */}
             {renderReasoningContent()}
           </div>
         </div>
 
-        {/* 右侧：工具结果区域（可滚动） */}
+        {/* Right side: Tool result area */}
         <div
           className="
-            md:w-72 
-            flex-shrink-0 
-            flex 
-            flex-col 
-            gap-4 
-            overflow-y-auto   /* 只让右侧滚动 */
-            max-h-[400px]     /* 限制高度，超过后滚动 */
-            border-l 
-            border-gray-200 
+            md:w-72
+            flex-shrink-0
+            flex
+            flex-col
+            gap-4
+            overflow-y-auto
+            max-h-[400px]
+            border-l
+            border-gray-200
             dark:border-zinc-700
             p-2
           "
@@ -405,7 +414,7 @@ export function ChatMessage({
               }
               return null;
             })}
-          {/* 回退到旧的 toolInvocations */}
+          {/* Legacy toolInvocations */}
           {!hasParts &&
             message.toolInvocations &&
             message.toolInvocations.map((tool) => (

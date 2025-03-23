@@ -11,6 +11,7 @@ import {
   Trash2,
   LineChart,
   FileText,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ import { formatDistanceToNow } from "date-fns";
 import { useSidebar } from "./sidebar-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { BarChart3 } from "lucide-react";
 
 export function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
@@ -64,10 +64,16 @@ export function Sidebar() {
     router.push(`/chat`);
   };
 
-  // Handle chat deletion
+  // Handle chat deletion with confirmation prompt
   const handleDeleteChat = async (chatId, e) => {
     e.preventDefault(); // Prevent navigating to the chat
     e.stopPropagation(); // Prevent event bubbling to parent elements
+
+    // Add confirmation prompt to prevent accidental deletion
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this conversation? This action cannot be undone."
+    );
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/chats/${chatId}`, {
@@ -79,7 +85,7 @@ export function Sidebar() {
       }
 
       // Show success toast
-      toast.success("对话已成功删除");
+      toast.success("Conversation deleted successfully");
 
       // Refresh chat list
       await fetchChats();
@@ -90,7 +96,7 @@ export function Sidebar() {
       }
     } catch (error) {
       console.error("Error deleting chat:", error);
-      toast.error("删除对话失败");
+      toast.error("Failed to delete conversation");
     }
   };
 
@@ -145,7 +151,7 @@ export function Sidebar() {
                 <MessageSquare className="h-3 w-3 text-white" />
               </div>
               <h2 className="mr-auto font-display font-semibold text-blue-900 dark:text-blue-100">
-                金融洞察
+                Financial Insights
               </h2>
             </div>
           )}
@@ -170,7 +176,7 @@ export function Sidebar() {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">新对话</TooltipContent>
+                  <TooltipContent side="right">New Chat</TooltipContent>
                 </Tooltip>
               ) : (
                 <Button
@@ -178,7 +184,7 @@ export function Sidebar() {
                   className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  新对话
+                  New Chat
                 </Button>
               )}
             </div>
@@ -188,7 +194,7 @@ export function Sidebar() {
                 <div className="flex items-center">
                   <div className="h-1 flex-1 bg-gradient-to-r from-blue-500/20 to-transparent"></div>
                   <h3 className="px-2 text-sm font-medium text-blue-700 dark:text-blue-400">
-                    最近对话
+                    Recent Chats
                   </h3>
                   <div className="h-1 flex-1 bg-gradient-to-l from-blue-500/20 to-transparent"></div>
                 </div>
@@ -211,7 +217,7 @@ export function Sidebar() {
                   {!collapsed && (
                     <div className="flex-1 truncate text-sm">
                       <div className="truncate font-medium">
-                        {chat.title || "新对话"}
+                        {chat.title || "New Chat"}
                       </div>
                       <p className="truncate text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(chat.updated_at), {
@@ -234,44 +240,47 @@ export function Sidebar() {
               ))}
               {loading && !collapsed && (
                 <div className="px-4 py-3 text-sm text-blue-600 dark:text-blue-400 animate-pulse">
-                  加载中...
+                  Loading...
                 </div>
               )}
               {!loading && chats.length === 0 && !collapsed && (
                 <div className="px-4 py-6 text-sm text-center text-muted-foreground">
                   <div className="mb-2 opacity-70">
                     <MessageSquare className="h-6 w-6 mx-auto mb-2" />
-                    暂无对话
+                    No conversations yet
                   </div>
-                  <p className="text-xs opacity-70">点击"新对话"按钮开始</p>
+                  <p className="text-xs opacity-70">
+                    Click "New Chat" to start
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </ScrollArea>
-        <div className="mt-auto border-t border-blue-100 dark:border-blue-900/30 p-4">
+        {/* 修改后的 /research 入口标签：使用紫色调 */}
+        <div className="mt-auto border-t border-purple-100 dark:border-purple-900/30 p-4">
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => router.push("/report")}
-                  className="mx-auto h-9 w-9 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  onClick={() => router.push("/research")}
+                  className="mx-auto h-9 w-9 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 >
                   <BarChart3 className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">公司研究</TooltipContent>
+              <TooltipContent side="right">Company Research</TooltipContent>
             </Tooltip>
           ) : (
             <Button
               variant="ghost"
-              className="w-full justify-start text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              onClick={() => router.push("/report")}
+              className="w-full justify-start text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+              onClick={() => router.push("/research")}
             >
               <BarChart3 className="h-5 w-5 mr-2" />
-              公司研究报告
+              Company Research
             </Button>
           )}
         </div>
@@ -284,7 +293,7 @@ export function Sidebar() {
                   <UserMenu minimal={true} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right">用户设置</TooltipContent>
+              <TooltipContent side="right">User Settings</TooltipContent>
             </Tooltip>
           ) : (
             <UserMenu />
