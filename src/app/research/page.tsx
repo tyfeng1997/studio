@@ -22,6 +22,15 @@ import { toast } from "@/components/ui/use-toast";
 import ResearchHeader from "@/components/research/research-header";
 import ResearchInput from "@/components/research/research-input";
 
+import { Download, FileDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import html2pdf from "html2pdf.js";
+
 // Function to extract content between <report> tags
 function extractReportContent(content) {
   if (!content) return "";
@@ -251,6 +260,102 @@ export default function ResearchPage() {
       });
     }
   };
+  const exportAsPDF = () => {
+    if (!displayContent) return;
+
+    // Create a temporary div to render the markdown content
+    const element = document.createElement("div");
+    element.className = "pdf-export";
+
+    // Apply styling to the temporary div
+    element.style.padding = "40px";
+    element.style.maxWidth = "800px";
+    element.style.margin = "0 auto";
+    element.style.fontFamily = "Arial, sans-serif";
+
+    // Add a CSS class to the body for print styling
+    document.body.classList.add("printing");
+
+    // Convert markdown to HTML
+    const markdownToHtml = displayContent
+      .replace(
+        /# (.*)/g,
+        '<h1 style="font-size: 28px; margin-bottom: 20px; color: #333;">$1</h1>'
+      )
+      .replace(
+        /## (.*)/g,
+        '<h2 style="font-size: 22px; margin-top: 30px; margin-bottom: 15px; color: #444;">$1</h2>'
+      )
+      .replace(
+        /### (.*)/g,
+        '<h3 style="font-size: 18px; margin-top: 25px; margin-bottom: 10px; color: #555;">$1</h3>'
+      )
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+      .replace(/\n\n/g, "<br><br>")
+      .replace(/\n- (.*)/g, "<br>• $1")
+      .replace(/\n\d\. (.*)/g, "<br>$&");
+
+    // Set the HTML content
+    element.innerHTML = markdownToHtml;
+
+    // Temporarily append to document
+    document.body.appendChild(element);
+
+    // Generate PDF options
+    const opt = {
+      margin: [15, 15],
+      filename: "financial-report.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    // Generate PDF
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => {
+        // Remove the temporary element
+        document.body.removeChild(element);
+        document.body.classList.remove("printing");
+
+        // Show success message
+        toast({
+          title: "PDF Exported",
+          description: "Your report has been exported as PDF successfully.",
+        });
+      });
+  };
+
+  const exportAsMarkdown = () => {
+    if (!displayContent) return;
+
+    // Create a blob with the markdown content
+    const blob = new Blob([displayContent], { type: "text/markdown" });
+
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "financial-report.md";
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Show success message
+    toast({
+      title: "Markdown Exported",
+      description: "Your report has been exported as Markdown successfully.",
+    });
+  };
 
   // Render tool invocation status
   const renderToolInvocation = (part) => {
@@ -387,17 +492,49 @@ export default function ResearchPage() {
                       Loading saved report...
                     </div>
                   ) : (
-                    <Button
-                      onClick={saveReport}
-                      disabled={
-                        !reportContentForSaving || reportSaved || isLoading
-                      }
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                      size="sm"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {reportSaved ? "Saved" : "Save Report"}
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={saveReport}
+                        disabled={
+                          !reportContentForSaving || reportSaved || isLoading
+                        }
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                        size="sm"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {reportSaved ? "Saved" : "Save Report"}
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!displayContent || isLoading}
+                            className="text-gray-600 dark:text-zinc-400"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={exportAsPDF}
+                            disabled={!displayContent || isLoading}
+                          >
+                            <FileDown className="h-4 w-4 mr-2" />
+                            Export as PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={exportAsMarkdown}
+                            disabled={!displayContent || isLoading}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Export as Markdown
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   )}
                 </div>
                 <ScrollArea className="flex-1">
