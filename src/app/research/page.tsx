@@ -60,7 +60,7 @@ export default function ResearchPage() {
     input: chatInput,
     setInput: setChatInput,
   } = useChat({
-    api: "/api/report",
+    api: "/api/research",
     id: reportId,
     maxSteps: 20,
     generateId: createIdGenerator({ prefix: "report", size: 16 }),
@@ -350,10 +350,11 @@ export default function ResearchPage() {
                       <FileText className="h-8 w-8 text-purple-500 dark:text-purple-400" />
                     </div>
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      Intelligent Research Assistant
+                      Financial Intelligence Assistant
                     </h2>
                     <p className="text-gray-500 dark:text-zinc-400 mt-2">
-                      This report generator supports three modes:
+                      Powerful AI-driven financial analysis in three specialized
+                      modes:
                     </p>
                     <ul className="text-left mt-4 space-y-2">
                       <li className="flex items-start">
@@ -363,9 +364,10 @@ export default function ResearchPage() {
                           </span>
                         </div>
                         <span>
-                          <strong>Deep Research</strong> - Generates a
-                          high-quality professional report based on the user's
-                          inquiry.
+                          <strong>Deep Research</strong> - Comprehensive
+                          analysis of public companies with financial metrics,
+                          market position, competitive landscape, and investment
+                          outlook.
                         </span>
                       </li>
                       <li className="flex items-start">
@@ -375,9 +377,9 @@ export default function ResearchPage() {
                           </span>
                         </div>
                         <span>
-                          <strong>Extended Research</strong> - Conducts extended
-                          research by combining uploaded PDF content with user
-                          input.
+                          <strong>Extended Research</strong> - Enhanced analysis
+                          by combining uploaded financial reports (10-K, 10-Q,
+                          earnings) with targeted inquiries for deeper insights.
                         </span>
                       </li>
                       <li className="flex items-start">
@@ -387,9 +389,9 @@ export default function ResearchPage() {
                           </span>
                         </div>
                         <span>
-                          <strong>Extract Content</strong> - Extracts structured
-                          information specified by the user from the uploaded
-                          PDF.
+                          <strong>Extract Content</strong> - Precise extraction
+                          of key financial data, metrics, and disclosures from
+                          uploaded reports in structured format.
                         </span>
                       </li>
                     </ul>

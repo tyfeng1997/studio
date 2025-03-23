@@ -2,13 +2,12 @@ import { Metadata } from "next";
 import { AuthForm } from "../auth/components/auth-form";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import { BarChart3, LineChart, FileText, Search } from "lucide-react";
+import { BarChart3, FileText, Search, LineChart } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "登录 | FinanceInsight",
-  description: "登录您的金融洞察账户，获取专业的公司分析",
+  title: "Login | FinanceInsight",
+  description:
+    "Log in to your FinanceInsight account for professional company analysis",
 };
 
 export default async function LoginPage({
@@ -24,11 +23,11 @@ export default async function LoginPage({
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white dark:bg-zinc-950">
-      {/* 左侧产品介绍区域 - 占 3/4 */}
-      <div className="w-full md:w-3/4 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-zinc-950 p-6 md:p-12 flex items-center">
-        <div className="max-w-3xl mx-auto">
+      {/* Left side - App Introduction */}
+      <div className="w-full md:w-2/3 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-zinc-950 p-6 md:p-12 flex items-center">
+        <div className="max-w-2xl mx-auto">
           {/* Logo */}
-          <div className="flex items-center mb-12">
+          <div className="flex items-center mb-8">
             <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-center mr-3">
               <BarChart3 className="h-6 w-6" />
             </div>
@@ -37,87 +36,72 @@ export default async function LoginPage({
                 FinanceInsight
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                金融洞察·数据驱动
+                Financial Intelligence · Data-Driven
               </p>
             </div>
           </div>
 
-          {/* 主标题 */}
-          <h2 className="text-4xl md:text-5xl font-display font-bold leading-tight text-gray-900 dark:text-white mb-6">
-            智能金融分析
-            <span className="text-blue-600 dark:text-blue-400">，</span>
+          {/* Main Heading */}
+          <h2 className="text-3xl md:text-4xl font-display font-bold leading-tight text-gray-900 dark:text-white mb-6">
+            Intelligent Financial Analysis
+            <span className="text-blue-600 dark:text-blue-400">,</span>
             <br />
-            为您的投资决策提供支持
+            Supporting Your Investment Decisions
           </h2>
 
-          {/* 特点介绍 */}
-          <div className="grid md:grid-cols-2 gap-6 mt-10">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800">
-              <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-                <Search className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          {/* Feature Cards */}
+          <div className="grid md:grid-cols-2 gap-5 mt-8">
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
+                <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                全面数据收集
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-1">
+                Deep Company Research
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                自动收集并整合来自多个来源的公司信息，包括财务数据、新闻报道和分析师报告。
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Comprehensive analysis of public companies with financial
+                metrics and investment outlook.
               </p>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800">
-              <div className="h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
-                <BarChart3 className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800">
+              <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+                <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                财务深度分析
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-1">
+                Financial Report Analysis
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                深入分析公司财务指标和业绩表现，揭示潜在的投资机会和风险。
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Extract and analyze data from financial reports (10-K, 10-Q) for
+                deeper insights.
               </p>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800">
-              <div className="h-12 w-12 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
-                <LineChart className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 md:col-span-2">
+              <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-3">
+                <LineChart className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                市场趋势追踪
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-1">
+                AI-Powered Investment Intelligence
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                识别市场变化和行业趋势，让您领先一步了解可能影响投资的关键发展。
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Make informed investment decisions with professional-grade
+                financial analysis tools.
               </p>
             </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800">
-              <div className="h-12 w-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
-                <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                专业研究报告
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                生成详细的公司分析报告，包括财务状况、竞争优势和风险评估，帮助您做出明智决策。
-              </p>
-            </div>
-          </div>
-
-          {/* 底部信息 */}
-          <div className="mt-12 pt-6 border-t border-gray-200 dark:border-zinc-800 text-gray-500 dark:text-gray-400 text-sm">
-            使用
-            FinanceInsight，您可以获取专业级的金融分析工具，让投资决策更加明智、高效。
           </div>
         </div>
       </div>
 
-      {/* 右侧登录区域 - 占 1/4 */}
-      <div className="w-full md:w-1/4 bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-zinc-800 flex items-center justify-center p-6">
+      {/* Right side - Login Form */}
+      <div className="w-full md:w-1/3 bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-zinc-800 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
+          <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              欢迎回来
+              Welcome Back
             </h2>
             <p className="text-gray-500 dark:text-gray-400">
-              登录您的账户获取专业金融分析
+              Log in to access professional financial analysis
             </p>
           </div>
           <AuthForm
