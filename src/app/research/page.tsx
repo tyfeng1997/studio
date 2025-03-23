@@ -46,7 +46,7 @@ const extractPdfContent = async (file) => {
   };
 };
 
-// 从流式消息中提取报告内容
+// Extract report content from streaming messages
 function extractStreamingReport(messages: Message[]): string {
   const lastMsg = messages
     .slice()
@@ -68,7 +68,7 @@ export default function SimplifiedReportsPage() {
   const { theme } = useTheme();
   const fileInputRef = useRef(null);
 
-  // 创建报告相关状态
+  // Report-related state
   const [input, setInput] = useState("");
   const [activeMode, setActiveMode] = useState<
     "deepResearch" | "extendedResearch" | "extraction"
@@ -81,7 +81,7 @@ export default function SimplifiedReportsPage() {
   const [pdfContent, setPdfContent] = useState("");
   const [processingProgress, setProcessingProgress] = useState(0);
 
-  // 初始化聊天客户端
+  // Initialize chat client
   const {
     messages,
     handleInputChange,
@@ -105,12 +105,12 @@ export default function SimplifiedReportsPage() {
     experimental_streamData: true,
   });
 
-  // 处理输入变化
+  // Handle input changes
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
   };
 
-  // 处理文件选择
+  // Handle file selection
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
@@ -121,22 +121,22 @@ export default function SimplifiedReportsPage() {
     }
   };
 
-  // 触发文件选择对话框
+  // Trigger file selection dialog
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
 
-  // 处理 PDF 处理
+  // Process PDF file
   const processPdf = async () => {
     if (!selectedFile) {
-      toast.error("请先选择 PDF 文件");
+      toast.error("Please select a PDF file first");
       return;
     }
 
     setIsPdfProcessing(true);
     setProcessingProgress(0);
 
-    // 模拟处理进度
+    // Simulate processing progress
     const interval = setInterval(() => {
       setProcessingProgress((prev) => {
         const newProgress = prev + Math.random() * 15;
@@ -145,49 +145,51 @@ export default function SimplifiedReportsPage() {
     }, 500);
 
     try {
-      // 使用假函数提取 PDF 内容，后续会替换为实际实现
+      // Use fake function to extract PDF content; replace later with actual logic
       const result = await extractPdfContent(selectedFile);
-      setPdfContent(`文件名：${result.fileName}\n内容：${result.content}`);
+      setPdfContent(
+        `File Name: ${result.fileName}\nContent: ${result.content}`
+      );
 
-      // 进度达到 100%
+      // Set progress to 100%
       setProcessingProgress(100);
       setTimeout(() => {
         clearInterval(interval);
         setIsPdfProcessing(false);
-        toast.success("PDF 处理完成");
+        toast.success("PDF processed successfully");
       }, 500);
     } catch (error) {
       clearInterval(interval);
       setIsPdfProcessing(false);
-      toast.error("PDF 处理失败");
-      console.error("PDF 处理错误：", error);
+      toast.error("PDF processing failed");
+      console.error("PDF processing error:", error);
     }
   };
 
-  // 开始生成报告
+  // Start generating report
   const startResearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // 检查是否需要 PDF 内容但尚未处理 PDF
+    // Check if PDF content is needed but not processed yet
     if (
       (activeMode === "extendedResearch" || activeMode === "extraction") &&
       selectedFile &&
       !pdfContent
     ) {
-      toast.error("请先处理选择的 PDF 文件", {
+      toast.error("Please process the selected PDF file first", {
         position: "top-center",
         duration: 3000,
       });
       return;
     }
 
-    // 如果选择了扩展研究或提取模式但没有选择文件
+    // If file is required but not uploaded
     if (
       (activeMode === "extendedResearch" || activeMode === "extraction") &&
       !selectedFile
     ) {
-      toast.error("请先上传 PDF 文件", {
+      toast.error("Please upload a PDF file first", {
         position: "top-center",
         duration: 3000,
       });
@@ -217,7 +219,7 @@ export default function SimplifiedReportsPage() {
     handleSubmit(e);
   };
 
-  // 处理报告内容的流式传输
+  // Handle streaming report content
   const [reportContent, setReportContent] = useState("");
   const [showLoader, setShowLoader] = useState(false);
 
@@ -225,7 +227,7 @@ export default function SimplifiedReportsPage() {
     const content = extractStreamingReport(messages);
     setReportContent(content);
 
-    // 只在有内容且正在加载时显示加载指示器
+    // Show loader only when content exists and still loading
     setShowLoader(isLoading && content.length > 0);
 
     if (!isLoading && content && content.length > 50 && isGenerating) {
@@ -233,7 +235,7 @@ export default function SimplifiedReportsPage() {
     }
   }, [messages, isLoading, isGenerating]);
 
-  // 渲染工具调用状态
+  // Render tool invocation status
   const renderToolInvocation = (part: any) => {
     switch (part.toolInvocation.state) {
       case "partial-call":
@@ -246,7 +248,7 @@ export default function SimplifiedReportsPage() {
             <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="font-medium">
-                准备工具: {part.toolInvocation.toolName}
+                Preparing tool: {part.toolInvocation.toolName}
               </span>
             </div>
             <div className="text-sm text-amber-700 dark:text-amber-300 overflow-x-auto">
@@ -255,7 +257,7 @@ export default function SimplifiedReportsPage() {
                   {JSON.stringify(part.toolInvocation.args, null, 2)}
                 </pre>
               ) : (
-                <span className="italic">收集参数中...</span>
+                <span className="italic">Collecting parameters...</span>
               )}
             </div>
           </motion.div>
@@ -272,7 +274,7 @@ export default function SimplifiedReportsPage() {
             <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="font-medium">
-                执行工具: {part.toolInvocation.toolName}
+                Executing tool: {part.toolInvocation.toolName}
               </span>
             </div>
             {part.toolInvocation.args && (
@@ -284,7 +286,7 @@ export default function SimplifiedReportsPage() {
             )}
             <div className="mt-2 flex items-center gap-2">
               <span className="text-xs text-blue-500 dark:text-blue-400">
-                工具调用中，请稍候...
+                Tool is being called, please wait...
               </span>
               <div className="flex space-x-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
@@ -316,7 +318,7 @@ export default function SimplifiedReportsPage() {
     }
   };
 
-  // 打字机动画
+  // Typing indicator animation
   const TypingIndicator = () => (
     <div className="flex items-center gap-1 py-2 px-4">
       <motion.div
@@ -347,7 +349,7 @@ export default function SimplifiedReportsPage() {
               <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              研究报告
+              Company Research
             </h1>
           </div>
           <Button
@@ -356,14 +358,14 @@ export default function SimplifiedReportsPage() {
             className="text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white border-gray-200 dark:border-zinc-800"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            返回对话
+            Financial Insights Assistant
           </Button>
         </div>
       </header>
 
-      {/* Main Content - Takes the rest of the screen height */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Input Area - Centered */}
+        {/* Input Area */}
         <form
           onSubmit={startResearch}
           className={cn(
@@ -379,19 +381,19 @@ export default function SimplifiedReportsPage() {
                 onChange={handleQueryChange}
                 placeholder={
                   activeMode === "deepResearch"
-                    ? "输入公司名称或研究主题..."
+                    ? "Enter company name or research topic..."
                     : activeMode === "extendedResearch"
-                    ? "输入需要扩展研究的内容..."
-                    : "输入需要提取的结构化信息..."
+                    ? "Enter content for extended research..."
+                    : "Enter structured information to extract..."
                 }
                 className="w-full h-12 px-4 py-2 pl-10 pr-24 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent"
                 disabled={isLoading}
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
 
-              {/* 右侧操作按钮区域 */}
+              {/* Right-side action buttons */}
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-                {/* PDF 上传按钮 (仅在扩展研究或提取模式下显示) */}
+                {/* PDF upload button (only for Extended Research or Extract Content modes) */}
                 {(activeMode === "extendedResearch" ||
                   activeMode === "extraction") && (
                   <>
@@ -433,7 +435,7 @@ export default function SimplifiedReportsPage() {
                   </>
                 )}
 
-                {/* 发送按钮 */}
+                {/* Submit button */}
                 <Button
                   type="submit"
                   variant="ghost"
@@ -478,7 +480,7 @@ export default function SimplifiedReportsPage() {
             </div>
 
             <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
-              {/* 研究模式选择 */}
+              {/* Mode selection buttons */}
               <Button
                 type="button"
                 variant={activeMode === "deepResearch" ? "secondary" : "ghost"}
@@ -492,7 +494,7 @@ export default function SimplifiedReportsPage() {
               >
                 <FileText className="h-4 w-4 mr-1 text-blue-500 dark:text-blue-400" />
                 <span className="text-gray-700 dark:text-gray-300">
-                  深度研究
+                  Deep Research
                 </span>
               </Button>
               <Button
@@ -506,7 +508,7 @@ export default function SimplifiedReportsPage() {
               >
                 <FileUp className="h-4 w-4 mr-1 text-purple-500 dark:text-purple-400" />
                 <span className="text-gray-700 dark:text-gray-300">
-                  扩展研究
+                  Extended Research
                 </span>
               </Button>
               <Button
@@ -518,12 +520,12 @@ export default function SimplifiedReportsPage() {
               >
                 <FileSearch className="h-4 w-4 mr-1 text-amber-500 dark:text-amber-400" />
                 <span className="text-gray-700 dark:text-gray-300">
-                  提取内容
+                  Extract Content
                 </span>
               </Button>
             </div>
 
-            {/* 显示已选择的文件 */}
+            {/* Display selected file */}
             {selectedFile && (
               <div className="mt-2 p-2 rounded-md bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-sm text-gray-600 dark:text-gray-300 flex items-center justify-between">
                 <div className="flex items-center">
@@ -539,7 +541,7 @@ export default function SimplifiedReportsPage() {
                   </div>
                 ) : pdfContent ? (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                    已处理
+                    Processed
                   </span>
                 ) : (
                   <Button
@@ -549,7 +551,7 @@ export default function SimplifiedReportsPage() {
                     className="h-6 px-2 py-0 text-xs rounded-full text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
                     onClick={processPdf}
                   >
-                    处理
+                    Process
                   </Button>
                 )}
               </div>
@@ -557,9 +559,9 @@ export default function SimplifiedReportsPage() {
           </div>
         </form>
 
-        {/* Content Area - Flexible height */}
+        {/* Content Area */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Main content area */}
+          {/* Main content */}
           <div className="flex-1 overflow-hidden flex flex-col">
             {reportContent || isLoading ? (
               <>
@@ -657,53 +659,56 @@ export default function SimplifiedReportsPage() {
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center">
-                <Card className="w-full max-w-xl bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
-                  <CardHeader className="text-center pb-6">
+                <Card className="w-full max-w-xl bg-white dark:bg-zinc-900 shadow-lg p-6">
+                  <div className="text-center">
                     <div className="mx-auto w-16 h-16 mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                       <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <CardTitle className="text-2xl text-gray-900 dark:text-white">
-                      智能研究助手
-                    </CardTitle>
-                    <CardDescription className="text-gray-500 dark:text-zinc-400 mt-2">
-                      报告生成器支持三种模式：
-                      <ul className="text-left mt-2 space-y-2">
-                        <li className="flex items-start">
-                          <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2 mt-0.5">
-                            <span className="text-blue-600 dark:text-blue-400 text-xs">
-                              1
-                            </span>
-                          </div>
-                          <span>
-                            <strong>深度研究</strong> -
-                            根据用户希望了解的内容生成高质量的专业报告
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      Intelligent Research Assistant
+                    </h2>
+                    <p className="text-gray-500 dark:text-zinc-400 mt-2">
+                      This report generator supports three modes:
+                    </p>
+                    <ul className="text-left mt-4 space-y-2">
+                      <li className="flex items-start">
+                        <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2">
+                          <span className="text-blue-600 dark:text-blue-400 text-xs">
+                            1
                           </span>
-                        </li>
-                        <li className="flex items-start">
-                          <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2 mt-0.5">
-                            <span className="text-blue-600 dark:text-blue-400 text-xs">
-                              2
-                            </span>
-                          </div>
-                          <span>
-                            <strong>扩展研究</strong> - 基于已有的 PDF
-                            内容，结合用户输入进行补充研究
+                        </div>
+                        <span>
+                          <strong>Deep Research</strong> - Generates a
+                          high-quality professional report based on the user's
+                          inquiry.
+                        </span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2">
+                          <span className="text-blue-600 dark:text-blue-400 text-xs">
+                            2
                           </span>
-                        </li>
-                        <li className="flex items-start">
-                          <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2 mt-0.5">
-                            <span className="text-blue-600 dark:text-blue-400 text-xs">
-                              3
-                            </span>
-                          </div>
-                          <span>
-                            <strong>提取内容</strong> - 从上传的 PDF
-                            中提取用户指定的结构化信息
+                        </div>
+                        <span>
+                          <strong>Extended Research</strong> - Conducts extended
+                          research by combining uploaded PDF content with user
+                          input.
+                        </span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-2">
+                          <span className="text-blue-600 dark:text-blue-400 text-xs">
+                            3
                           </span>
-                        </li>
-                      </ul>
-                    </CardDescription>
-                  </CardHeader>
+                        </div>
+                        <span>
+                          <strong>Extract Content</strong> - Extracts structured
+                          information specified by the user from the uploaded
+                          PDF.
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
                 </Card>
               </div>
             )}
@@ -714,7 +719,7 @@ export default function SimplifiedReportsPage() {
             <div className="w-72 border-l border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 overflow-y-auto">
               <div className="p-4">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-3 flex items-center justify-between">
-                  <span>研究过程</span>
+                  <span>Research Process</span>
                   <Button
                     variant="ghost"
                     size="sm"
