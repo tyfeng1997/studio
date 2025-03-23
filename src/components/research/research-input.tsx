@@ -14,14 +14,32 @@ import {
   FileSearch,
 } from "lucide-react";
 
-// Fake function to extract PDF content, to be replaced with actual implementation later
+// Function to extract PDF content using Mistral OCR API
 const extractPdfContent = async (file) => {
-  // This is a placeholder function that just returns the file name and a fake message
-  // Will be replaced with actual PDF extraction logic later
-  return {
-    fileName: file.name,
-    content: "This is fake pdf.",
-  };
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/ocr", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to process PDF");
+    }
+
+    const data = await response.json();
+    console.log("PDF extraction result:", data);
+    return {
+      fileName: data.fileName,
+      content: data.content,
+    };
+  } catch (error) {
+    console.error("PDF extraction error:", error);
+    throw error;
+  }
 };
 
 export default function ResearchInput({
@@ -46,11 +64,21 @@ export default function ResearchInput({
   // Handle file selection
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+
+      // Check if file is PDF
+      if (file.type !== "application/pdf") {
+        toast.error("Please select a PDF file");
+        return;
+      }
+
+      setSelectedFile(file);
       // Reset processing states
       setIsPdfProcessing(false);
       setPdfContent("");
       setProcessingProgress(0);
+
+      toast.success(`File "${file.name}" selected`);
     }
   };
 
@@ -69,32 +97,37 @@ export default function ResearchInput({
     setIsPdfProcessing(true);
     setProcessingProgress(0);
 
-    // Simulate processing progress
-    const interval = setInterval(() => {
+    // Set up progress simulation
+    const progressInterval = setInterval(() => {
       setProcessingProgress((prev) => {
-        const newProgress = prev + Math.random() * 15;
-        return newProgress >= 100 ? 100 : newProgress;
+        // Cap at 95% during processing to indicate that it's not complete yet
+        const newProgress = prev + Math.random() * 10;
+        return newProgress >= 95 ? 95 : newProgress;
       });
     }, 500);
 
     try {
-      // Use fake function to extract PDF content; replace later with actual logic
+      // Use the OCR API to extract PDF content
       const result = await extractPdfContent(selectedFile);
-      setPdfContent(
-        `File Name: ${result.fileName}\nContent: ${result.content}`
-      );
 
-      // Set progress to 100%
+      // Format the content for display
+      const formattedContent =
+        typeof result.content === "string"
+          ? result.content
+          : JSON.stringify(result.content, null, 2);
+
+      setPdfContent(formattedContent);
+
+      // Set progress to 100% to indicate completion
+      clearInterval(progressInterval);
       setProcessingProgress(100);
-      setTimeout(() => {
-        clearInterval(interval);
-        setIsPdfProcessing(false);
-        toast.success("PDF processed successfully");
-      }, 500);
-    } catch (error) {
-      clearInterval(interval);
       setIsPdfProcessing(false);
-      toast.error("PDF processing failed");
+      toast.success("PDF processed successfully");
+    } catch (error) {
+      clearInterval(progressInterval);
+      setIsPdfProcessing(false);
+      setProcessingProgress(0);
+      toast.error(`PDF processing failed: ${error.message || "Unknown error"}`);
       console.error("PDF processing error:", error);
     }
   };

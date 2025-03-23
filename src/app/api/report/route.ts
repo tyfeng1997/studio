@@ -190,7 +190,7 @@ export async function POST(req: Request) {
   console.log("message", message);
   console.log("id", id);
   console.log("mode", mode);
-  console.log("pdfContent available:", !!pdfContent);
+  console.log("pdfContent available:", pdfContent);
 
   const toolsConfig = getToolsConfig();
   const messages = appendClientMessage({

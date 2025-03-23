@@ -29,6 +29,9 @@ importers:
       '@mendable/firecrawl-js':
         specifier: ^1.17.0
         version: 1.17.0(ws@8.18.0)
+      '@mistralai/mistralai':
+        specifier: ^1.5.2
+        version: 1.5.2(zod@3.24.2)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
@@ -574,6 +577,11 @@ packages:
 
   '@mendable/firecrawl-js@1.17.0':
     resolution: {integrity: sha512-W8NEbFLtgedSI4CwxDFJ2iwcmwL7F3Gkv8usagYQ764AxnNdmcylVWMuYoQmzS6iYCtmSLFQUNEvHW9NbWigPQ==}
+
+  '@mistralai/mistralai@1.5.2':
+    resolution: {integrity: sha512-mBTIDQmuAX9RowMYteZFHJIYlEwDcHzzaxgXzrFtlvH9CkKXK7R1VnZ1sZSe+uLMg0dIXUVdPRUh1SwyFeSqXw==}
+    peerDependencies:
+      zod: '>= 3'
 
   '@modelcontextprotocol/sdk@1.7.0':
     resolution: {integrity: sha512-IYPe/FLpvF3IZrd/f5p5ffmWhMc3aEMuM2wGJASDqC2Ge7qatVCdbfPx3n/5xFeb19xN0j/911M2AaFuircsWA==}
@@ -4090,6 +4098,11 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - ws
+
+  '@mistralai/mistralai@1.5.2(zod@3.24.2)':
+    dependencies:
+      zod: 3.24.2
+      zod-to-json-schema: 3.24.1(zod@3.24.2)
 
   '@modelcontextprotocol/sdk@1.7.0':
     dependencies:
