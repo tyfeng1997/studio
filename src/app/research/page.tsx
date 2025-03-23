@@ -260,76 +260,157 @@ export default function ResearchPage() {
       });
     }
   };
+  // 优化 PDF 导出函数
   const exportAsPDF = () => {
     if (!displayContent) return;
 
-    // Create a temporary div to render the markdown content
+    // 创建临时 div 用于渲染内容
     const element = document.createElement("div");
     element.className = "pdf-export";
 
-    // Apply styling to the temporary div
+    // 应用更好的样式
     element.style.padding = "40px";
     element.style.maxWidth = "800px";
     element.style.margin = "0 auto";
-    element.style.fontFamily = "Arial, sans-serif";
+    element.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+    element.style.backgroundColor = "#ffffff";
+    element.style.color = "#333333";
 
-    // Add a CSS class to the body for print styling
-    document.body.classList.add("printing");
+    // 创建标题元素并应用样式
+    const titleEl = document.createElement("div");
+    titleEl.style.textAlign = "center";
+    titleEl.style.marginBottom = "30px";
+    element.appendChild(titleEl);
 
-    // Convert markdown to HTML
+    // 添加 Logo 或标题图片（可选）
+    // const logoImg = document.createElement("img");
+    // logoImg.src = "/logo.png";
+    // logoImg.style.height = "60px";
+    // logoImg.style.marginBottom = "20px";
+    // titleEl.appendChild(logoImg);
+
+    // 转换 Markdown 为增强的 HTML
     const markdownToHtml = displayContent
+      // 标题样式
       .replace(
         /# (.*)/g,
-        '<h1 style="font-size: 28px; margin-bottom: 20px; color: #333;">$1</h1>'
+        '<h1 style="font-size: 28px; margin-bottom: 20px; color: #111; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 10px;">$1</h1>'
       )
       .replace(
         /## (.*)/g,
-        '<h2 style="font-size: 22px; margin-top: 30px; margin-bottom: 15px; color: #444;">$1</h2>'
+        '<h2 style="font-size: 22px; margin-top: 30px; margin-bottom: 15px; color: #222; font-weight: 600;">$1</h2>'
       )
       .replace(
         /### (.*)/g,
-        '<h3 style="font-size: 18px; margin-top: 25px; margin-bottom: 10px; color: #555;">$1</h3>'
+        '<h3 style="font-size: 18px; margin-top: 25px; margin-bottom: 10px; color: #333; font-weight: 600;">$1</h3>'
       )
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-      .replace(/\n\n/g, "<br><br>")
-      .replace(/\n- (.*)/g, "<br>• $1")
-      .replace(/\n\d\. (.*)/g, "<br>$&");
 
-    // Set the HTML content
-    element.innerHTML = markdownToHtml;
+      // 文本格式
+      .replace(
+        /\*\*(.*?)\*\*/g,
+        '<strong style="font-weight: 600; color: #111;">$1</strong>'
+      )
+      .replace(
+        /\*(.*?)\*/g,
+        '<em style="font-style: italic; color: #444;">$1</em>'
+      )
 
-    // Temporarily append to document
+      // 链接样式
+      .replace(
+        /\[(.*?)\]\((.*?)\)/g,
+        '<a href="$2" style="color: #0066cc; text-decoration: none; border-bottom: 1px solid #0066cc;">$1</a>'
+      )
+
+      // 引用样式 - 加强引用的视觉效果
+      .replace(
+        /\n> (.*)/g,
+        '<blockquote style="border-left: 4px solid #0066cc; padding-left: 15px; margin-left: 0; margin-right: 0; color: #555; font-style: italic;">$1</blockquote>'
+      )
+
+      // 列表样式
+      .replace(
+        /\n- (.*)/g,
+        '<div style="margin: 5px 0; display: flex;"><span style="min-width: 18px; color: #0066cc; font-weight: bold; margin-right: 8px;">•</span><span>$1</span></div>'
+      )
+      .replace(
+        /\n(\d+)\. (.*)/g,
+        '<div style="margin: 5px 0; display: flex;"><span style="min-width: 25px; color: #0066cc; font-weight: bold; margin-right: 8px;">$1.</span><span>$2</span></div>'
+      )
+
+      // 引用编号加强显示 [1], [2] 等
+      .replace(
+        /\[(\d+)\]/g,
+        '<span style="display: inline-block; min-width: 25px; color: #0066cc; font-weight: bold;">[$1]</span>'
+      )
+
+      // 段落间距
+      .replace(/\n\n/g, '<div style="margin: 15px 0;"></div>');
+
+    // 为引用部分添加特殊样式（通常在报告底部）
+    const referencesSection = markdownToHtml.match(
+      /<h2[^>]*>References<\/h2>([\s\S]*?)(<h2|$)/i
+    );
+    let processedHtml = markdownToHtml;
+
+    if (referencesSection && referencesSection[1]) {
+      const refContent = referencesSection[1];
+      const styledRefContent =
+        '<div style="background-color: #f9f9f9; border: 1px solid #eee; padding: 15px; border-radius: 5px; margin-top: 10px;">' +
+        refContent +
+        "</div>";
+
+      processedHtml = markdownToHtml.replace(refContent, styledRefContent);
+    }
+
+    // 设置 HTML 内容
+    element.innerHTML = processedHtml;
+
+    // 添加页码
+    const pageFooter = document.createElement("div");
+    pageFooter.style.position = "fixed";
+    pageFooter.style.bottom = "20px";
+    pageFooter.style.right = "20px";
+    pageFooter.style.fontSize = "12px";
+    pageFooter.style.color = "#666";
+    pageFooter.innerHTML = "Page _page_ of _total_";
+    element.appendChild(pageFooter);
+
+    // 临时添加到文档
     document.body.appendChild(element);
 
-    // Generate PDF options
+    // 生成 PDF 选项
     const opt = {
-      margin: [15, 15],
+      margin: [20, 20],
       filename: "financial-report.pdf",
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      footer: {
+        height: "15mm",
+        contents: {
+          default:
+            '<div style="text-align: right; font-size: 10px; color: #666;">Page {{page}} of {{pages}}</div>',
+        },
+      },
     };
 
-    // Generate PDF
+    // 生成 PDF
     html2pdf()
       .set(opt)
       .from(element)
       .save()
       .then(() => {
-        // Remove the temporary element
+        // 删除临时元素
         document.body.removeChild(element);
-        document.body.classList.remove("printing");
 
-        // Show success message
+        // 显示成功消息
         toast({
-          title: "PDF Exported",
-          description: "Your report has been exported as PDF successfully.",
+          title: "PDF 导出成功",
+          description: "您的报告已成功导出为 PDF 格式。",
         });
       });
   };
-
   const exportAsMarkdown = () => {
     if (!displayContent) return;
 
