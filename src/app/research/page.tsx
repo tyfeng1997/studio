@@ -43,8 +43,8 @@ function getReportTitle(reportContent) {
   // Get the first line
   const firstLine = reportContent.split("\n")[0];
 
-  // Take up to 10 characters
-  return firstLine.substring(0, 10) + (firstLine.length > 10 ? "..." : "");
+  // Take up to 30 characters
+  return firstLine.substring(0, 30) + (firstLine.length > 30 ? "..." : "");
 }
 
 // Extract complete message content for display
@@ -108,11 +108,63 @@ export default function ResearchPage() {
 
   // State to track PDF content from the input component
   const [pdfContent, setPdfContent] = useState("");
+  // State to track if we're loading a saved report
+  const [loadingReport, setLoadingReport] = useState(false);
+
+  // Function to load saved report from URL parameter
+  useEffect(() => {
+    const fetchReportFromURL = async () => {
+      // Check for report ID in URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const reportId = searchParams.get("report");
+
+      if (reportId) {
+        setLoadingReport(true);
+        try {
+          // Fetch the report data
+          const response = await fetch(`/api/reports?id=${reportId}`);
+
+          if (!response.ok) {
+            throw new Error("Failed to load report");
+          }
+
+          const reportData = await response.json();
+
+          // Set the report content to display
+          setDisplayContent(reportData.content);
+          // Also save it for potential citation extraction
+          setReportContentForSaving(reportData.content);
+          // Mark as saved since it's coming from the database
+          setReportSaved(true);
+        } catch (error) {
+          console.error("Error loading report:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load the saved report",
+            variant: "destructive",
+          });
+        } finally {
+          setLoadingReport(false);
+        }
+      }
+    };
+
+    fetchReportFromURL();
+  }, []);
 
   // Start generating report
   const startResearch = (e, pdfContentFromInput) => {
     e.preventDefault();
     if (!input.trim()) return;
+
+    // Clear any existing report data
+    setDisplayContent("");
+    setReportContentForSaving("");
+
+    // Remove report ID from URL without reloading the page
+    const url = new URL(window.location);
+    url.searchParams.delete("report");
+    window.history.pushState({}, "", url);
 
     setIsGenerating(true);
     setReportSaved(false);
@@ -325,21 +377,28 @@ export default function ResearchPage() {
         <div className="flex-1 flex overflow-hidden">
           {/* Main content */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            {displayContent || isLoading ? (
+            {displayContent || isLoading || loadingReport ? (
               <>
                 {/* Report Content */}
                 <div className="flex justify-end px-6 py-2">
-                  <Button
-                    onClick={saveReport}
-                    disabled={
-                      !reportContentForSaving || reportSaved || isLoading
-                    }
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                    size="sm"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {reportSaved ? "Saved" : "Save Report"}
-                  </Button>
+                  {loadingReport ? (
+                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading saved report...
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={saveReport}
+                      disabled={
+                        !reportContentForSaving || reportSaved || isLoading
+                      }
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      size="sm"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {reportSaved ? "Saved" : "Save Report"}
+                    </Button>
+                  )}
                 </div>
                 <ScrollArea className="flex-1">
                   <div className="max-w-4xl mx-auto p-6">

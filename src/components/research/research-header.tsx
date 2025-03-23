@@ -42,9 +42,15 @@ export default function ResearchHeader() {
     }
   };
 
-  // Load report by ID
+  // Load report by ID - now uses same page with parameter
   const loadReport = (id) => {
-    router.push(`/research?report=${id}`);
+    // Instead of navigating to a new page, we'll just change the URL parameter
+    const url = new URL(window.location);
+    url.searchParams.set("report", id);
+    window.history.pushState({}, "", url);
+
+    // Trigger a page reload to fetch the report content
+    window.location.reload();
   };
 
   return (
