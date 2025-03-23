@@ -1,85 +1,95 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useChat, Message } from "@ai-sdk/react";
 import { createIdGenerator } from "ai";
-import { Button } from "@/components/ui/button";
+import { v4 as uuidv4 } from "uuid";
+import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  Zap,
-  FileText,
-  Loader2,
-  ArrowLeft,
-  X,
-  Search,
-  Upload,
-  FileUp,
-  Download,
-  FileSearch,
-} from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Zap, FileText, Loader2, X, Search, Save } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { ToolResultRenderer } from "@/components/tool-result-render";
-import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
+import { toast } from "@/components/ui/use-toast";
 
-// Fake function to extract PDF content, to be replaced with actual implementation later
-const extractPdfContent = async (file) => {
-  // This is a placeholder function that just returns the file name and a fake message
-  // Will be replaced with actual PDF extraction logic later
-  return {
-    fileName: file.name,
-    content: "This is fake pdf.",
-  };
-};
+// Import the components we created
+import ResearchHeader from "@/components/research/research-header";
+import ResearchInput from "@/components/research/research-input";
 
-// Extract report content from streaming messages
-function extractStreamingReport(messages: Message[]): string {
+import { Download, FileDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import html2pdf from "html2pdf.js";
+
+// Function to extract content between <report> tags
+function extractReportContent(content) {
+  if (!content) return "";
+
+  const reportRegex = /<report>([\s\S]*?)<\/report>/;
+  const match = content.match(reportRegex);
+
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  return "";
+}
+
+// Function to get title from report content
+function getReportTitle(reportContent) {
+  if (!reportContent) return "Untitled Report";
+
+  // Get the first line
+  const firstLine = reportContent.split("\n")[0];
+
+  // Take up to 30 characters
+  return firstLine.substring(0, 30) + (firstLine.length > 30 ? "..." : "");
+}
+
+// Extract complete message content for display
+function extractStreamingContent(messages) {
   const lastMsg = messages
     .slice()
     .reverse()
     .find((msg) => msg.role === "assistant" && typeof msg.content === "string");
+
   if (!lastMsg) return "";
-  let content = lastMsg.content;
-  if (content.startsWith("<report>")) {
-    content = content.substring(8);
-  }
-  if (content.endsWith("</report>")) {
-    content = content.substring(0, content.length - 9);
-  }
-  return content;
+
+  return lastMsg.content;
 }
 
-export default function SimplifiedReportsPage() {
+// Extract only report content for saving
+function extractReportForSaving(messages) {
+  const lastMsg = messages
+    .slice()
+    .reverse()
+    .find((msg) => msg.role === "assistant" && typeof msg.content === "string");
+
+  if (!lastMsg) return "";
+
+  return extractReportContent(lastMsg.content);
+}
+
+export default function ResearchPage() {
   const router = useRouter();
   const { theme } = useTheme();
-  const fileInputRef = useRef(null);
 
   // Report-related state
   const [input, setInput] = useState("");
-  const [activeMode, setActiveMode] = useState<
-    "deepResearch" | "extendedResearch" | "extraction"
-  >("deepResearch");
+  const [activeMode, setActiveMode] = useState("deepResearch");
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportId] = useState(uuidv4());
   const [reportSaved, setReportSaved] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isPdfProcessing, setIsPdfProcessing] = useState(false);
-  const [pdfContent, setPdfContent] = useState("");
-  const [processingProgress, setProcessingProgress] = useState(0);
 
   // Initialize chat client
   const {
@@ -90,7 +100,7 @@ export default function SimplifiedReportsPage() {
     input: chatInput,
     setInput: setChatInput,
   } = useChat({
-    api: "/api/report",
+    api: "/api/research",
     id: reportId,
     maxSteps: 20,
     generateId: createIdGenerator({ prefix: "report", size: 16 }),
@@ -105,99 +115,69 @@ export default function SimplifiedReportsPage() {
     experimental_streamData: true,
   });
 
-  // Handle input changes
-  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-  };
+  // State to track PDF content from the input component
+  const [pdfContent, setPdfContent] = useState("");
+  // State to track if we're loading a saved report
+  const [loadingReport, setLoadingReport] = useState(false);
 
-  // Handle file selection
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-      // Reset processing states
-      setIsPdfProcessing(false);
-      setPdfContent("");
-      setProcessingProgress(0);
-    }
-  };
+  // Function to load saved report from URL parameter
+  useEffect(() => {
+    const fetchReportFromURL = async () => {
+      // Check for report ID in URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const reportId = searchParams.get("report");
 
-  // Trigger file selection dialog
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
+      if (reportId) {
+        setLoadingReport(true);
+        try {
+          // Fetch the report data
+          const response = await fetch(`/api/reports?id=${reportId}`);
 
-  // Process PDF file
-  const processPdf = async () => {
-    if (!selectedFile) {
-      toast.error("Please select a PDF file first");
-      return;
-    }
+          if (!response.ok) {
+            throw new Error("Failed to load report");
+          }
 
-    setIsPdfProcessing(true);
-    setProcessingProgress(0);
+          const reportData = await response.json();
 
-    // Simulate processing progress
-    const interval = setInterval(() => {
-      setProcessingProgress((prev) => {
-        const newProgress = prev + Math.random() * 15;
-        return newProgress >= 100 ? 100 : newProgress;
-      });
-    }, 500);
+          // Set the report content to display
+          setDisplayContent(reportData.content);
+          // Also save it for potential citation extraction
+          setReportContentForSaving(reportData.content);
+          // Mark as saved since it's coming from the database
+          setReportSaved(true);
+        } catch (error) {
+          console.error("Error loading report:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load the saved report",
+            variant: "destructive",
+          });
+        } finally {
+          setLoadingReport(false);
+        }
+      }
+    };
 
-    try {
-      // Use fake function to extract PDF content; replace later with actual logic
-      const result = await extractPdfContent(selectedFile);
-      setPdfContent(
-        `File Name: ${result.fileName}\nContent: ${result.content}`
-      );
-
-      // Set progress to 100%
-      setProcessingProgress(100);
-      setTimeout(() => {
-        clearInterval(interval);
-        setIsPdfProcessing(false);
-        toast.success("PDF processed successfully");
-      }, 500);
-    } catch (error) {
-      clearInterval(interval);
-      setIsPdfProcessing(false);
-      toast.error("PDF processing failed");
-      console.error("PDF processing error:", error);
-    }
-  };
+    fetchReportFromURL();
+  }, []);
 
   // Start generating report
-  const startResearch = (e: React.FormEvent) => {
+  const startResearch = (e, pdfContentFromInput) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // Check if PDF content is needed but not processed yet
-    if (
-      (activeMode === "extendedResearch" || activeMode === "extraction") &&
-      selectedFile &&
-      !pdfContent
-    ) {
-      toast.error("Please process the selected PDF file first", {
-        position: "top-center",
-        duration: 3000,
-      });
-      return;
-    }
+    // Clear any existing report data
+    setDisplayContent("");
+    setReportContentForSaving("");
 
-    // If file is required but not uploaded
-    if (
-      (activeMode === "extendedResearch" || activeMode === "extraction") &&
-      !selectedFile
-    ) {
-      toast.error("Please upload a PDF file first", {
-        position: "top-center",
-        duration: 3000,
-      });
-      return;
-    }
+    // Remove report ID from URL without reloading the page
+    const url = new URL(window.location);
+    url.searchParams.delete("report");
+    window.history.pushState({}, "", url);
 
     setIsGenerating(true);
     setReportSaved(false);
+    setPdfContent(pdfContentFromInput || "");
 
     let modePrompt = "";
 
@@ -219,13 +199,19 @@ export default function SimplifiedReportsPage() {
     handleSubmit(e);
   };
 
-  // Handle streaming report content
-  const [reportContent, setReportContent] = useState("");
+  // Handle streaming content
+  const [displayContent, setDisplayContent] = useState("");
+  const [reportContentForSaving, setReportContentForSaving] = useState("");
   const [showLoader, setShowLoader] = useState(false);
 
   useEffect(() => {
-    const content = extractStreamingReport(messages);
-    setReportContent(content);
+    // Get full content for display
+    const content = extractStreamingContent(messages);
+    setDisplayContent(content);
+
+    // Get only report content for saving
+    const reportContent = extractReportForSaving(messages);
+    setReportContentForSaving(reportContent);
 
     // Show loader only when content exists and still loading
     setShowLoader(isLoading && content.length > 0);
@@ -235,8 +221,225 @@ export default function SimplifiedReportsPage() {
     }
   }, [messages, isLoading, isGenerating]);
 
+  // Save report to database
+  const saveReport = async () => {
+    if (!reportContentForSaving || reportSaved) return;
+
+    try {
+      const title = getReportTitle(reportContentForSaving);
+
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: reportId,
+          title: title,
+          content: reportContentForSaving,
+          mode: activeMode,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save report");
+      }
+
+      setReportSaved(true);
+      toast({
+        title: "Report saved",
+        description: "Your report has been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving report:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save report",
+        variant: "destructive",
+      });
+    }
+  };
+  // 优化 PDF 导出函数
+  const exportAsPDF = () => {
+    if (!displayContent) return;
+
+    // 创建临时 div 用于渲染内容
+    const element = document.createElement("div");
+    element.className = "pdf-export";
+
+    // 应用更好的样式
+    element.style.padding = "40px";
+    element.style.maxWidth = "800px";
+    element.style.margin = "0 auto";
+    element.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+    element.style.backgroundColor = "#ffffff";
+    element.style.color = "#333333";
+
+    // 创建标题元素并应用样式
+    const titleEl = document.createElement("div");
+    titleEl.style.textAlign = "center";
+    titleEl.style.marginBottom = "30px";
+    element.appendChild(titleEl);
+
+    // 添加 Logo 或标题图片（可选）
+    // const logoImg = document.createElement("img");
+    // logoImg.src = "/logo.png";
+    // logoImg.style.height = "60px";
+    // logoImg.style.marginBottom = "20px";
+    // titleEl.appendChild(logoImg);
+
+    // 转换 Markdown 为增强的 HTML
+    const markdownToHtml = displayContent
+      // 标题样式
+      .replace(
+        /# (.*)/g,
+        '<h1 style="font-size: 28px; margin-bottom: 20px; color: #111; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 10px;">$1</h1>'
+      )
+      .replace(
+        /## (.*)/g,
+        '<h2 style="font-size: 22px; margin-top: 30px; margin-bottom: 15px; color: #222; font-weight: 600;">$1</h2>'
+      )
+      .replace(
+        /### (.*)/g,
+        '<h3 style="font-size: 18px; margin-top: 25px; margin-bottom: 10px; color: #333; font-weight: 600;">$1</h3>'
+      )
+
+      // 文本格式
+      .replace(
+        /\*\*(.*?)\*\*/g,
+        '<strong style="font-weight: 600; color: #111;">$1</strong>'
+      )
+      .replace(
+        /\*(.*?)\*/g,
+        '<em style="font-style: italic; color: #444;">$1</em>'
+      )
+
+      // 链接样式
+      .replace(
+        /\[(.*?)\]\((.*?)\)/g,
+        '<a href="$2" style="color: #0066cc; text-decoration: none; border-bottom: 1px solid #0066cc;">$1</a>'
+      )
+
+      // 引用样式 - 加强引用的视觉效果
+      .replace(
+        /\n> (.*)/g,
+        '<blockquote style="border-left: 4px solid #0066cc; padding-left: 15px; margin-left: 0; margin-right: 0; color: #555; font-style: italic;">$1</blockquote>'
+      )
+
+      // 列表样式
+      .replace(
+        /\n- (.*)/g,
+        '<div style="margin: 5px 0; display: flex;"><span style="min-width: 18px; color: #0066cc; font-weight: bold; margin-right: 8px;">•</span><span>$1</span></div>'
+      )
+      .replace(
+        /\n(\d+)\. (.*)/g,
+        '<div style="margin: 5px 0; display: flex;"><span style="min-width: 25px; color: #0066cc; font-weight: bold; margin-right: 8px;">$1.</span><span>$2</span></div>'
+      )
+
+      // 引用编号加强显示 [1], [2] 等
+      .replace(
+        /\[(\d+)\]/g,
+        '<span style="display: inline-block; min-width: 25px; color: #0066cc; font-weight: bold;">[$1]</span>'
+      )
+
+      // 段落间距
+      .replace(/\n\n/g, '<div style="margin: 15px 0;"></div>');
+
+    // 为引用部分添加特殊样式（通常在报告底部）
+    const referencesSection = markdownToHtml.match(
+      /<h2[^>]*>References<\/h2>([\s\S]*?)(<h2|$)/i
+    );
+    let processedHtml = markdownToHtml;
+
+    if (referencesSection && referencesSection[1]) {
+      const refContent = referencesSection[1];
+      const styledRefContent =
+        '<div style="background-color: #f9f9f9; border: 1px solid #eee; padding: 15px; border-radius: 5px; margin-top: 10px;">' +
+        refContent +
+        "</div>";
+
+      processedHtml = markdownToHtml.replace(refContent, styledRefContent);
+    }
+
+    // 设置 HTML 内容
+    element.innerHTML = processedHtml;
+
+    // 添加页码
+    const pageFooter = document.createElement("div");
+    pageFooter.style.position = "fixed";
+    pageFooter.style.bottom = "20px";
+    pageFooter.style.right = "20px";
+    pageFooter.style.fontSize = "12px";
+    pageFooter.style.color = "#666";
+    pageFooter.innerHTML = "Page _page_ of _total_";
+    element.appendChild(pageFooter);
+
+    // 临时添加到文档
+    document.body.appendChild(element);
+
+    // 生成 PDF 选项
+    const opt = {
+      margin: [20, 20],
+      filename: "financial-report.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      footer: {
+        height: "15mm",
+        contents: {
+          default:
+            '<div style="text-align: right; font-size: 10px; color: #666;">Page {{page}} of {{pages}}</div>',
+        },
+      },
+    };
+
+    // 生成 PDF
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => {
+        // 删除临时元素
+        document.body.removeChild(element);
+
+        // 显示成功消息
+        toast({
+          title: "PDF 导出成功",
+          description: "您的报告已成功导出为 PDF 格式。",
+        });
+      });
+  };
+  const exportAsMarkdown = () => {
+    if (!displayContent) return;
+
+    // Create a blob with the markdown content
+    const blob = new Blob([displayContent], { type: "text/markdown" });
+
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "financial-report.md";
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Show success message
+    toast({
+      title: "Markdown Exported",
+      description: "Your report has been exported as Markdown successfully.",
+    });
+  };
+
   // Render tool invocation status
-  const renderToolInvocation = (part: any) => {
+  const renderToolInvocation = (part) => {
     switch (part.toolInvocation.state) {
       case "partial-call":
         return (
@@ -341,235 +544,84 @@ export default function SimplifiedReportsPage() {
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-zinc-950">
-      {/* Header - Fixed at the top */}
-      <header className="border-b border-gray-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-950 sticky top-0 z-10">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-            </div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Company Research
-            </h1>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => router.push("/chat")}
-            className="text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white border-gray-200 dark:border-zinc-800"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Financial Insights Assistant
-          </Button>
-        </div>
-      </header>
+      {/* Header Component */}
+      <ResearchHeader />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Input Area */}
-        <form
-          onSubmit={startResearch}
-          className={cn(
-            "p-4 flex flex-col items-center justify-center transition-all duration-300",
-            reportContent ? "h-auto" : "h-auto"
-          )}
-        >
-          <div className="relative w-full max-w-3xl">
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                value={input}
-                onChange={handleQueryChange}
-                placeholder={
-                  activeMode === "deepResearch"
-                    ? "Enter company name or research topic..."
-                    : activeMode === "extendedResearch"
-                    ? "Enter content for extended research..."
-                    : "Enter structured information to extract..."
-                }
-                className="w-full h-12 px-4 py-2 pl-10 pr-24 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600 focus:border-transparent"
-                disabled={isLoading}
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
-
-              {/* Right-side action buttons */}
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-                {/* PDF upload button (only for Extended Research or Extract Content modes) */}
-                {(activeMode === "extendedResearch" ||
-                  activeMode === "extraction") && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={triggerFileInput}
-                      disabled={isLoading || isPdfProcessing}
-                    >
-                      <Upload className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                    </Button>
-
-                    {selectedFile && !pdfContent && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full text-green-600 dark:text-green-400"
-                        onClick={processPdf}
-                        disabled={isLoading || isPdfProcessing}
-                      >
-                        {isPdfProcessing ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <Download className="h-5 w-5" />
-                        )}
-                      </Button>
-                    )}
-
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept=".pdf"
-                      className="hidden"
-                    />
-                  </>
-                )}
-
-                {/* Submit button */}
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="icon"
-                  disabled={
-                    isLoading ||
-                    !input.trim() ||
-                    ((activeMode === "extendedResearch" ||
-                      activeMode === "extraction") &&
-                      (!selectedFile || !pdfContent))
-                  }
-                  className={`h-8 w-8 rounded-full ${
-                    input.trim() &&
-                    !(
-                      (activeMode === "extendedResearch" ||
-                        activeMode === "extraction") &&
-                      (!selectedFile || !pdfContent)
-                    )
-                      ? "bg-purple-500 text-white hover:bg-purple-600"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-5 w-5"
-                    >
-                      <path d="M22 2L11 13"></path>
-                      <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-                    </svg>
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
-              {/* Mode selection buttons */}
-              <Button
-                type="button"
-                variant={activeMode === "deepResearch" ? "secondary" : "ghost"}
-                size="sm"
-                className="rounded-full"
-                onClick={() => {
-                  setActiveMode("deepResearch");
-                  setSelectedFile(null);
-                  setPdfContent("");
-                }}
-              >
-                <FileText className="h-4 w-4 mr-1 text-purple-500 dark:text-purple-400" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  Deep Research
-                </span>
-              </Button>
-              <Button
-                type="button"
-                variant={
-                  activeMode === "extendedResearch" ? "secondary" : "ghost"
-                }
-                size="sm"
-                className="rounded-full"
-                onClick={() => setActiveMode("extendedResearch")}
-              >
-                <FileUp className="h-4 w-4 mr-1 text-purple-500 dark:text-purple-400" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  Extended Research
-                </span>
-              </Button>
-              <Button
-                type="button"
-                variant={activeMode === "extraction" ? "secondary" : "ghost"}
-                size="sm"
-                className="rounded-full"
-                onClick={() => setActiveMode("extraction")}
-              >
-                <FileSearch className="h-4 w-4 mr-1 text-amber-500 dark:text-amber-400" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  Extract Content
-                </span>
-              </Button>
-            </div>
-
-            {/* Display selected file */}
-            {selectedFile && (
-              <div className="mt-2 p-2 rounded-md bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-sm text-gray-600 dark:text-gray-300 flex items-center justify-between">
-                <div className="flex items-center">
-                  <FileText className="h-4 w-4 mr-2 text-purple-500 dark:text-purple-400" />
-                  <span className="truncate max-w-[200px] sm:max-w-xs">
-                    {selectedFile.name}
-                  </span>
-                </div>
-                {isPdfProcessing ? (
-                  <div className="flex items-center text-xs text-purple-500 dark:text-purple-400">
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    <span>{Math.round(processingProgress)}%</span>
-                  </div>
-                ) : pdfContent ? (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                    Processed
-                  </span>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 py-0 text-xs rounded-full text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                    onClick={processPdf}
-                  >
-                    Process
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        </form>
+        {/* Input Component */}
+        <ResearchInput
+          input={input}
+          setInput={setInput}
+          activeMode={activeMode}
+          setActiveMode={setActiveMode}
+          isLoading={isLoading}
+          startResearch={startResearch}
+        />
 
         {/* Content Area */}
         <div className="flex-1 flex overflow-hidden">
           {/* Main content */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            {reportContent || isLoading ? (
+            {displayContent || isLoading || loadingReport ? (
               <>
                 {/* Report Content */}
+                <div className="flex justify-end px-6 py-2">
+                  {loadingReport ? (
+                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading saved report...
+                    </div>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={saveReport}
+                        disabled={
+                          !reportContentForSaving || reportSaved || isLoading
+                        }
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                        size="sm"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {reportSaved ? "Saved" : "Save Report"}
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!displayContent || isLoading}
+                            className="text-gray-600 dark:text-zinc-400"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={exportAsPDF}
+                            disabled={!displayContent || isLoading}
+                          >
+                            <FileDown className="h-4 w-4 mr-2" />
+                            Export as PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={exportAsMarkdown}
+                            disabled={!displayContent || isLoading}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Export as Markdown
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+                </div>
                 <ScrollArea className="flex-1">
                   <div className="max-w-4xl mx-auto p-6">
                     <div className="prose prose-blue dark:prose-invert max-w-none">
-                      {reportContent ? (
+                      {displayContent ? (
                         <div className="relative">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -637,7 +689,7 @@ export default function SimplifiedReportsPage() {
                               },
                             }}
                           >
-                            {reportContent}
+                            {displayContent}
                           </ReactMarkdown>
                           {showLoader && (
                             <span className="inline-flex ml-2">
@@ -665,10 +717,11 @@ export default function SimplifiedReportsPage() {
                       <FileText className="h-8 w-8 text-purple-500 dark:text-purple-400" />
                     </div>
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      Intelligent Research Assistant
+                      Financial Intelligence Assistant
                     </h2>
                     <p className="text-gray-500 dark:text-zinc-400 mt-2">
-                      This report generator supports three modes:
+                      Powerful AI-driven financial analysis in three specialized
+                      modes:
                     </p>
                     <ul className="text-left mt-4 space-y-2">
                       <li className="flex items-start">
@@ -678,9 +731,10 @@ export default function SimplifiedReportsPage() {
                           </span>
                         </div>
                         <span>
-                          <strong>Deep Research</strong> - Generates a
-                          high-quality professional report based on the user's
-                          inquiry.
+                          <strong>Deep Research</strong> - Comprehensive
+                          analysis of public companies with financial metrics,
+                          market position, competitive landscape, and investment
+                          outlook.
                         </span>
                       </li>
                       <li className="flex items-start">
@@ -690,9 +744,9 @@ export default function SimplifiedReportsPage() {
                           </span>
                         </div>
                         <span>
-                          <strong>Extended Research</strong> - Conducts extended
-                          research by combining uploaded PDF content with user
-                          input.
+                          <strong>Extended Research</strong> - Enhanced analysis
+                          by combining uploaded financial reports (10-K, 10-Q,
+                          earnings) with targeted inquiries for deeper insights.
                         </span>
                       </li>
                       <li className="flex items-start">
@@ -702,9 +756,9 @@ export default function SimplifiedReportsPage() {
                           </span>
                         </div>
                         <span>
-                          <strong>Extract Content</strong> - Extracts structured
-                          information specified by the user from the uploaded
-                          PDF.
+                          <strong>Extract Content</strong> - Precise extraction
+                          of key financial data, metrics, and disclosures from
+                          uploaded reports in structured format.
                         </span>
                       </li>
                     </ul>

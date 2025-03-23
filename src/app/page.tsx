@@ -13,6 +13,48 @@ import {
 export default function Home() {
   return (
     <main className="flex flex-col min-h-screen">
+      {/* Navigation */}
+      <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
+        <div className="container mx-auto max-w-6xl px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-center mr-2">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <span className="text-xl font-bold">FinancialInsights</span>
+            </div>
+            <div className="flex items-center space-x-6">
+              <Link
+                href="/chat"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center"
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Chat
+              </Link>
+              <Link
+                href="/research"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center"
+              >
+                <Search className="h-4 w-4 mr-1" />
+                Research
+              </Link>
+              <Link
+                href="/login"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Sign Up
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-600 to-indigo-900 text-white py-16 px-4 md:py-24">
         <div className="container mx-auto max-w-6xl">
@@ -28,19 +70,30 @@ export default function Home() {
               </h1>
               <p className="text-lg md:text-xl opacity-90 max-w-lg">
                 Unlock deep insights on public companies, market sentiment, and
-                real-time news with FinanceInsight's AI-powered analysis for
+                real-time news with FinancialInsights's AI-powered analysis for
                 smarter investment decisions.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <a
-                  href="mailto:bofeng1997@gmail.com?subject=FinanceInsight%20MVP%20Access%20Request"
+                  href="mailto:bofeng1997@gmail.com?subject=FinancialInsights%20MVP%20Access%20Request"
                   className="px-6 py-3 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all inline-flex items-center justify-center"
                 >
                   Request Test Access <MoveRight className="ml-2 h-4 w-4" />
                 </a>
-                <button className="px-6 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-600 transition-all">
-                  Learn More
-                </button>
+                <div className="flex gap-2">
+                  <Link
+                    href="/chat"
+                    className="px-6 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-600 transition-all flex items-center"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" /> Try Chat
+                  </Link>
+                  <Link
+                    href="/research"
+                    className="px-6 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-600 transition-all flex items-center"
+                  >
+                    <Search className="h-4 w-4 mr-1" /> Try Research
+                  </Link>
+                </div>
               </div>
             </div>
             <div className="md:w-1/2 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-gradient-to-br from-blue-800/50 to-indigo-900/50 backdrop-blur-sm">
@@ -51,7 +104,7 @@ export default function Home() {
                     <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
                     <div className="h-3 w-3 rounded-full bg-green-500"></div>
                     <div className="ml-2 text-sm text-gray-400">
-                      financeinsight.app
+                      financialinsights.app
                     </div>
                   </div>
                   <div className="space-y-3 font-mono text-sm">
@@ -140,6 +193,14 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
+              <div className="mt-6">
+                <Link
+                  href="/research"
+                  className="inline-flex items-center text-blue-600 dark:text-blue-400 font-medium hover:underline"
+                >
+                  Try Research <MoveRight className="ml-1 h-4 w-4" />
+                </Link>
+              </div>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border border-gray-100 dark:border-gray-700">
@@ -168,6 +229,14 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
+              <div className="mt-6">
+                <Link
+                  href="/chat"
+                  className="inline-flex items-center text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+                >
+                  Try Chat <MoveRight className="ml-1 h-4 w-4" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -238,15 +307,31 @@ export default function Home() {
           </h2>
           <p className="text-lg max-w-2xl mx-auto mb-8 opacity-90">
             We're recruiting test users to experience and help improve
-            FinanceInsight. Get early access to this powerful financial analysis
-            tool and shape its future development.
+            FinancialInsights. Get early access to this powerful financial
+            analysis tool and shape its future development.
           </p>
-          <a
-            href="mailto:bofeng1997@gmail.com?subject=FinanceInsight%20MVP%20Access%20Request"
-            className="px-8 py-4 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all inline-flex items-center justify-center text-lg"
-          >
-            Request Test Access <MoveRight className="ml-2 h-5 w-5" />
-          </a>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="mailto:bofeng1997@gmail.com?subject=FinancialInsights%20MVP%20Access%20Request"
+              className="px-8 py-4 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all inline-flex items-center justify-center text-lg"
+            >
+              Request Test Access <MoveRight className="ml-2 h-5 w-5" />
+            </a>
+            <div className="flex gap-4">
+              <Link
+                href="/chat"
+                className="px-6 py-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-400 transition-all flex items-center justify-center text-lg"
+              >
+                <MessageSquare className="h-5 w-5 mr-2" /> Try Chat
+              </Link>
+              <Link
+                href="/research"
+                className="px-6 py-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-400 transition-all flex items-center justify-center text-lg"
+              >
+                <Search className="h-5 w-5 mr-2" /> Try Research
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -256,14 +341,40 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
               <div className="text-2xl font-display font-bold text-blue-600 dark:text-blue-400">
-                FinanceInsight.app
+                FinancialInsights.app
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                 AI-Powered Financial & Company Analysis Platform
               </p>
             </div>
+            <div className="flex gap-6 mb-4 md:mb-0">
+              <Link
+                href="/chat"
+                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                Chat
+              </Link>
+              <Link
+                href="/research"
+                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                Research
+              </Link>
+              <Link
+                href="/login"
+                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                Sign Up
+              </Link>
+            </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              © 2025 FinanceInsight. All rights reserved.
+              © 2025 FinancialInsights. All rights reserved.
             </div>
           </div>
         </div>
