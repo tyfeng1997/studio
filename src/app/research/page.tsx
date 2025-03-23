@@ -47,8 +47,20 @@ function getReportTitle(reportContent) {
   return firstLine.substring(0, 10) + (firstLine.length > 10 ? "..." : "");
 }
 
-// Extract report content from streaming messages
-function extractStreamingReport(messages) {
+// Extract complete message content for display
+function extractStreamingContent(messages) {
+  const lastMsg = messages
+    .slice()
+    .reverse()
+    .find((msg) => msg.role === "assistant" && typeof msg.content === "string");
+
+  if (!lastMsg) return "";
+
+  return lastMsg.content;
+}
+
+// Extract only report content for saving
+function extractReportForSaving(messages) {
   const lastMsg = messages
     .slice()
     .reverse()
@@ -126,13 +138,19 @@ export default function ResearchPage() {
     handleSubmit(e);
   };
 
-  // Handle streaming report content
-  const [reportContent, setReportContent] = useState("");
+  // Handle streaming content
+  const [displayContent, setDisplayContent] = useState("");
+  const [reportContentForSaving, setReportContentForSaving] = useState("");
   const [showLoader, setShowLoader] = useState(false);
 
   useEffect(() => {
-    const content = extractStreamingReport(messages);
-    setReportContent(content);
+    // Get full content for display
+    const content = extractStreamingContent(messages);
+    setDisplayContent(content);
+
+    // Get only report content for saving
+    const reportContent = extractReportForSaving(messages);
+    setReportContentForSaving(reportContent);
 
     // Show loader only when content exists and still loading
     setShowLoader(isLoading && content.length > 0);
@@ -144,10 +162,10 @@ export default function ResearchPage() {
 
   // Save report to database
   const saveReport = async () => {
-    if (!reportContent || reportSaved) return;
+    if (!reportContentForSaving || reportSaved) return;
 
     try {
-      const title = getReportTitle(reportContent);
+      const title = getReportTitle(reportContentForSaving);
 
       const response = await fetch("/api/reports", {
         method: "POST",
@@ -157,7 +175,7 @@ export default function ResearchPage() {
         body: JSON.stringify({
           id: reportId,
           title: title,
-          content: reportContent,
+          content: reportContentForSaving,
           mode: activeMode,
         }),
       });
@@ -307,13 +325,15 @@ export default function ResearchPage() {
         <div className="flex-1 flex overflow-hidden">
           {/* Main content */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            {reportContent || isLoading ? (
+            {displayContent || isLoading ? (
               <>
                 {/* Report Content */}
                 <div className="flex justify-end px-6 py-2">
                   <Button
                     onClick={saveReport}
-                    disabled={!reportContent || reportSaved || isLoading}
+                    disabled={
+                      !reportContentForSaving || reportSaved || isLoading
+                    }
                     className="bg-purple-600 hover:bg-purple-700 text-white"
                     size="sm"
                   >
@@ -324,7 +344,7 @@ export default function ResearchPage() {
                 <ScrollArea className="flex-1">
                   <div className="max-w-4xl mx-auto p-6">
                     <div className="prose prose-blue dark:prose-invert max-w-none">
-                      {reportContent ? (
+                      {displayContent ? (
                         <div className="relative">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -392,7 +412,7 @@ export default function ResearchPage() {
                               },
                             }}
                           >
-                            {reportContent}
+                            {displayContent}
                           </ReactMarkdown>
                           {showLoader && (
                             <span className="inline-flex ml-2">
