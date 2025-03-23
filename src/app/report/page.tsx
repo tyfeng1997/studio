@@ -175,7 +175,10 @@ export default function SimplifiedReportsPage() {
       selectedFile &&
       !pdfContent
     ) {
-      toast.error("请先处理选择的 PDF 文件");
+      toast.error("请先处理选择的 PDF 文件", {
+        position: "top-center",
+        duration: 3000,
+      });
       return;
     }
 
@@ -184,7 +187,10 @@ export default function SimplifiedReportsPage() {
       (activeMode === "extendedResearch" || activeMode === "extraction") &&
       !selectedFile
     ) {
-      toast.error("请先上传 PDF 文件");
+      toast.error("请先上传 PDF 文件", {
+        position: "top-center",
+        duration: 3000,
+      });
       return;
     }
 
@@ -366,138 +372,154 @@ export default function SimplifiedReportsPage() {
           )}
         >
           <div className="relative w-full max-w-3xl">
-            <input
-              type="text"
-              value={input}
-              onChange={handleQueryChange}
-              placeholder={
-                activeMode === "deepResearch"
-                  ? "输入公司名称或研究主题..."
-                  : activeMode === "extendedResearch"
-                  ? "输入需要扩展研究的内容..."
-                  : "输入需要提取的结构化信息..."
-              }
-              className="w-full h-12 px-4 py-2 pl-10 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent"
-              disabled={isLoading}
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                value={input}
+                onChange={handleQueryChange}
+                placeholder={
+                  activeMode === "deepResearch"
+                    ? "输入公司名称或研究主题..."
+                    : activeMode === "extendedResearch"
+                    ? "输入需要扩展研究的内容..."
+                    : "输入需要提取的结构化信息..."
+                }
+                className="w-full h-12 px-4 py-2 pl-10 pr-24 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent"
+                disabled={isLoading}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
 
-            <div className="mt-3 flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-              {/* 研究模式选择 */}
-              <div className="flex flex-wrap justify-center sm:justify-start gap-2 w-full sm:w-auto border-b sm:border-b-0 sm:border-r border-gray-200 dark:border-zinc-700 pb-2 sm:pb-0 sm:pr-2">
-                <Button
-                  type="button"
-                  variant={
-                    activeMode === "deepResearch" ? "secondary" : "ghost"
-                  }
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => {
-                    setActiveMode("deepResearch");
-                    setSelectedFile(null);
-                    setPdfContent("");
-                  }}
-                >
-                  <FileText className="h-4 w-4 mr-1 text-blue-500 dark:text-blue-400" />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    深度研究
-                  </span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={
-                    activeMode === "extendedResearch" ? "secondary" : "ghost"
-                  }
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => setActiveMode("extendedResearch")}
-                >
-                  <FileUp className="h-4 w-4 mr-1 text-purple-500 dark:text-purple-400" />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    扩展研究
-                  </span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={activeMode === "extraction" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => setActiveMode("extraction")}
-                >
-                  <FileSearch className="h-4 w-4 mr-1 text-amber-500 dark:text-amber-400" />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    提取内容
-                  </span>
-                </Button>
-              </div>
-
-              {/* PDF 上传按钮 (仅在扩展研究或提取模式下显示) */}
-              {(activeMode === "extendedResearch" ||
-                activeMode === "extraction") && (
-                <div className="flex items-center space-x-2 w-full sm:w-auto">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full"
-                    onClick={triggerFileInput}
-                    disabled={isLoading || isPdfProcessing}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    <span>{selectedFile ? "更换PDF" : "上传PDF"}</span>
-                  </Button>
-
-                  {selectedFile && !pdfContent && (
+              {/* 右侧操作按钮区域 */}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+                {/* PDF 上传按钮 (仅在扩展研究或提取模式下显示) */}
+                {(activeMode === "extendedResearch" ||
+                  activeMode === "extraction") && (
+                  <>
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/50 hover:bg-green-100 dark:hover:bg-green-800/30"
-                      onClick={processPdf}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      onClick={triggerFileInput}
                       disabled={isLoading || isPdfProcessing}
                     >
-                      {isPdfProcessing ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          <span>{Math.round(processingProgress)}%</span>
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-4 w-4 mr-1" />
-                          <span>处理PDF</span>
-                        </>
-                      )}
+                      <Upload className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     </Button>
-                  )}
 
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept=".pdf"
-                    className="hidden"
-                  />
-                </div>
-              )}
+                    {selectedFile && !pdfContent && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full text-green-600 dark:text-green-400"
+                        onClick={processPdf}
+                        disabled={isLoading || isPdfProcessing}
+                      >
+                        {isPdfProcessing ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Download className="h-5 w-5" />
+                        )}
+                      </Button>
+                    )}
 
-              {/* 研究按钮 */}
-              <Button
-                type="submit"
-                disabled={
-                  isLoading ||
-                  !input.trim() ||
-                  ((activeMode === "extendedResearch" ||
-                    activeMode === "extraction") &&
-                    (!selectedFile || !pdfContent))
-                }
-                className="rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white h-8 w-full sm:w-auto"
-                size="sm"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "开始研究"
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept=".pdf"
+                      className="hidden"
+                    />
+                  </>
                 )}
+
+                {/* 发送按钮 */}
+                <Button
+                  type="submit"
+                  variant="ghost"
+                  size="icon"
+                  disabled={
+                    isLoading ||
+                    !input.trim() ||
+                    ((activeMode === "extendedResearch" ||
+                      activeMode === "extraction") &&
+                      (!selectedFile || !pdfContent))
+                  }
+                  className={`h-8 w-8 rounded-full ${
+                    input.trim() &&
+                    !(
+                      (activeMode === "extendedResearch" ||
+                        activeMode === "extraction") &&
+                      (!selectedFile || !pdfContent)
+                    )
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-5 w-5"
+                    >
+                      <path d="M22 2L11 13"></path>
+                      <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                    </svg>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
+              {/* 研究模式选择 */}
+              <Button
+                type="button"
+                variant={activeMode === "deepResearch" ? "secondary" : "ghost"}
+                size="sm"
+                className="rounded-full"
+                onClick={() => {
+                  setActiveMode("deepResearch");
+                  setSelectedFile(null);
+                  setPdfContent("");
+                }}
+              >
+                <FileText className="h-4 w-4 mr-1 text-blue-500 dark:text-blue-400" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  深度研究
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant={
+                  activeMode === "extendedResearch" ? "secondary" : "ghost"
+                }
+                size="sm"
+                className="rounded-full"
+                onClick={() => setActiveMode("extendedResearch")}
+              >
+                <FileUp className="h-4 w-4 mr-1 text-purple-500 dark:text-purple-400" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  扩展研究
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant={activeMode === "extraction" ? "secondary" : "ghost"}
+                size="sm"
+                className="rounded-full"
+                onClick={() => setActiveMode("extraction")}
+              >
+                <FileSearch className="h-4 w-4 mr-1 text-amber-500 dark:text-amber-400" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  提取内容
+                </span>
               </Button>
             </div>
 
@@ -506,12 +528,29 @@ export default function SimplifiedReportsPage() {
               <div className="mt-2 p-2 rounded-md bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-sm text-gray-600 dark:text-gray-300 flex items-center justify-between">
                 <div className="flex items-center">
                   <FileText className="h-4 w-4 mr-2 text-blue-500 dark:text-blue-400" />
-                  <span>{selectedFile.name}</span>
+                  <span className="truncate max-w-[200px] sm:max-w-xs">
+                    {selectedFile.name}
+                  </span>
                 </div>
-                {pdfContent && (
+                {isPdfProcessing ? (
+                  <div className="flex items-center text-xs text-blue-500 dark:text-blue-400">
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    <span>{Math.round(processingProgress)}%</span>
+                  </div>
+                ) : pdfContent ? (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
                     已处理
                   </span>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 py-0 text-xs rounded-full text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                    onClick={processPdf}
+                  >
+                    处理
+                  </Button>
                 )}
               </div>
             )}
