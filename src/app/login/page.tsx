@@ -18,7 +18,7 @@ export default async function LoginPage({
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (data?.user) {
-    redirect("/chat");
+    redirect("/research");
   }
 
   return (
