@@ -18,7 +18,7 @@ export default async function RegisterPage({
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (data?.user) {
-    redirect("/research");
+    redirect("/chat");
   }
 
   return (
