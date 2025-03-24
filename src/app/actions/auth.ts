@@ -76,7 +76,7 @@ export async function signInWithGitHub() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/github`,
+      redirectTo: `https://www.financialinsights.app/api/auth/callback/github`,
     },
   });
 
@@ -98,7 +98,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/google`,
+      redirectTo: `https://www.financialinsights.app/api/auth/callback/google`,
     },
   });
 
@@ -118,11 +118,11 @@ export async function resetPasswordForEmail(email: string) {
   const supabase = await createClient();
 
   if (!email || !email.includes("@")) {
-    return { error: "请输入有效的电子邮件地址" };
+    return { error: "Please enter a valid email address" };
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/account/update-password`,
+    redirectTo: `https://www.financialinsights.app/account/update-password`,
   });
 
   if (error) {
@@ -137,7 +137,7 @@ export async function updateUserPassword(password: string) {
   const supabase = await createClient();
 
   if (!password || password.length < 6) {
-    return { error: "密码必须至少包含6个字符" };
+    return { error: "Password must contain at least 6 characters" };
   }
 
   const { error } = await supabase.auth.updateUser({
