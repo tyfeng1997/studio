@@ -29,7 +29,7 @@ export function GitHubAuthButton() {
       disabled={isPending}
     >
       <Github className="h-4 w-4" />
-      {isPending ? "正在连接..." : "使用 GitHub 登录"}
+      {isPending ? "linking ..." : " GitHub "}
     </Button>
   );
 }

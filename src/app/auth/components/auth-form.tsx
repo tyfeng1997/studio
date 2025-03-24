@@ -121,7 +121,18 @@ export function AuthForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              {type === "login" && (
+                <Button
+                  variant="link"
+                  className="p-0 h-auto font-normal text-xs"
+                  onClick={() => router.push("/reset-password")}
+                >
+                  forget the password?
+                </Button>
+              )}
+            </div>
             <Input
               id="password"
               name="password"
@@ -150,27 +161,10 @@ export function AuthForm({
 
           <SubmitButton type={type} />
 
-          {type === "login" && (
-            <div className="text-sm text-right">
-              <Button
-                variant="link"
-                className="p-0 h-auto font-normal"
-                onClick={() => router.push("/forgot-password")}
-              >
-                忘记密码?
-              </Button>
-            </div>
-          )}
-
           {/* 添加分割线 */}
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2 text-muted-foreground">
-                或者使用
-              </span>
             </div>
           </div>
 

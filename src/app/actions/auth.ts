@@ -90,3 +90,42 @@ export async function signInWithGitHub() {
 
   return { success: true };
 }
+
+// 密码重置功能
+export async function resetPasswordForEmail(email: string) {
+  const supabase = await createClient();
+
+  if (!email || !email.includes("@")) {
+    return { error: "请输入有效的电子邮件地址" };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/account/update-password`,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true };
+}
+
+// 更新用户密码
+export async function updateUserPassword(password: string) {
+  const supabase = await createClient();
+
+  if (!password || password.length < 6) {
+    return { error: "密码必须至少包含6个字符" };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  return { success: true };
+}
