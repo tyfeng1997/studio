@@ -208,11 +208,11 @@ export default function Home() {
                 <MessageSquare className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <h3 className="text-xl font-bold mb-3">
-                Intelligent Finance Assistant
+                Intelligent Finance Agent
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Chat with your intelligent finance assistant anytime, anywhere
-                to get real-time market dynamics, company news, and data
+                Chat with your intelligent finance agent anytime, anywhere to
+                get real-time market dynamics, company news, and data
                 interpretation. Simple questions, instant professional answers.
               </p>
               <ul className="space-y-2">

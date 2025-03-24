@@ -116,7 +116,7 @@ export default function ResearchHeader() {
             className="text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white border-gray-200 dark:border-zinc-800"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Financial Insights Assistant
+            Financial Insights Agent
           </Button>
         </div>
       </div>
