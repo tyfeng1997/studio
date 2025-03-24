@@ -111,9 +111,9 @@ export default function ResearchHeader() {
           </DropdownMenu>
 
           <Button
-            variant="outline"
+            variant="default"
             onClick={() => router.push("/chat")}
-            className="text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white border-gray-200 dark:border-zinc-800"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Financial Insights Agent
