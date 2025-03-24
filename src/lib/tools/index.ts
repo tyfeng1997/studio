@@ -4,6 +4,7 @@ import { scrapeTool } from "./scrape";
 import { extractTool } from "./extract-url";
 import { deepsearchTool } from "./deep-research";
 import { companyNewsTool } from "./company-news";
+import { stockFinancialsTool } from "./stockFinancialsTool";
 // 工具注册表
 export const tools = {
   // scrape: scrapeTool,
@@ -11,6 +12,7 @@ export const tools = {
   extract: extractTool,
   deepsearch: deepsearchTool,
   companyNews: companyNewsTool,
+  stockFinancials: stockFinancialsTool,
 };
 
 // 获取所有工具的配置，用于AI SDK
