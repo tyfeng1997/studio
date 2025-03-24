@@ -63,6 +63,7 @@ const FinancialMetric = ({
 
 // Financial metric section component
 const MetricSection = ({ title, items, icon: Icon }) => {
+  // Move useState hook to the top level - always called
   const [isOpen, setIsOpen] = useState(true);
 
   return (
@@ -103,6 +104,11 @@ const MetricSection = ({ title, items, icon: Icon }) => {
 
 // Company financials result renderer
 export function StockFinancialsResultRenderer({ data }) {
+  // Always initialize these hooks, regardless of data condition
+  const [activeReportIndex, setActiveReportIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("income");
+
+  // Handle empty data case separately
   if (!data || !data.reports || data.reports.length === 0) {
     return (
       <ToolCard title="Financial Data">
@@ -114,9 +120,6 @@ export function StockFinancialsResultRenderer({ data }) {
   }
 
   const { ticker, company_name, reports } = data;
-  const [activeReportIndex, setActiveReportIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState("income");
-
   const activeReport = reports[activeReportIndex];
   const prevReport = reports[activeReportIndex + 1]; // For comparisons
 

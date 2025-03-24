@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Message } from "ai";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -26,10 +26,10 @@ interface ChatMessageProps {
 export function ChatMessage({
   message,
   isLoading,
-  onReload,
-  isLastMessage = false,
-  status,
-  onDelete,
+  onReload: _onReload,
+  isLastMessage: _isLastMessage = false,
+  status: _status,
+  onDelete: _onDelete,
 }: ChatMessageProps) {
   const [isReasoningVisible, setIsReasoningVisible] = useState(false);
 
@@ -204,7 +204,7 @@ export function ChatMessage({
   };
 
   // Skeleton typing indicator (can be used as a loading indicator)
-  const TypingIndicator = () => (
+  const _TypingIndicator = () => (
     <div className="flex items-center gap-1 py-1">
       <motion.div
         className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
@@ -377,9 +377,8 @@ export function ChatMessage({
               {!hasParts &&
                 message.toolInvocations &&
                 message.toolInvocations.map((tool) => (
-                  <div className="w-full my-2">
+                  <div key={`${tool.toolCallId}`} className="w-full my-2">
                     <ToolResultRenderer
-                      key={`${tool.toolCallId}`}
                       tool={tool.toolName}
                       data={tool.result}
                       error={tool.error}
