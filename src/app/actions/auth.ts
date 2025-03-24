@@ -76,7 +76,7 @@ export async function signInWithGitHub() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
-      redirectTo: `https://www.financialinsights.app/api/auth/callback/github`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/github`,
     },
   });
 
@@ -98,7 +98,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `https://www.financialinsights.app/api/auth/callback/google`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/google`,
     },
   });
 
@@ -122,7 +122,7 @@ export async function resetPasswordForEmail(email: string) {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `https://www.financialinsights.app/account/update-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/account/update-password`,
   });
 
   if (error) {
