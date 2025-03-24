@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
+import { redirect } from "next/navigation";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -66,4 +67,87 @@ export async function signup(formData: FormData) {
     success: true,
     message: "Check your email to confirm your account",
   };
+}
+
+// 新增 GitHub 登录功能
+export async function signInWithGitHub() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "github",
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/github`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  return { success: true };
+}
+
+// 新增 Google 登录功能
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/google`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  return { success: true };
+}
+
+// 密码重置功能
+export async function resetPasswordForEmail(email: string) {
+  const supabase = await createClient();
+
+  if (!email || !email.includes("@")) {
+    return { error: "请输入有效的电子邮件地址" };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/account/update-password`,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true };
+}
+
+// 更新用户密码
+export async function updateUserPassword(password: string) {
+  const supabase = await createClient();
+
+  if (!password || password.length < 6) {
+    return { error: "密码必须至少包含6个字符" };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  return { success: true };
 }
