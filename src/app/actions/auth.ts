@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
+import { redirect } from "next/navigation";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -66,4 +67,26 @@ export async function signup(formData: FormData) {
     success: true,
     message: "Check your email to confirm your account",
   };
+}
+
+// 新增 GitHub 登录功能
+export async function signInWithGitHub() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "github",
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/github`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  return { success: true };
 }
