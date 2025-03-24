@@ -91,6 +91,28 @@ export async function signInWithGitHub() {
   return { success: true };
 }
 
+// 新增 Google 登录功能
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback/google`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  return { success: true };
+}
+
 // 密码重置功能
 export async function resetPasswordForEmail(email: string) {
   const supabase = await createClient();

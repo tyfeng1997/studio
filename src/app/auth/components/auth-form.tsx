@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MailCheck } from "lucide-react";
 import { GitHubAuthButton } from "@/components/GitHubAuthButton"; // 导入 GitHub 登录按钮组件
+import { GoogleAuthButton } from "@/components/GoogleAuthButton"; // 导入 Google 登录按钮组件
 
 function SubmitButton({ type }: { type: "login" | "register" }) {
   const { pending } = useFormStatus();
@@ -166,10 +167,14 @@ export function AuthForm({
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-gray-300" />
             </div>
+            <div className="relative flex justify-center text-xs"></div>
           </div>
 
-          {/* GitHub 登录按钮 */}
-          <GitHubAuthButton />
+          {/* 社交登录按钮 */}
+          <div className="space-y-2">
+            <GitHubAuthButton />
+            <GoogleAuthButton />
+          </div>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">
