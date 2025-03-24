@@ -29,12 +29,12 @@ export function UpdatePasswordForm() {
       const confirmPassword = formData.get("confirmPassword") as string;
 
       if (password.length < 6) {
-        setError("密码必须至少包含6个字符");
+        setError("Password must contain at least 6 characters");
         return;
       }
 
       if (password !== confirmPassword) {
-        setError("两次输入的密码不匹配");
+        setError("The two passwords you entered do not match");
         return;
       }
 
@@ -56,14 +56,16 @@ export function UpdatePasswordForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl font-serif">设置新密码</CardTitle>
-        <CardDescription>请为您的账户设置一个新密码</CardDescription>
+        <CardTitle className="text-2xl font-serif">Set New Password</CardTitle>
+        <CardDescription>
+          Please create a new password for your account
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {!success ? (
           <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">新密码</Label>
+              <Label htmlFor="password">New Password</Label>
               <Input
                 id="password"
                 name="password"
@@ -76,7 +78,7 @@ export function UpdatePasswordForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">确认新密码</Label>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -90,21 +92,22 @@ export function UpdatePasswordForm() {
 
             {error && (
               <Alert variant="destructive">
-                <AlertTitle>错误</AlertTitle>
+                <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "更新中..." : "更新密码"}
+              {isPending ? "processing..." : "Update Password"}
             </Button>
           </form>
         ) : (
           <Alert>
             <Check className="h-4 w-4" />
-            <AlertTitle>密码已更新</AlertTitle>
+            <AlertTitle>Password updated</AlertTitle>
             <AlertDescription>
-              您的密码已成功更新。即将跳转到登录页面...
+              Your password has been updated successfully. You will be
+              redirected to the login page...
             </AlertDescription>
           </Alert>
         )}

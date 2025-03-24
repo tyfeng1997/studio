@@ -717,7 +717,7 @@ export default function ResearchPage() {
                       <FileText className="h-8 w-8 text-purple-500 dark:text-purple-400" />
                     </div>
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      Financial Intelligence Assistant
+                      Financial Intelligence Agent
                     </h2>
                     <p className="text-gray-500 dark:text-zinc-400 mt-2">
                       Powerful AI-driven financial analysis in three specialized

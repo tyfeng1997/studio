@@ -21,7 +21,7 @@ export function WelcomeView({
       <div className="w-full py-8" suppressHydrationWarning>
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">
-            Intelligent Chat Assistant
+            Intelligent Chat Agent
           </h1>
         </div>
       </div>
@@ -35,7 +35,7 @@ export function WelcomeView({
     >
       <div className="text-center mt-40">
         <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-          Financial Insights Assistant
+          Financial Insights Agent
         </h1>
         <p className="text-muted-foreground max-w-md mx-auto">
           Your AI partner for public company analysis, financial data, news

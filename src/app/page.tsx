@@ -1,4 +1,6 @@
 // app/page.tsx
+"use client";
+
 import Link from "next/link";
 import {
   MoveRight,
@@ -9,8 +11,34 @@ import {
   Activity,
   LineChart,
 } from "lucide-react";
+import { UserMenu } from "@/components/user-menu";
+import { useState, useEffect } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await fetch("/api/auth/user");
+        if (response.ok) {
+          const data = await response.json();
+          setEmail(data.email);
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Error checking auth status:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
   return (
     <main className="flex flex-col min-h-screen">
       {/* Navigation */}
@@ -38,18 +66,37 @@ export default function Home() {
                 <Search className="h-4 w-4 mr-1" />
                 Research
               </Link>
-              <Link
-                href="/login"
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Sign Up
-              </Link>
+
+              {isLoading ? (
+                // Show loading skeleton
+                <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg"></div>
+              ) : isAuthenticated ? (
+                // Show welcome message and user menu when logged in
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    Welcome, {email && email.split("@")[0]}
+                  </span>
+                  <UserMenu />
+                </div>
+              ) : (
+                // Show login and signup buttons when not logged in
+                <>
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -208,11 +255,11 @@ export default function Home() {
                 <MessageSquare className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <h3 className="text-xl font-bold mb-3">
-                Intelligent Finance Assistant
+                Intelligent Finance Agent
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Chat with your intelligent finance assistant anytime, anywhere
-                to get real-time market dynamics, company news, and data
+                Chat with your intelligent finance agent anytime, anywhere to
+                get real-time market dynamics, company news, and data
                 interpretation. Simple questions, instant professional answers.
               </p>
               <ul className="space-y-2">
