@@ -6,6 +6,8 @@ import { ToolCard } from "@/components/tool-card";
 import { ExtractResultRenderer } from "@/components/tools/extract-tool-render";
 import { SearchResultRenderer } from "@/components/tools/search-tool-render";
 import { DeepSearchResultRenderer } from "@/components/tools/deepresearch-tool-render";
+import { CompanyNewsResultRenderer } from "@/components/tools/company-news-tool-render";
+import { StockFinancialsResultRenderer } from "@/components/tools/stock-financials-tool-render";
 
 interface ToolResultRendererProps {
   tool: string;
@@ -47,6 +49,10 @@ export function ToolResultRenderer({
         return <ExtractResultRenderer data={data.data} />;
       case "deepresearch":
         return <DeepSearchResultRenderer data={data.data} />;
+      case "companyNews":
+        return <CompanyNewsResultRenderer data={data.data} />;
+      case "stockFinancials":
+        return <StockFinancialsResultRenderer data={data.data} />;
       // Add more tool renderers as needed
       default:
         // Generic JSON renderer for unknown tools

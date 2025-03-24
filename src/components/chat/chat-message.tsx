@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Message } from "ai";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -26,10 +26,10 @@ interface ChatMessageProps {
 export function ChatMessage({
   message,
   isLoading,
-  onReload,
-  isLastMessage = false,
-  status,
-  onDelete,
+  onReload: _onReload,
+  isLastMessage: _isLastMessage = false,
+  status: _status,
+  onDelete: _onDelete,
 }: ChatMessageProps) {
   const [isReasoningVisible, setIsReasoningVisible] = useState(false);
 
@@ -188,7 +188,7 @@ export function ChatMessage({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="my-2 break-words whitespace-pre-wrap"
+            className="w-full my-2 break-words whitespace-pre-wrap"
           >
             <ToolResultRenderer
               tool={part.toolInvocation.toolName}
@@ -204,7 +204,7 @@ export function ChatMessage({
   };
 
   // Skeleton typing indicator (can be used as a loading indicator)
-  const TypingIndicator = () => (
+  const _TypingIndicator = () => (
     <div className="flex items-center gap-1 py-1">
       <motion.div
         className="h-1.5 w-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
@@ -232,199 +232,186 @@ export function ChatMessage({
       )}
     >
       {/* Container */}
-      <div className="flex w-full flex-col md:flex-row gap-4">
-        {/* Left side: Main message text area */}
-        <div className="flex-1">
-          <div
-            className={cn(
-              "flex flex-col gap-4 rounded-lg px-4 py-3 shadow-md",
-              isUserMessage
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                : "bg-white dark:bg-zinc-800 text-foreground border border-gray-100 dark:border-zinc-700"
-            )}
-          >
-            {textContent.trim() ? (
-              <div
-                className={cn(
-                  "markdown-content break-words",
-                  isUserMessage ? "user-message" : "assistant-message"
-                )}
-              >
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    code({ node, inline, className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || "");
-                      const codeContent = String(children).replace(/\n$/, "");
+      <div className="flex w-full flex-col">
+        {/* Message content area */}
+        <div
+          className={cn(
+            "flex flex-col gap-4 rounded-lg px-4 py-3 shadow-md",
+            isUserMessage
+              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+              : "bg-white dark:bg-zinc-800 text-foreground border border-gray-100 dark:border-zinc-700"
+          )}
+        >
+          {textContent.trim() ? (
+            <div
+              className={cn(
+                "markdown-content break-words",
+                isUserMessage ? "user-message" : "assistant-message"
+              )}
+            >
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    const codeContent = String(children).replace(/\n$/, "");
 
-                      if (!inline && match) {
-                        // Code block with language
-                        return (
-                          <div className="relative my-2 rounded-md overflow-hidden">
-                            <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
-                              <span>{match[1]}</span>
-                            </div>
-                            <SyntaxHighlighter
-                              language={match[1]}
-                              style={oneDark}
-                              customStyle={{
-                                margin: 0,
-                                borderRadius: 0,
-                                fontSize: "14px",
-                                lineHeight: "1.5",
-                              }}
-                            >
-                              {codeContent}
-                            </SyntaxHighlighter>
-                          </div>
-                        );
-                      } else if (!inline) {
-                        // Code block without language
-                        return (
-                          <div className="relative my-2 rounded-md overflow-hidden">
-                            <SyntaxHighlighter
-                              language="text"
-                              style={oneDark}
-                              customStyle={{
-                                margin: 0,
-                                borderRadius: 0,
-                                fontSize: "14px",
-                                lineHeight: "1.5",
-                              }}
-                            >
-                              {codeContent}
-                            </SyntaxHighlighter>
-                          </div>
-                        );
-                      }
-                      // Inline code
+                    if (!inline && match) {
+                      // Code block with language
                       return (
-                        <code
-                          className={cn(
-                            "px-1 py-0.5 rounded text-sm",
-                            isUserMessage
-                              ? "bg-white/20 text-white"
-                              : "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
-                          )}
-                          {...props}
-                        >
-                          {children}
-                        </code>
+                        <div className="relative my-2 rounded-md overflow-hidden">
+                          <div className="flex justify-between items-center py-1 px-3 bg-zinc-800 text-zinc-200 text-xs">
+                            <span>{match[1]}</span>
+                          </div>
+                          <SyntaxHighlighter
+                            language={match[1]}
+                            style={oneDark}
+                            customStyle={{
+                              margin: 0,
+                              borderRadius: 0,
+                              fontSize: "14px",
+                              lineHeight: "1.5",
+                            }}
+                          >
+                            {codeContent}
+                          </SyntaxHighlighter>
+                        </div>
                       );
-                    },
-                  }}
-                >
-                  {textContent}
-                </ReactMarkdown>
-              </div>
-            ) : isLoading ? (
-              // Display skeleton component when loading (can be replaced with TypingIndicator)
-              <SkeletonMessage />
-            ) : null}
+                    } else if (!inline) {
+                      // Code block without language
+                      return (
+                        <div className="relative my-2 rounded-md overflow-hidden">
+                          <SyntaxHighlighter
+                            language="text"
+                            style={oneDark}
+                            customStyle={{
+                              margin: 0,
+                              borderRadius: 0,
+                              fontSize: "14px",
+                              lineHeight: "1.5",
+                            }}
+                          >
+                            {codeContent}
+                          </SyntaxHighlighter>
+                        </div>
+                      );
+                    }
+                    // Inline code
+                    return (
+                      <code
+                        className={cn(
+                          "px-1 py-0.5 rounded text-sm",
+                          isUserMessage
+                            ? "bg-white/20 text-white"
+                            : "bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
+                        )}
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {textContent}
+              </ReactMarkdown>
+            </div>
+          ) : isLoading ? (
+            // Display skeleton component when loading (can be replaced with TypingIndicator)
+            <SkeletonMessage />
+          ) : null}
 
-            {/* PDF attachments */}
-            {pdfAttachments.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {pdfAttachments.map((attachment, index) => (
-                  <div
-                    key={`pdf-${message.id}-${index}`}
-                    className={cn(
-                      "flex items-center gap-2 rounded-md p-2",
-                      isUserMessage
-                        ? "bg-white/10"
-                        : "bg-blue-50 dark:bg-blue-900/20"
-                    )}
-                  >
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm truncate">
-                      {attachment.name || `Document-${index + 1}.pdf`}
-                    </span>
+          {/* PDF attachments */}
+          {pdfAttachments.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {pdfAttachments.map((attachment, index) => (
+                <div
+                  key={`pdf-${message.id}-${index}`}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md p-2",
+                    isUserMessage
+                      ? "bg-white/10"
+                      : "bg-blue-50 dark:bg-blue-900/20"
+                  )}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="text-sm truncate">
+                    {attachment.name || `Document-${index + 1}.pdf`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Image attachments */}
+          {imageAttachments.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {imageAttachments.map((attachment, index) => (
+                <Image
+                  key={`image-${message.id}-${index}`}
+                  src={attachment.url}
+                  width={300}
+                  height={300}
+                  className="rounded-lg object-cover"
+                  alt={attachment.name ?? `attachment-${index}`}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Tool invocations - Moved from sidebar to main content area */}
+          {!isUserMessage && (
+            <>
+              {hasParts &&
+                message.parts.map((part, idx) => {
+                  if (part.type === "tool-invocation") {
+                    return (
+                      <React.Fragment key={`tool-${idx}`}>
+                        {renderToolInvocationState(part)}
+                      </React.Fragment>
+                    );
+                  }
+                  return null;
+                })}
+              {/* Legacy toolInvocations */}
+              {!hasParts &&
+                message.toolInvocations &&
+                message.toolInvocations.map((tool) => (
+                  <div key={`${tool.toolCallId}`} className="w-full my-2">
+                    <ToolResultRenderer
+                      tool={tool.toolName}
+                      data={tool.result}
+                      error={tool.error}
+                    />
                   </div>
                 ))}
-              </div>
-            )}
+            </>
+          )}
 
-            {/* Image attachments */}
-            {imageAttachments.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {imageAttachments.map((attachment, index) => (
-                  <Image
-                    key={`image-${message.id}-${index}`}
-                    src={attachment.url}
-                    width={300}
-                    height={300}
-                    className="rounded-lg object-cover"
-                    alt={attachment.name ?? `attachment-${index}`}
-                  />
-                ))}
-              </div>
-            )}
+          {/* Reasoning toggle button */}
+          {hasReasoningParts && !isUserMessage && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 self-start"
+              onClick={() => setIsReasoningVisible(!isReasoningVisible)}
+            >
+              {isReasoningVisible ? (
+                <>
+                  <ChevronUp className="h-3 w-3" />
+                  Hide reasoning
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3" />
+                  Show reasoning
+                </>
+              )}
+            </Button>
+          )}
 
-            {/* Reasoning toggle button */}
-            {hasReasoningParts && !isUserMessage && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 self-start"
-                onClick={() => setIsReasoningVisible(!isReasoningVisible)}
-              >
-                {isReasoningVisible ? (
-                  <>
-                    <ChevronUp className="h-3 w-3" />
-                    Hide reasoning
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-3 w-3" />
-                    Show reasoning
-                  </>
-                )}
-              </Button>
-            )}
-
-            {/* Reasoning content */}
-            {renderReasoningContent()}
-          </div>
-        </div>
-
-        {/* Right side: Tool result area */}
-        <div
-          className="
-            md:w-72
-            flex-shrink-0
-            flex
-            flex-col
-            gap-4
-            overflow-y-auto
-            max-h-[400px]
-            border-l
-            border-gray-200
-            dark:border-zinc-700
-            p-2
-          "
-        >
-          {hasParts &&
-            message.parts.map((part, idx) => {
-              if (part.type === "tool-invocation") {
-                return (
-                  <React.Fragment key={`tool-${idx}`}>
-                    {renderToolInvocationState(part)}
-                  </React.Fragment>
-                );
-              }
-              return null;
-            })}
-          {/* Legacy toolInvocations */}
-          {!hasParts &&
-            message.toolInvocations &&
-            message.toolInvocations.map((tool) => (
-              <ToolResultRenderer
-                key={`${tool.toolCallId}`}
-                tool={tool.toolName}
-                data={tool.result}
-                error={tool.error}
-              />
-            ))}
+          {/* Reasoning content */}
+          {renderReasoningContent()}
         </div>
       </div>
     </div>
