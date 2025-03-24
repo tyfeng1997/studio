@@ -23,27 +23,29 @@ export default function AuthCodeErrorPage() {
             <AlertTriangle className="h-12 w-12 text-yellow-500" />
           </div>
           <CardTitle className="text-2xl text-center font-serif">
-            验证链接无效
+            Invalid verification link
           </CardTitle>
           <CardDescription className="text-center">
-            您的验证链接可能已过期或无效
+            Your verification link may have expired or is invalid
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="mb-4">这可能是因为：</p>
+          <p className="mb-4">This may be because:</p>
           <ul className="text-left list-disc pl-6 space-y-1 mb-4">
-            <li>链接已过期（通常在24小时后）</li>
-            <li>链接已被使用</li>
-            <li>链接格式不正确</li>
+            <li>The link has expired (usually after 24 hours)</li>
+            <li>Link already used</li>
           </ul>
-          <p>请尝试重新发起密码重置，或联系支持团队获取帮助。</p>
+          <p>
+            Please try to re-initiate password reset or contact support for
+            assistance.
+          </p>
         </CardContent>
         <CardFooter className="flex justify-center space-x-4">
           <Button variant="outline" onClick={() => router.push("/login")}>
-            返回登录
+            Back to Login
           </Button>
           <Button onClick={() => router.push("/reset-password")}>
-            重新发送重置链接
+            Resend reset link
           </Button>
         </CardFooter>
       </Card>
