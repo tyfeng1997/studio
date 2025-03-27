@@ -13,7 +13,8 @@ import { AnalyticsRenderer } from "@/components/tools/analytics-tool-render";
 import { CompanyOverviewRenderer } from "@/components/tools/company-overview-tool-render";
 import { ETFAnalyticsRenderer } from "@/components/tools/etf-analytics-tool-render";
 import { DividendResultRenderer } from "@/components/tools/dividend-tool-render";
-
+import { IncomeStatementResultRenderer } from "@/components/tools/income-statement-tool-render";
+import { BalanceSheetResultRenderer } from "@/components/tools/balance-sheet-tool-render";
 interface ToolResultRendererProps {
   tool: string;
   data: any;
@@ -68,6 +69,10 @@ export function ToolResultRenderer({
         return <ETFAnalyticsRenderer data={data.data} />;
       case "dividends":
         return <DividendResultRenderer data={data.data} />;
+      case "incomeStatement":
+        return <IncomeStatementResultRenderer data={data.data} />;
+      case "balanceSheet":
+        return <BalanceSheetResultRenderer data={data.data} />;
 
       // Add more tool renderers as needed
       default:

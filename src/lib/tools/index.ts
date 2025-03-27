@@ -10,6 +10,8 @@ import { analyticsTool } from "./analytics-tool";
 import { companyOverviewTool } from "./company-overview-tool";
 import { etfAnalyticsTool } from "./etf-analytics-tool";
 import { dividendTool } from "./dividend-tool";
+import { incomeStatementTool } from "./incomeStatement-tool";
+import { balanceSheetTool } from "./balanceSheet-tool";
 // 工具注册表
 export const tools = {
   // scrape: scrapeTool,
@@ -23,6 +25,8 @@ export const tools = {
   companyOverview: companyOverviewTool,
   etfAnalytics: etfAnalyticsTool,
   dividends: dividendTool,
+  incomeStatement: incomeStatementTool,
+  balanceSheet: balanceSheetTool,
 };
 
 // 获取所有工具的配置，用于AI SDK
