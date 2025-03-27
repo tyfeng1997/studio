@@ -11,6 +11,8 @@ import { StockFinancialsResultRenderer } from "@/components/tools/stock-financia
 import { MarketMoversRenderer } from "@/components/tools/market-movers-tool-render";
 import { AnalyticsRenderer } from "@/components/tools/analytics-tool-render";
 import { CompanyOverviewRenderer } from "@/components/tools/company-overview-tool-render";
+import { ETFAnalyticsRenderer } from "@/components/tools/etf-analytics-tool-render";
+import { DividendResultRenderer } from "@/components/tools/dividend-tool-render";
 
 interface ToolResultRendererProps {
   tool: string;
@@ -58,11 +60,14 @@ export function ToolResultRenderer({
         return <StockFinancialsResultRenderer data={data.data} />;
       case "marketMovers":
         return <MarketMoversRenderer data={data.data} />;
-      // 在switch case中添加
       case "analytics":
         return <AnalyticsRenderer data={data.data} />;
       case "companyOverview":
         return <CompanyOverviewRenderer data={data.data} />;
+      case "etfAnalytics":
+        return <ETFAnalyticsRenderer data={data.data} />;
+      case "dividends":
+        return <DividendResultRenderer data={data.data} />;
 
       // Add more tool renderers as needed
       default:
