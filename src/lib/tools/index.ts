@@ -6,7 +6,6 @@ import { deepsearchTool } from "./deep-research";
 import { companyNewsTool } from "./company-news";
 import { stockFinancialsTool } from "./stockFinancialsTool";
 import { marketMoversTool } from "./market-movers-tool";
-import { advancedAnalyticsTool } from "./advancedAnalytics-tool";
 import { companyOverviewTool } from "./company-overview-tool";
 import { etfAnalyticsTool } from "./etf-analytics-tool";
 import { dividendTool } from "./dividend-tool";
@@ -23,7 +22,6 @@ export const tools = {
   companyNews: companyNewsTool,
   stockFinancials: stockFinancialsTool,
   marketMovers: marketMoversTool,
-  advancedAnalytics: advancedAnalyticsTool,
   companyOverview: companyOverviewTool,
   etfAnalytics: etfAnalyticsTool,
   dividends: dividendTool,
