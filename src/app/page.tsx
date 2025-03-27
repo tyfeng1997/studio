@@ -92,6 +92,22 @@ export default function Home() {
 
   return (
     <main className="flex flex-col min-h-screen">
+      {/* ProductHunt 徽标，放置在页面顶部 */}
+      <div className="container mx-auto max-w-6xl px-4 py-4 flex justify-center">
+        <a
+          href="https://www.producthunt.com/posts/financial-insights?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-financial&#0045;insights"
+          target="_blank"
+        >
+          <img
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=946731&theme=light&t=1743072804735"
+            alt="Financial Insights - Transform hours of financial research into minutes | Product Hunt"
+            style={{ width: "250px", height: "54px" }}
+            width="250"
+            height="54"
+          />
+        </a>
+      </div>
+
       {/* Navigation */}
       <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto max-w-6xl px-4 py-4">
@@ -119,10 +135,8 @@ export default function Home() {
               </Link>
 
               {isLoading ? (
-                // Show loading skeleton
                 <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg"></div>
               ) : isAuthenticated ? (
-                // Show welcome message and user menu when logged in
                 <div className="flex items-center gap-4">
                   <span className="text-gray-700 dark:text-gray-300">
                     Welcome, {email && email.split("@")[0]}
@@ -130,7 +144,6 @@ export default function Home() {
                   <UserMenu />
                 </div>
               ) : (
-                // Show login and signup buttons when not logged in
                 <>
                   <Link
                     href="/login"
