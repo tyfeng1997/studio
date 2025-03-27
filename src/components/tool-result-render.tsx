@@ -10,6 +10,7 @@ import { CompanyNewsResultRenderer } from "@/components/tools/company-news-tool-
 import { StockFinancialsResultRenderer } from "@/components/tools/stock-financials-tool-render";
 import { MarketMoversRenderer } from "@/components/tools/market-movers-tool-render";
 import { AnalyticsRenderer } from "@/components/tools/analytics-tool-render";
+import { CompanyOverviewRenderer } from "@/components/tools/company-overview-tool-render";
 
 interface ToolResultRendererProps {
   tool: string;
@@ -60,6 +61,8 @@ export function ToolResultRenderer({
       // 在switch case中添加
       case "analytics":
         return <AnalyticsRenderer data={data.data} />;
+      case "companyOverview":
+        return <CompanyOverviewRenderer data={data.data} />;
 
       // Add more tool renderers as needed
       default:
