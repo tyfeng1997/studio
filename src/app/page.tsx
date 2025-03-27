@@ -10,6 +10,11 @@ import {
   TrendingUp,
   Activity,
   LineChart,
+  Database,
+  Clock,
+  Users,
+  Layers,
+  PenTool,
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { useState, useEffect } from "react";
@@ -19,6 +24,52 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showTools, setShowTools] = useState(false);
+
+  // List of available tools for display
+  const availableTools = [
+    { name: "search", description: "Web search for relevant information" },
+    { name: "extract", description: "Extract structured data from webpages" },
+    { name: "deepsearch", description: "Perplexity AI-powered deep research" },
+    {
+      name: "companyNews",
+      description: "Latest news articles by stock ticker",
+    },
+    {
+      name: "stockFinancials",
+      description: "Historical financial data from SEC filings",
+    },
+    {
+      name: "marketMovers",
+      description: "Top gainers, losers, and active stocks",
+    },
+    {
+      name: "advancedAnalytics",
+      description: "Advanced stock analysis metrics",
+    },
+    {
+      name: "companyOverview",
+      description: "Comprehensive company information",
+    },
+    { name: "etfAnalytics", description: "ETF profiles and holdings analysis" },
+    {
+      name: "dividends",
+      description: "Historical and announced dividend distributions",
+    },
+    {
+      name: "incomeStatement",
+      description: "Annual/quarterly income statement data",
+    },
+    {
+      name: "balanceSheet",
+      description: "Annual/quarterly balance sheet data",
+    },
+    {
+      name: "cashFlow",
+      description: "Annual/quarterly cash flow statement data",
+    },
+    { name: "earnings", description: "Annual/quarterly EPS data" },
+  ];
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -113,13 +164,41 @@ export default function Home() {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
                 Your Intelligent
                 <br />
-                <span className="text-blue-300">Company Analyst</span>
+                <span className="text-blue-300">Financial Analyst</span>
               </h1>
               <p className="text-lg md:text-xl opacity-90 max-w-lg">
-                Unlock deep insights on public companies, market sentiment, and
-                real-time news with FinancialInsights's AI-powered analysis for
-                smarter investment decisions.
+                Unlock Bloomberg-level insights at a fraction of the cost.
+                Transform hours of financial research into minutes with
+                professional-grade analytics that anyone can use.
               </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                <div className="flex items-start space-x-2">
+                  <Database className="h-5 w-5 text-blue-300 flex-shrink-0 mt-1" />
+                  <p className="text-sm">
+                    Access professional-grade financial data at a fraction of
+                    the cost
+                  </p>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <Clock className="h-5 w-5 text-blue-300 flex-shrink-0 mt-1" />
+                  <p className="text-sm">
+                    Compress hours of financial research into minutes
+                  </p>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <Users className="h-5 w-5 text-blue-300 flex-shrink-0 mt-1" />
+                  <p className="text-sm">
+                    Professional investment data now accessible to everyone
+                  </p>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <Layers className="h-5 w-5 text-blue-300 flex-shrink-0 mt-1" />
+                  <p className="text-sm">
+                    Deep analysis for informed investment decisions, not just
+                    answers
+                  </p>
+                </div>
+              </div>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <a
                   href="mailto:bofeng1997@gmail.com?subject=FinancialInsights%20MVP%20Access%20Request"
@@ -159,15 +238,17 @@ export default function Home() {
                       {">"} Analyze recent performance and news sentiment for
                       Alibaba
                     </div>
-                    <div className="text-gray-300 pl-2">Collecting data...</div>
                     <div className="text-gray-300 pl-2">
-                      Analyzing market trends...
+                      Collecting data from premium financial sources...
                     </div>
                     <div className="text-gray-300 pl-2">
-                      Analyzing media sentiment...
+                      Analyzing SEC filings and insider transactions...
                     </div>
                     <div className="text-gray-300 pl-2">
-                      Generating report...
+                      Quantifying media sentiment across 500+ sources...
+                    </div>
+                    <div className="text-gray-300 pl-2">
+                      Generating investment-grade report...
                     </div>
                     <div className="bg-blue-800/30 rounded p-3 text-white">
                       <p>
@@ -190,6 +271,9 @@ export default function Home() {
                         Key News: Cloud business growth, international expansion
                         plans, new AI product launch
                       </p>
+                      <p className="mt-1">
+                        Institutional Holdings: 3.2% increase in last quarter
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -204,11 +288,12 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
-              Dual-Mode Intelligence
+              Bloomberg-Quality Research, Without the Bloomberg Price
             </h2>
             <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Our platform offers two powerful modes to meet all your needs,
-              from daily inquiries to professional research
+              Our platform offers investment-grade analytics through two
+              powerful modes, combining the best of AI with
+              institutional-quality financial data
             </p>
           </div>
 
@@ -221,18 +306,18 @@ export default function Home() {
                 Professional Research Reports
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Generate comprehensive research reports on public companies,
-                including financial analysis, market positioning, SWOT analysis,
-                competitive landscape, and future outlook. Get
-                professional-grade analysis in minutes.
+                Generate comprehensive research reports that would take analysts
+                hours to compile. Access the same quality of data that
+                professional investors rely on, analyzing financial metrics,
+                market positioning, and future outlook in minutes, not days.
               </p>
               <ul className="space-y-2">
                 {[
-                  "Deep financial data analysis",
-                  "Market competition assessment",
-                  "Industry trends and company positioning",
-                  "Risk evaluation and investment recommendations",
-                  "Exportable PDF reports",
+                  "Institutional-grade financial data analysis",
+                  "Market competition assessment with proprietary metrics",
+                  "Industry trends with predictive indicators",
+                  "Risk evaluation matching professional standards",
+                  "Investment-ready PDF reports for decision-making",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center">
                     <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
@@ -258,17 +343,18 @@ export default function Home() {
                 Intelligent Finance Agent
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Chat with your intelligent finance agent anytime, anywhere to
-                get real-time market dynamics, company news, and data
-                interpretation. Simple questions, instant professional answers.
+                Go beyond basic AI answers with a finance agent that delivers
+                investment-quality insights on demand. Access the same level of
+                analysis that powers Wall Street decisions through a simple
+                conversation interface.
               </p>
               <ul className="space-y-2">
                 {[
-                  "Real-time financial news interpretation",
-                  "Market sentiment and social media analysis",
-                  "Stock and industry data queries",
-                  "Simplified complex financial concepts",
-                  "Natural language conversation experience",
+                  "Real-time financial analysis previously only available to professionals",
+                  "Multi-source sentiment analysis across news and social media",
+                  "Quantitative metrics that match institutional standards",
+                  "Actionable insights, not just informational answers",
+                  "Deep financial expertise in a conversational format",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center">
                     <div className="h-2 w-2 rounded-full bg-indigo-500 mr-2"></div>
@@ -289,49 +375,89 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Available Tools Section */}
+      <section className="py-16 px-4 bg-white dark:bg-gray-800">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+              Professional-Grade Financial Tools
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Access the same financial data tools used by professional
+              analysts, now available through our AI platform
+            </p>
+            <button
+              onClick={() => setShowTools(!showTools)}
+              className="mt-4 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors inline-flex items-center"
+            >
+              {showTools ? "Hide Tools" : "View Available Tools"}
+              <PenTool className="ml-2 h-4 w-4" />
+            </button>
+          </div>
+
+          {showTools && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableTools.map((tool, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-100 dark:border-gray-600"
+                >
+                  <div className="font-mono text-sm text-blue-600 dark:text-blue-400 mb-1">
+                    {tool.name}
+                  </div>
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
+                    {tool.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Core Capabilities */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">
-            All-in-One Corporate Intelligence Platform
+            Beyond Basic AI: Financial Intelligence That Delivers Results
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                icon: <Search className="h-6 w-6" />,
-                title: "Comprehensive Data Collection",
-                desc: "Automatically collect and integrate company information from multiple sources, including financial data, news reports, social media, and analyst reports.",
+                icon: <Database className="h-6 w-6" />,
+                title: "Premium Financial Data Sources",
+                desc: "Access the same financial data that powers Wall Street decisions, with comprehensive coverage across global markets and instruments.",
               },
               {
                 icon: <Activity className="h-6 w-6" />,
-                title: "Sentiment Analysis",
-                desc: "Analyze opinions in social media and news reports to understand the overall market sentiment and attitude changes toward companies.",
+                title: "Professional-Grade Sentiment Analysis",
+                desc: "Quantify market sentiment with the same precision used by institutional investors, tracking opinion shifts across thousands of sources.",
               },
               {
                 icon: <TrendingUp className="h-6 w-6" />,
-                title: "Trend Identification",
-                desc: "Discover industry trends and market changes, staying one step ahead of key developments that may impact investment decisions.",
+                title: "Predictive Trend Identification",
+                desc: "Identify emerging market trends before they become obvious, using the same leading indicators that professional analysts rely on.",
               },
               {
                 icon: <LineChart className="h-6 w-6" />,
-                title: "Visual Analytics",
-                desc: "Easily understand complex financial and market data through intuitive charts and data visualizations.",
+                title: "Investment-Quality Visualizations",
+                desc: "Visualize complex financial data through professional-grade charts that match what you'd see on a trading desk.",
               },
               {
                 icon: <BarChart3 className="h-6 w-6" />,
-                title: "Competitive Comparison",
-                desc: "Comprehensively compare key metrics and performance of companies in the same industry to discover competitive advantages and potential opportunities.",
+                title: "Institutional Competitive Analysis",
+                desc: "Compare companies using the same proprietary metrics and frameworks employed by top-tier investment research firms.",
               },
               {
                 icon: <MessageSquare className="h-6 w-6" />,
-                title: "Natural Language Interaction",
-                desc: "Ask questions in natural language and receive accurate, easy-to-understand answers without requiring a professional financial background.",
+                title: "Decision-Ready Insights",
+                desc: "Receive actionable investment insights, not just information, with the depth and rigor needed for confident financial decisions.",
               },
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex flex-col items-start p-6 bg-gray-50 dark:bg-gray-800 rounded-xl"
+                className="flex flex-col items-start p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm"
               >
                 <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
                   {feature.icon}
@@ -350,12 +476,12 @@ export default function Home() {
       <section className="py-16 px-4 bg-gradient-to-br from-blue-600 to-indigo-900 text-white">
         <div className="container mx-auto max-w-6xl text-center">
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
-            Join Our MVP Testing Program
+            Experience Bloomberg-Level Insights at a Fraction of the Cost
           </h2>
           <p className="text-lg max-w-2xl mx-auto mb-8 opacity-90">
-            We're recruiting test users to experience and help improve
-            FinancialInsights. Get early access to this powerful financial
-            analysis tool and shape its future development.
+            Join our MVP program today and compress hours of professional
+            financial research into minutes. Access the data tools previously
+            available only to Wall Street professionals.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
@@ -391,7 +517,7 @@ export default function Home() {
                 FinancialInsights.app
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-                AI-Powered Financial & Company Analysis Platform
+                Professional-Grade Financial Analysis for Everyone
               </p>
             </div>
             <div className="flex gap-6 mb-4 md:mb-0">
