@@ -8,6 +8,14 @@ import { SearchResultRenderer } from "@/components/tools/search-tool-render";
 import { DeepSearchResultRenderer } from "@/components/tools/deepresearch-tool-render";
 import { CompanyNewsResultRenderer } from "@/components/tools/company-news-tool-render";
 import { StockFinancialsResultRenderer } from "@/components/tools/stock-financials-tool-render";
+import { MarketMoversRenderer } from "@/components/tools/market-movers-tool-render";
+import { CompanyOverviewRenderer } from "@/components/tools/company-overview-tool-render";
+import { ETFAnalyticsRenderer } from "@/components/tools/etf-analytics-tool-render";
+import { DividendResultRenderer } from "@/components/tools/dividend-tool-render";
+import { IncomeStatementResultRenderer } from "@/components/tools/income-statement-tool-render";
+import { BalanceSheetResultRenderer } from "@/components/tools/balance-sheet-tool-render";
+import { CashFlowResultRenderer } from "@/components/tools/cash-flow-tool-render";
+import { EarningsResultRenderer } from "@/components/tools/earnings-tool-render";
 
 interface ToolResultRendererProps {
   tool: string;
@@ -53,6 +61,23 @@ export function ToolResultRenderer({
         return <CompanyNewsResultRenderer data={data.data} />;
       case "stockFinancials":
         return <StockFinancialsResultRenderer data={data.data} />;
+      case "marketMovers":
+        return <MarketMoversRenderer data={data.data} />;
+      case "companyOverview":
+        return <CompanyOverviewRenderer data={data.data} />;
+      case "etfAnalytics":
+        return <ETFAnalyticsRenderer data={data.data} />;
+      case "dividends":
+        return <DividendResultRenderer data={data.data} />;
+      case "incomeStatement":
+        return <IncomeStatementResultRenderer data={data.data} />;
+      case "balanceSheet":
+        return <BalanceSheetResultRenderer data={data.data} />;
+      case "cashFlow":
+        return <CashFlowResultRenderer data={data.data} />;
+      case "earnings":
+        return <EarningsResultRenderer data={data.data} />;
+
       // Add more tool renderers as needed
       default:
         // Generic JSON renderer for unknown tools
