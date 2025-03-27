@@ -9,7 +9,7 @@ import { DeepSearchResultRenderer } from "@/components/tools/deepresearch-tool-r
 import { CompanyNewsResultRenderer } from "@/components/tools/company-news-tool-render";
 import { StockFinancialsResultRenderer } from "@/components/tools/stock-financials-tool-render";
 import { MarketMoversRenderer } from "@/components/tools/market-movers-tool-render";
-import { AnalyticsRenderer } from "@/components/tools/analytics-tool-render";
+import { AdvancedAnalyticsResultRenderer } from "@/components/tools/analytics-tool-render";
 import { CompanyOverviewRenderer } from "@/components/tools/company-overview-tool-render";
 import { ETFAnalyticsRenderer } from "@/components/tools/etf-analytics-tool-render";
 import { DividendResultRenderer } from "@/components/tools/dividend-tool-render";
@@ -65,7 +65,7 @@ export function ToolResultRenderer({
       case "marketMovers":
         return <MarketMoversRenderer data={data.data} />;
       case "analytics":
-        return <AnalyticsRenderer data={data.data} />;
+        return <AdvancedAnalyticsResultRenderer data={data.data} />;
       case "companyOverview":
         return <CompanyOverviewRenderer data={data.data} />;
       case "etfAnalytics":
