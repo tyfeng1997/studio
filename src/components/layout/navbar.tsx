@@ -1,9 +1,11 @@
+// components/navbar.tsx
 "use client";
 
 import { Github, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { FeedbackDialog } from "@/components/feedback-dialog";
 
 export function Navbar() {
   return (
@@ -26,13 +28,8 @@ export function Navbar() {
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden md:inline-flex text-sm border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-          >
-            Contact Us
-          </Button>
+          {/* Replace the Contact Us button with our FeedbackDialog component */}
+          <FeedbackDialog />
 
           <nav className="flex items-center space-x-2">
             <Link

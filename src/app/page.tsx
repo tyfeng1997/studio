@@ -172,7 +172,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="md:w-1/2 space-y-6">
               <div className="inline-block px-3 py-1 rounded-full bg-blue-500/30 text-sm font-medium mb-2">
-                MVP Access Available
+                BETA · Free Until April 15
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
                 Your Intelligent
@@ -213,16 +213,10 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <a
-                  href="mailto:bofeng1997@gmail.com?subject=FinancialInsights%20MVP%20Access%20Request"
-                  className="px-6 py-3 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all inline-flex items-center justify-center"
-                >
-                  Request Test Access <MoveRight className="ml-2 h-4 w-4" />
-                </a>
                 <div className="flex gap-2">
                   <Link
                     href="/chat"
-                    className="px-6 py-3 bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-600 transition-all flex items-center"
+                    className="px-6 py-3 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all flex items-center"
                   >
                     <MessageSquare className="h-4 w-4 mr-1" /> Try Chat
                   </Link>
@@ -491,18 +485,21 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
             Experience Bloomberg-Level Insights at a Fraction of the Cost
           </h2>
+          <p className="text-lg max-w-2xl mx-auto mb-4 opacity-90">
+            Get started now with our beta release - completely free until April
+            15th!
+          </p>
           <p className="text-lg max-w-2xl mx-auto mb-8 opacity-90">
-            Join our MVP program today and compress hours of professional
-            financial research into minutes. Access the data tools previously
-            available only to Wall Street professionals.
+            Access the data tools previously available only to Wall Street
+            professionals and compress hours of financial research into minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="mailto:bofeng1997@gmail.com?subject=FinancialInsights%20MVP%20Access%20Request"
+            <Link
+              href="/register"
               className="px-8 py-4 bg-white text-blue-900 rounded-lg font-medium hover:shadow-lg transition-all inline-flex items-center justify-center text-lg"
             >
-              Request Test Access <MoveRight className="ml-2 h-5 w-5" />
-            </a>
+              Sign Up Now - Free Beta <MoveRight className="ml-2 h-5 w-5" />
+            </Link>
             <div className="flex gap-4">
               <Link
                 href="/chat"
